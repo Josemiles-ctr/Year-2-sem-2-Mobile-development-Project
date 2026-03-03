@@ -17,7 +17,7 @@ jobs:
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ── 2. Java 21 (matches gradle-daemon-jvm.properties toolchainVersion) ─
       - name: Set up JDK 21
