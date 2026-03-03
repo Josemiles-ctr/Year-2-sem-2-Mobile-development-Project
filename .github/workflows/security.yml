@@ -69,6 +69,11 @@ jobs:
           java-version: '21'
           cache: gradle
 
+      # Capture today's date so the NVD cache rotates daily (fresh CVE data)
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
       # Cache the NVD database to avoid re-downloading on every run (~200 MB)
       - name: Cache NVD database
         uses: actions/cache@v4
