@@ -76,7 +76,7 @@ jobs:
 
       # Cache the NVD database to avoid re-downloading on every run (~200 MB)
       - name: Cache NVD database
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/dependency-check-data
           key: owasp-nvd-${{ runner.os }}-${{ steps.date.outputs.date }}
