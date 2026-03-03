@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    OWASP Dependency-Check suppression file.
+    Add entries here to suppress false-positive CVE findings.
+
+    Example:
+    <suppress>
+        <notes>False positive: this CVE affects the server component, not the Android client.</notes>
+        <gav regex="true">^com\.example:some-lib:.*$</gav>
+        <cve>CVE-2023-12345</cve>
+    </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>
