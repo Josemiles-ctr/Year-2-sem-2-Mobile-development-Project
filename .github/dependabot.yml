@@ -1,0 +1,27 @@
+version: 2
+updates:
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # ── Gradle (app dependencies + Gradle wrapper) ───────────────────────────────
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "gradle"
+    ignore:
+      # Keep compose-bom updates manual — BOM upgrades can be breaking
+      - dependency-name: "androidx.compose:compose-bom"
+        update-types: ["version-update:semver-major"]
