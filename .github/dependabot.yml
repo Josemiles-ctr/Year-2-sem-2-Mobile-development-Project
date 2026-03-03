@@ -7,6 +7,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
       - "github-actions"
@@ -17,11 +18,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
       - "gradle"
-    ignore:
-      # Keep compose-bom updates manual — BOM upgrades can be breaking
-      - dependency-name: "androidx.compose:compose-bom"
-        update-types: ["version-update:semver-major"]
