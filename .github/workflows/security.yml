@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload HTML report
         if: always()   # upload even if the scan found vulnerabilities
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: owasp-report
           path: app/build/reports/dependency-check-report.html
