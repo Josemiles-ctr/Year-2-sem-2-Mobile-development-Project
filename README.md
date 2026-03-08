@@ -4,7 +4,7 @@
 
 The Emergency Ambulance Request System is an Android mobile application developed using Jetpack Compose.  
 
-The purpose of this application is to improve emergency response efficiency by digitizing ambulance requests and providing real-time information on ambulance availability.
+The purpose of this application is to improve emergency response efficiency by digitizing ambulance requests and providing real-time information on ambulance availability.he system will help connect individuals in emergency situations with hospitals that have available ambulances.
 
 ---
 
@@ -50,7 +50,7 @@ This mobile application introduces a digital emergency coordination system where
 - Remove ambulances
 - View incoming emergency requests
 
-### Ambulance Features
+### Ambulance Management Features
 - Update availability status:
   - Available
   - On Emergency
