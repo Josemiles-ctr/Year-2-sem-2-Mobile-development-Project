@@ -50,7 +50,7 @@ This mobile application introduces a digital emergency coordination system where
 - Remove ambulances
 - View incoming emergency requests
 
-### Ambulance Features
+### Ambulance Management Features
 - Update availability status:
   - Available
   - On Emergency
