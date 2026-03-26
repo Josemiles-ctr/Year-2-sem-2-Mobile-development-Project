@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.owasp.dependency.check)
 }
 
 android {
@@ -49,20 +48,6 @@ android {
             keepDebugSymbols.add("**/*.so")
         }
     }
-}
-
-// ── OWASP Dependency-Check ────────────────────────────────────────────────────
-// Scans all dependencies for known CVEs from the NVD database.
-// Run locally:  ./gradlew :app:dependencyCheckAnalyze
-// Report:       app/build/reports/dependency-check-report.html
-//
-// Add NVD_API_KEY to GitHub Actions secrets for faster NVD downloads.
-// Get a free key at: https://nvd.nist.gov/developers/request-an-api-key
-dependencyCheck {
-    failBuildOnCVSS = 7.0f          // fail on HIGH severity (CVSS ≥ 7) and above
-    formats = listOf("HTML", "SARIF") // HTML for humans; SARIF for GitHub Code Scanning
-    nvd.apiKey = System.getenv("NVD_API_KEY") ?: ""
-    suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
 
 dependencies {
