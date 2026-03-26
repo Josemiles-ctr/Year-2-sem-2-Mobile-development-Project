@@ -62,7 +62,7 @@ dependencyCheck {
     failBuildOnCVSS = 7.0f          // fail on HIGH severity (CVSS ≥ 7) and above
     formats = listOf("HTML", "SARIF") // HTML for humans; SARIF for GitHub Code Scanning
     nvd.apiKey = System.getenv("NVD_API_KEY") ?: ""
-    suppressionFile = "dependency-check-suppressions.xml"
+    suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
 
 dependencies {
