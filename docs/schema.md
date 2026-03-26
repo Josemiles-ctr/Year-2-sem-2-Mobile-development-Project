@@ -85,7 +85,8 @@ erDiagram
 | email | String | UNIQUE | Email address |
 | phone | String | NOT NULL | Contact number |
 | location | String | NOT NULL | Home/Hospital address |
-| user_type | Enum | NOT NULL | PATIENT, HOSPITAL_ADMIN |
+| user_type | Enum | NOT NULL | PATIENT, HOSPITAL_ADMIN, DRIVER |
+| uuid | String | UNIQUE | Application-level identifier |
 | created_at | DateTime | NOT NULL | Account creation |
 | updated_at | DateTime | NOT NULL | Last update |
 
@@ -100,6 +101,7 @@ erDiagram
 | location | String | NOT NULL | Hospital address |
 | latitude | Float | NULLABLE | GPS latitude |
 | longitude | Float | NULLABLE | GPS longitude |
+| uuid | String | UNIQUE | Application-level identifier |
 | active_ambulances | Integer | DEFAULT 0 | Count of available ambulances |
 | created_at | DateTime | NOT NULL | Registration date |
 | updated_at | DateTime | NOT NULL | Last update |
@@ -160,6 +162,18 @@ graph LR
     style A fill:#f8bbd0,stroke:#c2185b,stroke-width:2px,color:#000
     style R fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px,color:#000
 ```
+
+---
+
+## Field Definitions and Scope
+
+### Application-Level Identifiers
+The `uuid` field is an **application-level identifier** (not the primary database key). It provides a secondary unique identifier for:
+- External API integrations
+- Data synchronization across systems
+- Human-readable references
+
+The actual database primary key is the `id` field (UUID data type).
 
 ---
 

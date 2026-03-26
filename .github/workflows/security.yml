@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@44c5b0b1f365650eb58e7ffad91bdff3dcd2fe4b  # v4.1.1
         with:
           fetch-depth: 0   # full history so gitleaks can scan all commits
 
@@ -41,10 +41,10 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@44c5b0b1f365650eb58e7ffad91bdff3dcd2fe4b  # v4.1.1
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@c9f02be6c1c2c9e4fa31f0da8e5a2b8dd5dd8e94  # v4.0.0
         with:
           fail-on-severity: high
 
@@ -63,10 +63,10 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@44c5b0b1f365650eb58e7ffad91bdff3dcd2fe4b  # v4.1.1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@9da3f4460191a3612b36b334b6371f0f7457cb69  # v4.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -79,7 +79,7 @@ jobs:
 
       # Cache the NVD database to avoid re-downloading on every run (~200 MB)
       - name: Cache NVD database
-        uses: actions/cache@v4
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f69a6cf420  # v4.0.0
         with:
           path: ~/.gradle/dependency-check-data
           key: owasp-nvd-${{ runner.os }}-${{ steps.date.outputs.date }}
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload HTML report
         if: always()   # upload even if the scan found vulnerabilities
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@26f896d76c12c087176ad0fa6ea33ce646f1c39e  # v4.0.0
         with:
           name: owasp-report
           path: app/build/reports/dependency-check-report.html
@@ -104,6 +104,8 @@ jobs:
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always()
-        uses: github/codeql-action/upload-sarif@v4
+        # Pinned to specific commit SHA for reproducibility and security
+        # v4.8.0: uses: github/codeql-action/upload-sarif@e5f505b9ef71eb729cfb242af826dbb3efb81a76
+        uses: github/codeql-action/upload-sarif@e5f505b9ef71eb729cfb242af826dbb3efb81a76
         with:
           sarif_file: app/build/reports/dependency-check-report.sarif
