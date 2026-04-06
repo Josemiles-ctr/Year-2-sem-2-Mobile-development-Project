@@ -15,7 +15,6 @@ coreSplashscreen = "1.2.0"
 googleServices = "4.4.4"
 dependencyCheck = "12.2.0"
 jbcrypt = "0.4"
-
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBomVersion" }
@@ -43,7 +42,6 @@ jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependencyCheck" }
