@@ -5,16 +5,24 @@ import com.example.mobiledev.data.model.User
 class InMemoryUserRepository : UserRepository {
     private val users = mutableListOf<User>()
 
-    override fun getUsers(): List<User> = users.toList()
+    override suspend fun getUsers(): List<User> = users.toList()
 
-    override fun addUser(name: String, email: String, phone: String): User {
-        val nextId = (users.maxOfOrNull { it.id } ?: 0) + 1
-        val user = User(id = nextId, name = name, email = email, phone = phone)
+    override suspend fun addUser(name: String, email: String, phone: String, password: String): User {
+        val nextId = (users.maxOfOrNull { it.id.toIntOrNull() ?: 0 } ?: 0) + 1
+        val user = User(id = nextId.toString(), name = name, email = email, phone = phone, password = password)
         users += user
         return user
     }
 
-    override fun removeUser(userId: Int) {
+    override suspend fun authenticateUser(emailOrPhone: String, password: String): Boolean {
+        val credential = emailOrPhone.trim()
+        return users.any { user ->
+            (user.email.equals(credential, ignoreCase = true) || user.phone == credential) &&
+                user.password == password
+        }
+    }
+
+    override suspend fun removeUser(userId: String) {
         users.removeAll { it.id == userId }
     }
 }

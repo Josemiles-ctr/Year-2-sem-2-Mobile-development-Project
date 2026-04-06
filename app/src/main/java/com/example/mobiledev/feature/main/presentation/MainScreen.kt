@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
@@ -36,11 +37,16 @@ private data class MainTab(
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     val tabs = listOf(
-        MainTab(R.string.tab_home, Icons.Filled.Home),
         MainTab(R.string.tab_activity, Icons.Filled.Notifications),
-        MainTab(R.string.tab_profile, Icons.Filled.AccountCircle)
+        MainTab(R.string.tab_requests, Icons.Filled.Home),
+        MainTab(R.string.tab_account, Icons.Filled.AccountCircle)
     )
     var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+
+    // Keep back behavior natural for tab UIs: return to default tab before exiting app.
+    BackHandler(enabled = selectedTabIndex != 0) {
+        selectedTabIndex = 0
+    }
 
     Scaffold(
         modifier = modifier,

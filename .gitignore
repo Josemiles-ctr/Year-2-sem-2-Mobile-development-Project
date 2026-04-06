@@ -15,3 +15,22 @@
 .externalNativeBuild
 .cxx
 local.properties
+.kotlin/
+.vscode/
+.gradle-user-home/
+
+# Build artifacts
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Log files
+*.log
+
+# Keystores
+*.jks
+*.keystore
+
+# Google Services (usually sensitive)
+# google-services.json

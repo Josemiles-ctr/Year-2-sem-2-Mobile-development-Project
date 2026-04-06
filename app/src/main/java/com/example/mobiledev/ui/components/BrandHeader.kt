@@ -1,11 +1,13 @@
 package com.example.mobiledev.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -15,14 +17,18 @@ import com.example.mobiledev.R
 fun BrandHeader(
     modifier: Modifier = Modifier
 ) {
-    Image(
-        painter = painterResource(id = R.drawable.backgroud),
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
+    Box(
         modifier = modifier
-            .fillMaxWidth()
-            .height(96.dp)
-            .padding(horizontal = 24.dp)
-    )
+            .size(88.dp)
+            .clip(CircleShape)
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.splash_screen),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+        )
+    }
 }
 

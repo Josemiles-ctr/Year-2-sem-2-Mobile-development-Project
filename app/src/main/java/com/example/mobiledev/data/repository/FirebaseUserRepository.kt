@@ -18,12 +18,25 @@ class FirebaseUserRepository(
         }
     }
 
-    override suspend fun addUser(name: String, email: String, phone: String): User {
+    override suspend fun addUser(name: String, email: String, phone: String, password: String): User {
         val newUserRef = usersRef.push()
         val generatedId = newUserRef.key.orEmpty()
-        val user = User(id = generatedId, name = name, email = email, phone = phone)
+        val user = User(id = generatedId, name = name, email = email, phone = phone, password = password)
         newUserRef.setValue(user).await()
         return user
+    }
+
+    override suspend fun authenticateUser(emailOrPhone: String, password: String): Boolean {
+        val credential = emailOrPhone.trim()
+        if (credential.isBlank()) return false
+
+        val snapshot = usersRef.get().await()
+        return snapshot.children.mapNotNull { it.toUserOrNull() }.any { user ->
+            val emailMatches = user.email.equals(credential, ignoreCase = true)
+            val phoneMatches = user.phone == credential
+            val passwordMatches = user.password == password
+            (emailMatches || phoneMatches) && passwordMatches
+        }
     }
 
     override suspend fun removeUser(userId: String) {

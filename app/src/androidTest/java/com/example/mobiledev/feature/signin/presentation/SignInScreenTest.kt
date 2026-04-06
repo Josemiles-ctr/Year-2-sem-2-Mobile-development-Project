@@ -27,8 +27,7 @@ class SignInScreenTest {
         composeTestRule.onNodeWithText("Login").assertIsDisplayed()
         composeTestRule.onNodeWithText("Email / Phone number").assertIsDisplayed()
         composeTestRule.onNodeWithText("Password:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Don't have an account?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Do not have an account?").assertIsDisplayed()
         composeTestRule.onNodeWithText("Sign In").assertIsDisplayed()
     }
 }
-
