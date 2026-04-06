@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">MobileDev</string>
+    <string name="sign_up_title">Sign Up</string>
+    <string name="full_name_label">Full Name</string>
+    <string name="phone_number_label">Phone Number</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="create_account_label">Create Account</string>
+    <string name="already_have_account_label">Already have an account?</string>
+    <string name="login_label">Login</string>
 </resources>

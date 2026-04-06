@@ -1,16 +1,16 @@
-package com.example.mobiledev
+package com.example.mobiledev.feature.signup.presentation
 
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
-class UserViewModelTest {
+class SignUpViewModelTest {
 
-    private lateinit var viewModel: UserViewModel
+    private lateinit var viewModel: SignUpViewModel
 
     @Before
     fun setUp() {
-        viewModel = UserViewModel()
+        viewModel = SignUpViewModel()
     }
 
     // ── Initial state ─────────────────────────────────────────────────────────
@@ -33,6 +33,7 @@ class UserViewModelTest {
         assertEquals(1, viewModel.users.value.size)
         assertEquals("Alice", viewModel.users.value.first().name)
         assertEquals("alice@example.com", viewModel.users.value.first().email)
+        assertEquals("", viewModel.users.value.first().phone)
     }
 
     @Test
@@ -110,4 +111,38 @@ class UserViewModelTest {
         viewModel.removeUser(id)
         assertTrue(viewModel.users.value.isEmpty())
     }
+
+    // -- submitSignUp ----------------------------------------------------------
+
+    @Test
+    fun `submitSignUp with valid data adds user and resets form`() {
+        viewModel.onFullNameChange("Alice")
+        viewModel.onPhoneNumberChange("0712345678")
+        viewModel.onEmailChange("alice@example.com")
+        viewModel.onPasswordChange("Secure123")
+        viewModel.onConfirmPasswordChange("Secure123")
+
+        viewModel.submitSignUp()
+
+        val user = viewModel.users.value.first()
+        assertEquals("Alice", user.name)
+        assertEquals("0712345678", user.phone)
+        assertNull(viewModel.signUpUiState.value.errorMessage)
+        assertEquals("Account created successfully.", viewModel.signUpUiState.value.successMessage)
+    }
+
+    @Test
+    fun `submitSignUp with mismatched passwords sets error`() {
+        viewModel.onFullNameChange("Alice")
+        viewModel.onPhoneNumberChange("0712345678")
+        viewModel.onEmailChange("alice@example.com")
+        viewModel.onPasswordChange("Secure123")
+        viewModel.onConfirmPasswordChange("Wrong123")
+
+        viewModel.submitSignUp()
+
+        assertTrue(viewModel.users.value.isEmpty())
+        assertEquals("Passwords do not match.", viewModel.signUpUiState.value.errorMessage)
+    }
 }
+
