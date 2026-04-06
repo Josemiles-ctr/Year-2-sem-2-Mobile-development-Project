@@ -1,12 +1,14 @@
 package com.example.mobiledev.feature.signin.presentation
 
+import com.example.mobiledev.data.model.User
+import com.example.mobiledev.data.repository.UserRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SignInViewModelTest {
 
-    private val viewModel = SignInViewModel()
+    private val viewModel = SignInViewModel(FakeUserRepository(isAuthenticated = true))
 
     @Test
     fun `initial state is empty`() {
@@ -14,7 +16,6 @@ class SignInViewModelTest {
         assertEquals("", state.emailOrPhone)
         assertEquals("", state.password)
         assertNull(state.errorMessage)
-        assertNull(state.successMessage)
     }
 
     @Test
@@ -43,7 +44,20 @@ class SignInViewModelTest {
 
         val state = viewModel.uiState.value
         assertNull(state.errorMessage)
-        assertEquals("Login request submitted.", state.successMessage)
+    }
+
+    private class FakeUserRepository(
+        private val isAuthenticated: Boolean
+    ) : UserRepository {
+        override suspend fun getUsers(): List<User> = emptyList()
+
+        override suspend fun addUser(name: String, email: String, phone: String, password: String): User =
+            User(id = "1", name = name, email = email, phone = phone, password = password)
+
+        override suspend fun authenticateUser(emailOrPhone: String, password: String): Boolean =
+            isAuthenticated
+
+        override suspend fun removeUser(userId: String) = Unit
     }
 }
 
