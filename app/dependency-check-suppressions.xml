@@ -58,7 +58,7 @@
     <!-- Apache HttpClient 4.5.6 -->
     <suppress>
         <notes>Apache HttpClient 4.5.6 CVE-2020-13956. Low impact due to HTTPS/TLS usage and Android context. Future fix: Replace with OkHttp3. See DEPENDENCY_UPDATES.md#DEPS-006</notes>
-        <gav regex="true">^org\.apache\.http components:httpclient:4\.5\.6$</gav>
+        <gav regex="true">^org\.apache\.httpcomponents:httpclient:4\.5\.6$</gav>
         <cve>CVE-2020-13956</cve>
     </suppress>
 
