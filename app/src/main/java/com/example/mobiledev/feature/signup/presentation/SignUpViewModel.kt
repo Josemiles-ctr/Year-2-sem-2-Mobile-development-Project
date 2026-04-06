@@ -47,7 +47,6 @@ class SignUpViewModel(
             is SignUpEvent.PasswordChanged -> onPasswordChange(event.value)
             is SignUpEvent.ConfirmPasswordChanged -> onConfirmPasswordChange(event.value)
             SignUpEvent.Submit -> submitSignUp()
-            SignUpEvent.ClearFeedback -> clearFeedback()
         }
     }
 
@@ -81,40 +80,35 @@ class SignUpViewModel(
     fun onFullNameChange(value: String) {
         _signUpUiState.value = _signUpUiState.value.copy(
             fullName = value,
-            errorMessage = null,
-            successMessage = null
+            errorMessage = null
         )
     }
 
     fun onPhoneNumberChange(value: String) {
         _signUpUiState.value = _signUpUiState.value.copy(
             phoneNumber = value,
-            errorMessage = null,
-            successMessage = null
+            errorMessage = null
         )
     }
 
     fun onEmailChange(value: String) {
         _signUpUiState.value = _signUpUiState.value.copy(
             email = value,
-            errorMessage = null,
-            successMessage = null
+            errorMessage = null
         )
     }
 
     fun onPasswordChange(value: String) {
         _signUpUiState.value = _signUpUiState.value.copy(
             password = value,
-            errorMessage = null,
-            successMessage = null
+            errorMessage = null
         )
     }
 
     fun onConfirmPasswordChange(value: String) {
         _signUpUiState.value = _signUpUiState.value.copy(
             confirmPassword = value,
-            errorMessage = null,
-            successMessage = null
+            errorMessage = null
         )
     }
 
@@ -135,7 +129,7 @@ class SignUpViewModel(
 
         if (error != null) {
             _errorMessage.value = error
-            _signUpUiState.value = state.copy(errorMessage = error, successMessage = null)
+            _signUpUiState.value = state.copy(errorMessage = error)
             return
         }
 
@@ -148,7 +142,7 @@ class SignUpViewModel(
                     password = state.password
                 )
                 _errorMessage.value = null
-                _signUpUiState.value = SignUpUiState(successMessage = SUCCESS_ACCOUNT_CREATED)
+                _signUpUiState.value = state.copy(errorMessage = null)
                 _navigationEvents.send(NavigationEvent.NavigateToDashboard)
 
                 // Refresh is the best effort and should not block successful navigation.
@@ -160,14 +154,9 @@ class SignUpViewModel(
                 val message = toUserMessage(exception)
                 Log.e(TAG, "Sign-up submit failed while accessing Firebase.", exception)
                 _errorMessage.value = message
-                _signUpUiState.value = state.copy(errorMessage = message, successMessage = null)
+                _signUpUiState.value = state.copy(errorMessage = message)
             }
         }
-    }
-
-    fun clearFeedback() {
-        _errorMessage.value = null
-        _signUpUiState.value = _signUpUiState.value.copy(errorMessage = null, successMessage = null)
     }
 
     fun removeUser(userId: String) {
@@ -218,7 +207,6 @@ class SignUpViewModel(
         const val ERROR_PERMISSION_DENIED = "Firebase denied access. Check Realtime Database rules."
         const val ERROR_NETWORK = "Network issue while contacting Firebase. Check internet and database URL."
         const val ERROR_DATA_SOURCE = "Could not reach Firebase database. Please try again."
-        const val SUCCESS_ACCOUNT_CREATED = "Account created successfully."
     }
 }
 

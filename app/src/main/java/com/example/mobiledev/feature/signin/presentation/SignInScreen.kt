@@ -27,6 +27,7 @@ import com.example.mobiledev.R
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.theme.MobileDevTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SignInRoute(
@@ -36,10 +37,11 @@ fun SignInRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(uiState.successMessage) {
-        if (!uiState.successMessage.isNullOrBlank()) {
-            onAuthSuccess()
-            viewModel.onEvent(SignInEvent.ClearFeedback)
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvents.collectLatest { event ->
+            when (event) {
+                SignInViewModel.NavigationEvent.NavigateToDashboard -> onAuthSuccess()
+            }
         }
     }
 
@@ -108,15 +110,11 @@ private fun LoginFormCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            val feedback = uiState.errorMessage ?: uiState.successMessage
+            val feedback = uiState.errorMessage
             if (!feedback.isNullOrBlank()) {
                 Text(
                     text = feedback,
-                    color = if (uiState.errorMessage != null) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
+                    color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth()
                 )

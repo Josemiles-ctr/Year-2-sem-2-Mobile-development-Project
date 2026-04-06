@@ -42,10 +42,7 @@ fun SignUpRoute(
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
             when (event) {
-                SignUpViewModel.NavigationEvent.NavigateToDashboard -> {
-                    onAuthSuccess()
-                    viewModel.onEvent(SignUpEvent.ClearFeedback)
-                }
+                SignUpViewModel.NavigationEvent.NavigateToDashboard -> onAuthSuccess()
             }
         }
     }
@@ -140,15 +137,11 @@ private fun SignUpFormCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            val feedback = uiState.errorMessage ?: uiState.successMessage
+            val feedback = uiState.errorMessage
             if (!feedback.isNullOrBlank()) {
                 Text(
                     text = feedback,
-                    color = if (uiState.errorMessage != null) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
+                    color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth()
                 )

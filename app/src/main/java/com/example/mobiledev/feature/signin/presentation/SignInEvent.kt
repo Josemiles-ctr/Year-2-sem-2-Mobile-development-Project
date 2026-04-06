@@ -4,6 +4,5 @@ sealed interface SignInEvent {
     data class EmailOrPhoneChanged(val value: String) : SignInEvent
     data class PasswordChanged(val value: String) : SignInEvent
     data object Submit : SignInEvent
-    data object ClearFeedback : SignInEvent
 }
 

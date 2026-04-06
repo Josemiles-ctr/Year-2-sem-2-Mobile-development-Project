@@ -7,7 +7,6 @@ sealed interface SignUpEvent {
     data class PasswordChanged(val value: String) : SignUpEvent
     data class ConfirmPasswordChanged(val value: String) : SignUpEvent
     data object Submit : SignUpEvent
-    data object ClearFeedback : SignUpEvent
 }
 
 
