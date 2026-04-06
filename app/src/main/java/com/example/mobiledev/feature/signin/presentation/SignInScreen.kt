@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
 import com.example.mobiledev.ui.components.AuthInputField
+import com.example.mobiledev.ui.components.BrandHeader
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.theme.MobileDevTheme
 import kotlinx.coroutines.flow.collectLatest
@@ -60,6 +61,7 @@ fun SignInScreen(
     modifier: Modifier = Modifier
 ) {
     AuthScreenContainer(modifier = modifier) {
+        BrandHeader()
 
         LoginFormCard(
             uiState = uiState,
