@@ -2,6 +2,7 @@ package com.example.mobiledev.feature.signin.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,8 +11,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,17 +66,17 @@ fun SignInScreen(
 
         LoginFormCard(
             uiState = uiState,
-            onEvent = onEvent
+            onEvent = onEvent,
+            onSignUpClick = onSignUpClick
         )
-
-        SignUpPromptCard(onSignUpClick = onSignUpClick)
     }
 }
 
 @Composable
 private fun LoginFormCard(
     uiState: SignInUiState,
-    onEvent: (SignInEvent) -> Unit
+    onEvent: (SignInEvent) -> Unit,
+    onSignUpClick: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -130,30 +131,19 @@ private fun LoginFormCard(
             ) {
                 Text(text = stringResource(R.string.login_label))
             }
-        }
-    }
-}
 
-@Composable
-private fun SignUpPromptCard(onSignUpClick: () -> Unit) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.no_account_label),
-                style = MaterialTheme.typography.bodySmall
-            )
-            OutlinedButton(onClick = onSignUpClick) {
-                Text(text = stringResource(R.string.sign_up_label))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.no_account_label),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(onClick = onSignUpClick) {
+                    Text(text = stringResource(R.string.sign_up_label))
+                }
             }
         }
     }

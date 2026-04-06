@@ -2,6 +2,7 @@ package com.example.mobiledev.feature.signup.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,8 +13,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
 import com.example.mobiledev.ui.components.AuthInputField
+import com.example.mobiledev.ui.components.BrandHeader
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.theme.MobileDevTheme
 
@@ -69,8 +71,8 @@ fun SignUpScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            SignUpFormCard(uiState = uiState, onEvent = onEvent)
-            LoginPromptCard(onLoginClick = onLoginClick)
+            BrandHeader()
+            SignUpFormCard(uiState = uiState, onEvent = onEvent, onLoginClick = onLoginClick)
         }
     }
 }
@@ -78,7 +80,8 @@ fun SignUpScreen(
 @Composable
 private fun SignUpFormCard(
     uiState: SignUpUiState,
-    onEvent: (SignUpEvent) -> Unit
+    onEvent: (SignUpEvent) -> Unit,
+    onLoginClick: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -155,30 +158,19 @@ private fun SignUpFormCard(
             ) {
                 Text(text = stringResource(R.string.create_account_label))
             }
-        }
-    }
-}
 
-@Composable
-private fun LoginPromptCard(onLoginClick: () -> Unit) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.already_have_account_label),
-                style = MaterialTheme.typography.bodySmall
-            )
-            OutlinedButton(onClick = onLoginClick) {
-                Text(text = stringResource(R.string.login_label))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.already_have_account_label),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(onClick = onLoginClick) {
+                    Text(text = stringResource(R.string.login_label))
+                }
             }
         }
     }
