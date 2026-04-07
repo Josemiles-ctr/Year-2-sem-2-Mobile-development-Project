@@ -2,8 +2,8 @@ package com.example.mobiledev.feature.signin.presentation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.mobiledev.data.repository.FirebaseUserRepository
 import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.domain.validation.Validator
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class SignInViewModel(
-    private val userRepository: UserRepository = FirebaseUserRepository()
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     sealed interface NavigationEvent {
@@ -107,6 +107,18 @@ class SignInViewModel(
         const val ERROR_PERMISSION_DENIED = "Firebase denied access. Check Realtime Database rules."
         const val ERROR_NETWORK = "Network issue while contacting Firebase. Check internet and database URL."
         const val ERROR_DATA_SOURCE = "Could not reach Firebase database. Please try again."
+    }
+}
+
+class SignInViewModelFactory(
+    private val userRepository: UserRepository
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        require(modelClass.isAssignableFrom(SignInViewModel::class.java)) {
+            "Unknown ViewModel class: ${modelClass.name}"
+        }
+        return SignInViewModel(userRepository) as T
     }
 }
 

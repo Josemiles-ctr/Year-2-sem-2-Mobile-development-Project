@@ -13,12 +13,11 @@
     <string name="login_title">Login</string>
     <string name="email_or_phone_label">Email / Phone number</string>
     <string name="password_hint_label">Password:</string>
-    <string name="login_label">Login</string>
     <string name="no_account_label">Do not have an account?</string>
     <string name="sign_up_label">Sign Up</string>
     <string name="sign_in_cta_label">Sign In</string>
     <string name="tab_activity">Activity</string>
-        <string name="tab_requests">Requests</string>
-      <string name="tab_account">Account</string>
+    <string name="tab_requests">Requests</string>
+    <string name="tab_account">Account</string>
     <string name="placeholder_screen_text">%1$s screen placeholder</string>
 </resources>

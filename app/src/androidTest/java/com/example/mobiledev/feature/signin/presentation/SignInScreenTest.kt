@@ -2,7 +2,7 @@ package com.example.mobiledev.feature.signin.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import com.example.mobiledev.ui.theme.MobileDevTheme
 import org.junit.Rule
 import org.junit.Test
@@ -24,10 +24,11 @@ class SignInScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Login").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Email / Phone number").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Password:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Do not have an account?").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Sign In").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_title").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_email_or_phone_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_password_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_no_account_text").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_submit_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signin_signup_button").assertIsDisplayed()
     }
 }
