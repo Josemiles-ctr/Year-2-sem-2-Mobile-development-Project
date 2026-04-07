@@ -1,7 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.owasp.dependency.check)
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.dependency.check)
+}
+
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
@@ -9,17 +14,14 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.mobiledev"
+        applicationId = "com.example.mobilelearning"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    // Explicitly set the NDK version to match what's installed in your SDK Manager
-    // ndkVersion = "28.2.13676358" 
 
     buildTypes {
         release {
@@ -44,8 +46,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
         jniLibs {
-            // Remove this line once you've confirmed the NDK is fully installed
-            // and the llvm-strip error is gone.
             keepDebugSymbols.add("**/*.so")
         }
     }
@@ -62,19 +62,26 @@ dependencyCheck {
     failBuildOnCVSS = 7.0f          // fail on HIGH severity (CVSS ≥ 7) and above
     formats = listOf("HTML", "SARIF") // HTML for humans; SARIF for GitHub Code Scanning
     nvd.apiKey = System.getenv("NVD_API_KEY") ?: ""
-    suppressionFile = "dependency-check-suppressions.xml"
+    suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.database)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)

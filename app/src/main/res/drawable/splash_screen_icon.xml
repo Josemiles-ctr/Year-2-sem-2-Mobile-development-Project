@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <size
+                android:width="124dp"
+                android:height="124dp" />
+            <solid android:color="@android:color/system_surface_container_high_dark" />
+        </shape>
+    </item>
+
+    <item
+        android:drawable="@drawable/splash_screen"
+        android:gravity="center"
+        android:width="88dp"
+        android:height="88dp" />
+</layer-list>
+
