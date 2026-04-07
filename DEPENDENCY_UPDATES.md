@@ -84,7 +84,7 @@ Also: libraries enforcing outdated Kotlin stdlib versions.
 - Update all kotlin-* dependencies
 - Recompile all modules
 - Run full test suite
-- Remove Kotlin CDE-2020-29582 suppression
+- Remove Kotlin CVE-2020-29582 suppression
 
 **Location:** `gradle/libs.versions.toml`, `app/build.gradle.kts`
 

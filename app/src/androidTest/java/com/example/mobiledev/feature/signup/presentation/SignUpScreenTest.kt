@@ -2,7 +2,7 @@ package com.example.mobiledev.feature.signup.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import com.example.mobiledev.ui.theme.MobileDevTheme
 import org.junit.Rule
 import org.junit.Test
@@ -24,14 +24,14 @@ class SignUpScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Sign Up").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Full Name").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Phone Number").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Email").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Password").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Confirm Password").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Create Account").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Login").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_title").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_full_name_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_phone_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_email_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_password_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_confirm_password_input").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_submit_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("signup_signin_button").assertIsDisplayed()
     }
 }
 

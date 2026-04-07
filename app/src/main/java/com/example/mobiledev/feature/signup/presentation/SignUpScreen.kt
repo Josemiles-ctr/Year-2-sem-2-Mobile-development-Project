@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -112,6 +113,7 @@ private fun SignUpFormCard(
         ) {
             Text(
                 text = stringResource(R.string.sign_up_title),
+                modifier = Modifier.testTag("signup_title"),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -122,21 +124,27 @@ private fun SignUpFormCard(
                 value = uiState.fullName,
                 onValueChange = { onEvent(SignUpEvent.FullNameChanged(it)) },
                 label = stringResource(R.string.full_name_label),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signup_full_name_input")
             )
 
             AuthInputField(
                 value = uiState.phoneNumber,
                 onValueChange = { onEvent(SignUpEvent.PhoneNumberChanged(it)) },
                 label = stringResource(R.string.phone_number_label),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signup_phone_input")
             )
 
             AuthInputField(
                 value = uiState.email,
                 onValueChange = { onEvent(SignUpEvent.EmailChanged(it)) },
                 label = stringResource(R.string.email_label),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signup_email_input")
             )
 
             AuthInputField(
@@ -144,7 +152,9 @@ private fun SignUpFormCard(
                 onValueChange = { onEvent(SignUpEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_label),
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signup_password_input")
             )
 
             AuthInputField(
@@ -152,7 +162,9 @@ private fun SignUpFormCard(
                 onValueChange = { onEvent(SignUpEvent.ConfirmPasswordChanged(it)) },
                 label = stringResource(R.string.confirm_password_label),
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signup_confirm_password_input")
             )
 
             val feedback = uiState.errorMessage
@@ -170,6 +182,7 @@ private fun SignUpFormCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
+                    .testTag("signup_submit_button")
             ) {
                 Text(text = stringResource(R.string.create_account_label))
             }
@@ -181,10 +194,14 @@ private fun SignUpFormCard(
             ) {
                 Text(
                     text = stringResource(R.string.already_have_account_label),
+                    modifier = Modifier.testTag("signup_already_have_account_text"),
                     style = MaterialTheme.typography.bodySmall
                 )
-                TextButton(onClick = onLoginClick) {
-                    Text(text = stringResource(R.string.login_label))
+                TextButton(
+                    onClick = onLoginClick,
+                    modifier = Modifier.testTag("signup_signin_button")
+                ) {
+                    Text(text = stringResource(R.string.sign_in_cta_label))
                 }
             }
         }

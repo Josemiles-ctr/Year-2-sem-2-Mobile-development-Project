@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -117,6 +118,7 @@ private fun LoginFormCard(
         ) {
             Text(
                 text = stringResource(R.string.login_title),
+                modifier = Modifier.testTag("signin_title"),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -127,7 +129,9 @@ private fun LoginFormCard(
                 value = uiState.emailOrPhone,
                 onValueChange = { onEvent(SignInEvent.EmailOrPhoneChanged(it)) },
                 label = stringResource(R.string.email_or_phone_label),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signin_email_or_phone_input")
             )
 
             AuthInputField(
@@ -135,7 +139,9 @@ private fun LoginFormCard(
                 onValueChange = { onEvent(SignInEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_hint_label),
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("signin_password_input")
             )
 
             val feedback = uiState.errorMessage
@@ -153,8 +159,9 @@ private fun LoginFormCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
+                    .testTag("signin_submit_button")
             ) {
-                Text(text = stringResource(R.string.login_label))
+                Text(text = stringResource(R.string.sign_in_cta_label))
             }
 
             Row(
@@ -164,9 +171,13 @@ private fun LoginFormCard(
             ) {
                 Text(
                     text = stringResource(R.string.no_account_label),
+                    modifier = Modifier.testTag("signin_no_account_text"),
                     style = MaterialTheme.typography.bodySmall
                 )
-                TextButton(onClick = onSignUpClick) {
+                TextButton(
+                    onClick = onSignUpClick,
+                    modifier = Modifier.testTag("signin_signup_button")
+                ) {
                     Text(text = stringResource(R.string.sign_up_label))
                 }
             }

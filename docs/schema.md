@@ -77,51 +77,52 @@ erDiagram
 ## Database Table Schema (Detailed View)
 
 ### USER Table
-| Column | Type | Constraint | Description |
-|--------|------|-----------|-------------|
-| **id** | UUID | PK | Patient/Hospital Admin ID |
-| **hospital_id** | UUID | FK | References HOSPITAL |
-| name | String | NOT NULL | Full name |
-| email | String | UNIQUE | Email address |
-| phone | String | NOT NULL | Contact number |
-| location | String | NOT NULL | Home/Hospital address |
-| user_type | Enum | NOT NULL | PATIENT, HOSPITAL_ADMIN, DRIVER |
-| uuid | String | UNIQUE | Application-level identifier |
-| created_at | DateTime | NOT NULL | Account creation |
-| updated_at | DateTime | NOT NULL | Last update |
+| Column          | Type     | Constraint | Description                     |
+|-----------------|----------|------------|---------------------------------|
+| **id**          | UUID     | PK         | Patient/Hospital Admin ID       |
+| **hospital_id** | UUID     | FK         | References HOSPITAL             |
+| name            | String   | NOT NULL   | Full name                       |
+| email           | String   | UNIQUE     | Email address                   |
+| phone           | String   | NOT NULL   | Contact number                  |
+| location        | String   | NOT NULL   | Home/Hospital address           |
+| user_type       | Enum     | NOT NULL   | PATIENT, HOSPITAL_ADMIN, DRIVER |
+| uuid            | String   | UNIQUE     | Application-level identifier    |
+| created_at      | DateTime | NOT NULL   | Account creation                |
+| updated_at      | DateTime | NOT NULL   | Last update                     |
 
 ### HOSPITAL Table
-| Column | Type | Constraint | Description |
-|--------|------|-----------|-------------|
-| **id** | UUID | PK | Hospital ID |
-| **admin_id** | UUID | FK | References USER (admin) |
-| name | String | UNIQUE | Hospital name |
-| email | String | UNIQUE | Hospital email |
-| phone | String | NOT NULL | Hospital contact |
-| location | String | NOT NULL | Hospital address |
-| latitude | Float | NULLABLE | GPS latitude |
-| longitude | Float | NULLABLE | GPS longitude |
-| uuid | String | UNIQUE | Application-level identifier |
-| active_ambulances | Integer | DEFAULT 0 | Count of available ambulances |
-| created_at | DateTime | NOT NULL | Registration date |
-| updated_at | DateTime | NOT NULL | Last update |
+| Column            | Type     | Constraint | Description                   |
+|-------------------|----------|------------|-------------------------------|
+| **id**            | UUID     | PK         | Hospital ID                   |
+| **admin_id**      | UUID     | FK         | References USER (admin)       |
+| name              | String   | UNIQUE     | Hospital name                 |
+| email             | String   | UNIQUE     | Hospital email                |
+| phone             | String   | NOT NULL   | Hospital contact              |
+| location          | String   | NOT NULL   | Hospital address              |
+| latitude          | Float    | NULLABLE   | GPS latitude                  |
+| longitude         | Float    | NULLABLE   | GPS longitude                 |
+| uuid              | String   | UNIQUE     | Application-level identifier  |
+| active_ambulances | Integer  | DEFAULT 0  | Count of available ambulances |
+| created_at        | DateTime | NOT NULL   | Registration date             |
+| updated_at        | DateTime | NOT NULL   | Last update                   |
 
 ### AMBULANCE Table
-| Column | Type | Constraint | Description |
-|--------|------|-----------|-------------|
-| **id** | UUID | PK | Ambulance ID |
-| **hospital_id** | UUID | FK | References HOSPITAL |
-| **driver_id** | UUID | FK | References USER (driver) |
-| registration_no | String | UNIQUE | Vehicle plate number |
-| license_no | String | UNIQUE | Service license number |
-| status | Enum | NOT NULL | AVAILABLE, ON_EMERGENCY, OFFLINE |
-| latitude | Float | NOT NULL | Current GPS latitude |
-| longitude | Float | NOT NULL | Current GPS longitude |
-| created_at | DateTime | NOT NULL | Registration date |
-| updated_at | DateTime | NOT NULL | Last location update |
+| Column          | Type     | Constraint | Description                      |
+|-----------------|----------|------------|----------------------------------|
+| **id**          | UUID     | PK         | Ambulance ID                     |
+| **hospital_id** | UUID     | FK         | References HOSPITAL              |
+| **driver_id**   | UUID     | FK         | References USER (driver)         |
+| registration_no | String   | UNIQUE     | Vehicle plate number             |
+| license_no      | String   | UNIQUE     | Service license number           |
+| status          | Enum     | NOT NULL   | AVAILABLE, ON_EMERGENCY, OFFLINE |
+| latitude        | Float    | NOT NULL   | Current GPS latitude             |
+| longitude       | Float    | NOT NULL   | Current GPS longitude            |
+| created_at      | DateTime | NOT NULL   | Registration date                |
+| updated_at      | DateTime | NOT NULL   | Last location update             |
 
 ### EMERGENCY_REQUEST Table
 | Column | Type | Constraint | Description |
+
 |--------|------|-----------|-------------|
 | **id** | UUID | PK | Request ID |
 | **user_id** | UUID | FK | References USER (patient) |
@@ -189,6 +190,7 @@ The actual database primary key is the `id` field (UUID data type).
 - `DRIVER` - Ambulance drivers who operate vehicles and respond to emergencies
 
 | Attribute | Type | Constraints | Description |
+
 |-----------|------|-------------|-------------|
 | `id` | UUID | PK | Unique identifier for the user |
 | `name` | String | NOT NULL | Full name of the user |
@@ -212,20 +214,23 @@ The actual database primary key is the `id` field (UUID data type).
 
 **Purpose:** Represents hospitals registered in the system that manage ambulances and respond to emergency requests.
 
-| Attribute | Type | Constraints | Description |
-|-----------|------|-------------|-------------|
-| `id` | UUID | PK | Unique identifier for the hospital |
-| `name` | String | NOT NULL, UNIQUE | Official hospital name |
-| `email` | String | NOT NULL, UNIQUE | Hospital contact email for authentication |
-| `phone` | String | NOT NULL | Hospital main phone number |
-| `location` | String | NOT NULL | Full address of the hospital |
-| `latitude` | Float | NULLABLE | GPS latitude coordinate |
-| `longitude` | Float | NULLABLE | GPS longitude coordinate |
-| `uuid` | String | UNIQUE | Alternative unique identifier |
-| `createdAt` | DateTime | NOT NULL | Hospital registration timestamp |
-| `updatedAt` | DateTime | NOT NULL | Last update timestamp |
+| Attribute           | Type     | Constraints      | Description                               |
+|---------------------|----------|------------------|-------------------------------------------|
+| `id`                | UUID     | PK               | Unique identifier for the hospital        |
+| `admin_id`          | UUID     | FK, NOT NULL     | References the USER hospital admin        |
+| `name`              | String   | NOT NULL, UNIQUE | Official hospital name                    |
+| `email`             | String   | NOT NULL, UNIQUE | Hospital contact email for authentication |
+| `phone`             | String   | NOT NULL         | Hospital main phone number                |
+| `location`          | String   | NOT NULL         | Full address of the hospital              |
+| `latitude`          | Float    | NULLABLE         | GPS latitude coordinate                   |
+| `longitude`         | Float    | NULLABLE         | GPS longitude coordinate                  |
+| `uuid`              | String   | UNIQUE           | Alternative unique identifier             |
+| `active_ambulances` | Integer  | DEFAULT 0        | Count of currently available ambulances   |
+| `createdAt`         | DateTime | NOT NULL         | Hospital registration timestamp           |
+| `updatedAt`         | DateTime | NOT NULL         | Last update timestamp                     |
 
 **Constraints:**
+- `admin_id` must reference an existing USER with `user_type = HOSPITAL_ADMIN`
 - Hospital name must be unique
 - Email must be unique across all hospitals
 - If GPS coordinates provided, both latitude and longitude must be present
@@ -238,6 +243,7 @@ The actual database primary key is the `id` field (UUID data type).
 **Purpose:** Represents ambulances managed by hospitals. Each ambulance is assigned to a driver and receives emergency requests while updating its availability status.
 
 | Attribute | Type | Constraints | Description |
+
 |-----------|------|-------------|-------------|
 | `id` | UUID | PK | Unique identifier for the ambulance |
 | `hospitalId` | UUID | FK, NOT NULL | References the managing HOSPITAL |
@@ -274,6 +280,7 @@ The actual database primary key is the `id` field (UUID data type).
 **Purpose:** Represents emergency requests submitted by users and tracked through to completion.
 
 | Attribute | Type | Constraints | Description |
+
 |-----------|------|-------------|-------------|
 | `id` | UUID | PK | Unique identifier for the request |
 | `userId` | UUID | FK, NOT NULL | References the USER who submitted the request |
