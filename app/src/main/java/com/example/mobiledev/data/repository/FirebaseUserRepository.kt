@@ -4,6 +4,7 @@ import com.example.mobiledev.data.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
+import org.mindrot.jbcrypt.BCrypt
 
 class FirebaseUserRepository(
     firebaseDatabase: FirebaseDatabase = FirebaseDatabase.getInstance()
@@ -23,12 +24,13 @@ class FirebaseUserRepository(
         val generatedId = newUserRef.key.orEmpty()
         val trimmedEmail = email.trim()
         val trimmedPhone = phone.trim()
+        val passwordHash = BCrypt.hashpw(password, BCrypt.gensalt())
         val user = User(
             id = generatedId,
             name = name,
             email = trimmedEmail,
             phone = trimmedPhone,
-            password = password
+            password = passwordHash
         )
 
         val userPayload = mapOf(
@@ -36,7 +38,7 @@ class FirebaseUserRepository(
             USER_NAME_FIELD to user.name,
             USER_EMAIL_FIELD to user.email,
             USER_PHONE_FIELD to user.phone,
-            USER_PASSWORD_FIELD to user.password,
+            USER_PASSWORD_FIELD to passwordHash,
             USER_EMAIL_KEY_FIELD to trimmedEmail.lowercase(),
             USER_PHONE_KEY_FIELD to normalizePhone(trimmedPhone)
         )
@@ -83,11 +85,30 @@ class FirebaseUserRepository(
             .get()
             .await()
 
-        val matchedUser = snapshot.children.firstOrNull()?.toUserOrNull() ?: return false
-        return matchedUser.password == password
+        val matchedSnapshot = snapshot.children.firstOrNull() ?: return false
+        val matchedUser = matchedSnapshot.toUserOrNull() ?: return false
+        val storedPassword = matchedUser.password
+
+        if (storedPassword.isBlank()) return false
+
+        if (isBcryptHash(storedPassword)) {
+            return BCrypt.checkpw(password, storedPassword)
+        }
+
+        if (storedPassword != password) return false
+
+        // Migrate legacy plaintext credentials to BCrypt after a successful sign-in.
+        val migratedHash = BCrypt.hashpw(password, BCrypt.gensalt())
+        runCatching {
+            matchedSnapshot.ref.child(USER_PASSWORD_FIELD).setValue(migratedHash).await()
+        }
+        return true
     }
 
     private fun normalizePhone(raw: String): String = raw.filter(Char::isDigit)
+
+    private fun isBcryptHash(value: String): Boolean =
+        value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$")
 
     private companion object {
         const val USERS_NODE = "users"

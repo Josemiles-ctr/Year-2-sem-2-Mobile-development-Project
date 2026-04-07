@@ -2,14 +2,17 @@ package com.example.mobiledev.feature.signup.presentation
 
 import com.example.mobiledev.data.model.User
 import com.example.mobiledev.data.repository.UserRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import com.example.mobiledev.test.MainDispatcherRule
-import org.junit.Assert.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SignUpViewModelTest {
@@ -36,90 +39,14 @@ class SignUpViewModelTest {
         assertNull(viewModel.errorMessage.value)
     }
 
-    // ── addUser — happy path ──────────────────────────────────────────────────
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `addUser with valid inputs adds user to list`() {
-        runTest {
-            viewModel.addUser("Alice", "alice@example.com")
-            advanceUntilIdle()
-            assertEquals(1, viewModel.users.value.size)
-            assertEquals("Alice", viewModel.users.value.first().name)
-            assertEquals("alice@example.com", viewModel.users.value.first().email)
-            assertEquals("", viewModel.users.value.first().phone)
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `addUser assigns auto-incrementing ids`() {
-        runTest {
-            viewModel.addUser("Alice", "alice@example.com")
-            viewModel.addUser("Bob", "bob@example.com")
-            advanceUntilIdle()
-            val ids = viewModel.users.value.map { it.id }
-            assertEquals(listOf("1", "2"), ids)
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `addUser trims whitespace from name and email`() {
-        runTest {
-            viewModel.addUser("  Alice  ", "  alice@example.com  ")
-            advanceUntilIdle()
-            val user = viewModel.users.value.first()
-            assertEquals("Alice", user.name)
-            assertEquals("alice@example.com", user.email)
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `addUser with valid data clears any previous error`() {
-        runTest {
-            viewModel.addUser("A", "bad") // trigger an error first
-            viewModel.addUser("Alice", "alice@example.com")
-            advanceUntilIdle()
-            assertNull(viewModel.errorMessage.value)
-        }
-    }
-
-    // ── addUser — validation errors ───────────────────────────────────────────
-
-    @Test
-    fun `addUser with invalid name does not add user`() {
-        viewModel.addUser("A", "alice@example.com")
-        assertTrue(viewModel.users.value.isEmpty())
-    }
-
-    @Test
-    fun `addUser with invalid name sets error message`() {
-        viewModel.addUser("A", "alice@example.com")
-        assertNotNull(viewModel.errorMessage.value)
-    }
-
-    @Test
-    fun `addUser with invalid email does not add user`() {
-        viewModel.addUser("Alice", "not-an-email")
-        assertTrue(viewModel.users.value.isEmpty())
-    }
-
-    @Test
-    fun `addUser with invalid email sets error message`() {
-        viewModel.addUser("Alice", "not-an-email")
-        assertNotNull(viewModel.errorMessage.value)
-    }
-
     // ── removeUser ────────────────────────────────────────────────────────────
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `removeUser removes the correct user by id`() {
         runTest {
-            viewModel.addUser("Alice", "alice@example.com")
-            viewModel.addUser("Bob", "bob@example.com")
+            submitValidSignUp(name = "Alice", email = "alice@example.com", phone = "0712345678")
+            submitValidSignUp(name = "Bob", email = "bob@example.com", phone = "0722222222")
             advanceUntilIdle()
             val aliceId = viewModel.users.value.first { it.name == "Alice" }.id
             viewModel.removeUser(aliceId)
@@ -133,7 +60,7 @@ class SignUpViewModelTest {
     @Test
     fun `removeUser with non-existent id leaves list unchanged`() {
         runTest {
-            viewModel.addUser("Alice", "alice@example.com")
+            submitValidSignUp(name = "Alice", email = "alice@example.com", phone = "0712345678")
             advanceUntilIdle()
             viewModel.removeUser("999")
             advanceUntilIdle()
@@ -145,7 +72,7 @@ class SignUpViewModelTest {
     @Test
     fun `removeUser all users results in empty list`() {
         runTest {
-            viewModel.addUser("Alice", "alice@example.com")
+            submitValidSignUp(name = "Alice", email = "alice@example.com", phone = "0712345678")
             advanceUntilIdle()
             val id = viewModel.users.value.first().id
             viewModel.removeUser(id)
@@ -153,8 +80,6 @@ class SignUpViewModelTest {
             assertTrue(viewModel.users.value.isEmpty())
         }
     }
-
-    // -- submitSignUp ----------------------------------------------------------
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -176,6 +101,16 @@ class SignUpViewModelTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `submitSignUp emits navigate to dashboard on success`() = runTest {
+        submitValidSignUp()
+        advanceUntilIdle()
+
+        val event = viewModel.navigationEvents.first()
+        assertEquals(SignUpViewModel.NavigationEvent.NavigateToDashboard, event)
+    }
+
     @Test
     fun `submitSignUp with mismatched passwords sets error`() {
         viewModel.onFullNameChange("Alice")
@@ -188,6 +123,20 @@ class SignUpViewModelTest {
 
         assertTrue(viewModel.users.value.isEmpty())
         assertEquals("Passwords do not match.", viewModel.signUpUiState.value.errorMessage)
+    }
+
+    private fun submitValidSignUp(
+        name: String = "Alice",
+        phone: String = "0712345678",
+        email: String = "alice@example.com",
+        password: String = "Secure123"
+    ) {
+        viewModel.onFullNameChange(name)
+        viewModel.onPhoneNumberChange(phone)
+        viewModel.onEmailChange(email)
+        viewModel.onPasswordChange(password)
+        viewModel.onConfirmPasswordChange(password)
+        viewModel.submitSignUp()
     }
 
     private class FakeUserRepository : UserRepository {

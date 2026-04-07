@@ -2,9 +2,9 @@ package com.example.mobiledev.feature.signup.presentation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mobiledev.data.model.User
-import com.example.mobiledev.data.repository.FirebaseUserRepository
 import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.domain.validation.Validator
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 
 class SignUpViewModel(
-    private val userRepository: UserRepository = FirebaseUserRepository()
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     sealed interface NavigationEvent {
@@ -47,33 +47,6 @@ class SignUpViewModel(
             is SignUpEvent.PasswordChanged -> onPasswordChange(event.value)
             is SignUpEvent.ConfirmPasswordChanged -> onConfirmPasswordChange(event.value)
             SignUpEvent.Submit -> submitSignUp()
-        }
-    }
-
-    fun addUser(name: String, email: String) {
-        if (!Validator.isValidName(name)) {
-            _errorMessage.value = ERROR_INVALID_NAME
-            return
-        }
-        if (!Validator.isValidEmail(email)) {
-            _errorMessage.value = ERROR_INVALID_EMAIL
-            return
-        }
-        viewModelScope.launch {
-            try {
-                userRepository.addUser(
-                    name = name.trim(),
-                    email = email.trim(),
-                    phone = "",
-                    password = ""
-                )
-                refreshUsers()
-                _errorMessage.value = null
-            } catch (exception: Exception) {
-                val userMessage = toUserMessage(exception)
-                Log.e(TAG, "Sign-up helper addUser failed while accessing Firebase.", exception)
-                _errorMessage.value = userMessage
-            }
         }
     }
 
@@ -207,6 +180,18 @@ class SignUpViewModel(
         const val ERROR_PERMISSION_DENIED = "Firebase denied access. Check Realtime Database rules."
         const val ERROR_NETWORK = "Network issue while contacting Firebase. Check internet and database URL."
         const val ERROR_DATA_SOURCE = "Could not reach Firebase database. Please try again."
+    }
+}
+
+class SignUpViewModelFactory(
+    private val userRepository: UserRepository
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        require(modelClass.isAssignableFrom(SignUpViewModel::class.java)) {
+            "Unknown ViewModel class: ${modelClass.name}"
+        }
+        return SignUpViewModel(userRepository) as T
     }
 }
 
