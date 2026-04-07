@@ -1,4 +1,4 @@
-package com.example.mobiledev
+package com.example.mobiledev.domain.validation
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -83,4 +83,39 @@ class ValidatorTest {
     fun `name with surrounding whitespace is trimmed and valid`() {
         assertTrue(Validator.isValidName("  Alice  "))
     }
+
+    // -- isValidPhone ----------------------------------------------------------
+
+    @Test
+    fun `phone with ten digits returns true`() {
+        assertTrue(Validator.isValidPhone("0712345678"))
+    }
+
+    @Test
+    fun `phone with formatting chars still validates on digits`() {
+        assertTrue(Validator.isValidPhone("+94 71-234-5678"))
+    }
+
+    @Test
+    fun `phone with fewer than ten digits returns false`() {
+        assertFalse(Validator.isValidPhone("12345"))
+    }
+
+    // -- isValidPassword -------------------------------------------------------
+
+    @Test
+    fun `password with upper lower and number returns true`() {
+        assertTrue(Validator.isValidPassword("Secure123"))
+    }
+
+    @Test
+    fun `password missing uppercase returns false`() {
+        assertFalse(Validator.isValidPassword("secure123"))
+    }
+
+    @Test
+    fun `password mismatch returns false`() {
+        assertFalse(Validator.passwordsMatch("Secure123", "Secure124"))
+    }
 }
+
