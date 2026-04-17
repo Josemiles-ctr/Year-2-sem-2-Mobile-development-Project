@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.dependency.check)
+    alias(libs.plugins.ksp)
 }
 
 if (file("google-services.json").exists()) {
@@ -82,6 +83,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    //Room
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.room.ktx)
     implementation(libs.jbcrypt)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
