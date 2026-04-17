@@ -15,7 +15,7 @@ interface EmergencyRequestDao {
     @Delete
     suspend fun deleteRequest(request: EmergencyRequestEntity)
 
-    @Query("SELECT * FROM EMERGENCY_REQUEST WHERE id = :id")
+    @Query("SELECT * FROM EMERGENCY_REQUEST WHERE id = :id AND is_deleted = 0")
     suspend fun getRequestById(id: String): EmergencyRequestEntity?
 
     @Query("SELECT * FROM EMERGENCY_REQUEST WHERE user_id = :userId AND is_deleted = 0")

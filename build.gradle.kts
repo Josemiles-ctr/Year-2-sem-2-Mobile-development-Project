@@ -6,5 +6,3 @@ plugins {
     alias(libs.plugins.dependency.check) apply false
     alias(libs.plugins.ksp) apply false
 }
-
-extra["room_version"] = "2.6.1"

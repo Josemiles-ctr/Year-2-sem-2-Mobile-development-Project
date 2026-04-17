@@ -36,8 +36,8 @@ data class AmbulanceEntity(
     @ColumnInfo(name = "registration_no") val registrationNo: String,
     @ColumnInfo(name = "license_no") val licenseNo: String,
     val status: String, // AVAILABLE, ON_EMERGENCY, OFFLINE
-    val latitude: Float,
-    val longitude: Float,
+    val latitude: Double,
+    val longitude: Double,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long
 )

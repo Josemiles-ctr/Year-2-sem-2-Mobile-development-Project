@@ -42,8 +42,8 @@ data class EmergencyRequestEntity(
     val status: String, // PENDING, ASSIGNED, ON_WAY, ARRIVED, COMPLETED
     val description: String,
     val location: String,
-    val latitude: Float?,
-    val longitude: Float?,
+    val latitude: Double?,
+    val longitude: Double?,
     val priority: String, // LOW, MEDIUM, HIGH, CRITICAL
     @ColumnInfo(name = "estimated_time_mins") val estimatedTimeMins: Int?,
     @ColumnInfo(name = "created_at") val createdAt: Long,
