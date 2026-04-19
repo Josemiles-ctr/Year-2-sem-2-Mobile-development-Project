@@ -15,11 +15,13 @@ import com.example.mobiledev.feature.signin.presentation.SignInViewModelFactory
 import com.example.mobiledev.feature.signup.presentation.SignUpRoute
 import com.example.mobiledev.feature.signup.presentation.SignUpViewModel
 import com.example.mobiledev.feature.signup.presentation.SignUpViewModelFactory
+import com.example.mobiledev.feature.tracking.presentation.TrackingScreen
 
 sealed class Screen(val route: String) {
     object SignIn : Screen("signin")
     object SignUp : Screen("signup")
     object Main : Screen("main")
+    object Tracking : Screen("tracking")
 }
 
 @Composable
@@ -66,7 +68,19 @@ fun NavGraph(
         }
 
         composable(Screen.Main.route) {
-            MainScreen()
+            MainScreen(
+                onTrackingClick = {
+                    navController.navigate(Screen.Tracking.route)
+                }
+            )
+        }
+
+        composable(Screen.Tracking.route) {
+            TrackingScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

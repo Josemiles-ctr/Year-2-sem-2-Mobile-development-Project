@@ -42,7 +42,10 @@ private data class MainTab(
 )
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(
+    onTrackingClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val tabs = listOf(
         MainTab(R.string.tab_activity, Icons.Filled.Notifications),
         MainTab(R.string.tab_requests, Icons.Filled.Home),
@@ -105,6 +108,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
             )
             PlaceholderScreen(
                 title = stringResource(tabs[selectedTabIndex].titleRes),
+                onTrackingClick = onTrackingClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
@@ -116,6 +120,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun PlaceholderScreen(
     title: String,
+    onTrackingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -123,6 +128,9 @@ private fun PlaceholderScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
+        androidx.compose.material3.Button(onClick = onTrackingClick) {
+            Text("Go to Tracking")
+        }
         ElevatedCard(
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.elevatedCardColors(
