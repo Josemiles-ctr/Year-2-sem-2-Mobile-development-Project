@@ -75,9 +75,13 @@ class FirebaseUserRepository(
         val phoneCandidate = normalizePhone(credential)
 
         val matchedUser = getUsers().firstOrNull { user ->
-            normalizeEmail(user.email) == emailCandidate || normalizePhone(user.phone) == phoneCandidate ||
-                user.emailKey == emailCandidate || user.phoneKey == phoneCandidate ||
-                user.email.equals(credential, ignoreCase = true) || user.phone == credential
+            val emailMatches = emailCandidate.isNotBlank() && normalizeEmail(user.email) == emailCandidate
+            val phoneMatches = phoneCandidate.isNotBlank() && normalizePhone(user.phone) == phoneCandidate
+            val keyMatches = (emailCandidate.isNotBlank() && user.emailKey == emailCandidate) ||
+                             (phoneCandidate.isNotBlank() && user.phoneKey == phoneCandidate)
+            val exactMatches = user.email.equals(credential, ignoreCase = true) || user.phone == credential
+            
+            emailMatches || phoneMatches || keyMatches || exactMatches
         } ?: return false
 
         return verifyPasswordAndMigrateIfNeeded(matchedUser, password)
