@@ -30,10 +30,21 @@ class FirebaseUserRepository(
     }
 
     override suspend fun addUser(name: String, email: String, phone: String, password: String): User {
-        val newUserRef = usersRef.push()
-        val generatedId = newUserRef.key.orEmpty()
         val trimmedEmail = email.trim()
         val trimmedPhone = phone.trim()
+        val normalizedEmail = trimmedEmail.lowercase()
+        val normalizedPhone = normalizePhone(trimmedPhone)
+
+        val existingUsers = getUsers()
+        val duplicateExists = existingUsers.any { user ->
+            normalizeEmail(user.email) == normalizedEmail || normalizePhone(user.phone) == normalizedPhone
+        }
+        if (duplicateExists) {
+            throw IllegalStateException("An account with this email or phone already exists.")
+        }
+
+        val newUserRef = usersRef.push()
+        val generatedId = newUserRef.key.orEmpty()
         val passwordHash = BCrypt.hashpw(password, BCrypt.gensalt())
         val user = User(
             id = generatedId,
@@ -49,8 +60,8 @@ class FirebaseUserRepository(
             USER_EMAIL_FIELD to user.email,
             USER_PHONE_FIELD to user.phone,
             USER_PASSWORD_FIELD to passwordHash,
-            USER_EMAIL_KEY_FIELD to trimmedEmail.lowercase(),
-            USER_PHONE_KEY_FIELD to normalizePhone(trimmedPhone)
+            USER_EMAIL_KEY_FIELD to normalizedEmail,
+            USER_PHONE_KEY_FIELD to normalizedPhone
         )
         newUserRef.setValue(userPayload).await()
         return user
@@ -63,12 +74,13 @@ class FirebaseUserRepository(
         val emailCandidate = credential.lowercase()
         val phoneCandidate = normalizePhone(credential)
 
-        // Use indexed lookups instead of downloading the entire users' collection.
-        return findMatchingUserByField(USER_EMAIL_KEY_FIELD, emailCandidate, password) ||
-            findMatchingUserByField(USER_PHONE_KEY_FIELD, phoneCandidate, password) ||
-            // Legacy fallback for rows created before normalized keys were stored.
-            findMatchingUserByField(USER_EMAIL_FIELD, credential, password) ||
-            findMatchingUserByField(USER_PHONE_FIELD, credential, password)
+        val matchedUser = getUsers().firstOrNull { user ->
+            normalizeEmail(user.email) == emailCandidate || normalizePhone(user.phone) == phoneCandidate ||
+                user.emailKey == emailCandidate || user.phoneKey == phoneCandidate ||
+                user.email.equals(credential, ignoreCase = true) || user.phone == credential
+        } ?: return false
+
+        return verifyPasswordAndMigrateIfNeeded(matchedUser, password)
     }
 
     override suspend fun removeUser(userId: String) {
@@ -85,18 +97,7 @@ class FirebaseUserRepository(
         }
     }
 
-    private suspend fun findMatchingUserByField(field: String, value: String, password: String): Boolean {
-        if (value.isBlank()) return false
-
-        val snapshot = usersRef
-            .orderByChild(field)
-            .equalTo(value)
-            .limitToFirst(1)
-            .get()
-            .await()
-
-        val matchedSnapshot = snapshot.children.firstOrNull() ?: return false
-        val matchedUser = matchedSnapshot.toUserOrNull() ?: return false
+    private suspend fun verifyPasswordAndMigrateIfNeeded(matchedUser: User, password: String): Boolean {
         val storedPassword = matchedUser.password
 
         if (storedPassword.isBlank()) return false
@@ -107,13 +108,16 @@ class FirebaseUserRepository(
 
         if (storedPassword != password) return false
 
-        // Migrate legacy plaintext credentials to BCrypt after a successful sign-in.
         val migratedHash = BCrypt.hashpw(password, BCrypt.gensalt())
         runCatching {
-            matchedSnapshot.ref.child(USER_PASSWORD_FIELD).setValue(migratedHash).await()
+            if (matchedUser.id.isNotBlank()) {
+                usersRef.child(matchedUser.id).child(USER_PASSWORD_FIELD).setValue(migratedHash).await()
+            }
         }
         return true
     }
+
+    private fun normalizeEmail(raw: String): String = raw.trim().lowercase()
 
     private fun normalizePhone(raw: String): String = raw.filter(Char::isDigit)
 

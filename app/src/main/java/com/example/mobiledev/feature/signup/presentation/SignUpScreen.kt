@@ -151,7 +151,7 @@ private fun SignUpFormCard(
                 value = uiState.password,
                 onValueChange = { onEvent(SignUpEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_password_input")
@@ -161,7 +161,7 @@ private fun SignUpFormCard(
                 value = uiState.confirmPassword,
                 onValueChange = { onEvent(SignUpEvent.ConfirmPasswordChanged(it)) },
                 label = stringResource(R.string.confirm_password_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_confirm_password_input")

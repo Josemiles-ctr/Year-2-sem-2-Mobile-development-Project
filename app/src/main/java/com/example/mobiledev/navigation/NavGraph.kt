@@ -9,8 +9,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mobiledev.data.repository.FirebaseUserRepository
-import androidx.compose.ui.platform.LocalContext
 import com.example.mobiledev.ResQApplication
+import com.example.mobiledev.data.repository.ApiEmergencyRepository
+import com.example.mobiledev.data.repository.ApiStaffRepository
+import com.example.mobiledev.data.repository.EmergencyApiService
+import com.example.mobiledev.data.repository.StaffApiService
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModelFactory
@@ -37,6 +40,8 @@ sealed class Screen(val route: String) {
     object SignIn : Screen("signin")
     object SignUp : Screen("signup")
     object Main : Screen("main")
+    object StaffManagement : Screen("staff_management")
+    object EmergencyDashboard : Screen("emergency_dashboard")
     object HospitalSignIn : Screen("hospital_signin")
     object HospitalDashboard : Screen("hospital_dashboard/{hospitalId}") {
         fun createRoute(hospitalId: String) = "hospital_dashboard/$hospitalId"
@@ -49,7 +54,19 @@ fun NavGraph(
 ) {
     val context = LocalContext.current
     val resQRepository = (context.applicationContext as ResQApplication).container.resQRepository
-    val userRepository = remember { FirebaseUserRepository() }
+    val userRepository = remember(context) { FirebaseUserRepository(context) }
+    val retrofit = remember {
+        Retrofit.Builder()
+            .baseUrl("https://example.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+    val staffRepository = remember(retrofit) {
+        ApiStaffRepository(retrofit.create(StaffApiService::class.java))
+    }
+    val emergencyRepository = remember(retrofit) {
+        ApiEmergencyRepository(retrofit.create(EmergencyApiService::class.java))
+    }
 
     NavHost(
         navController = navController,

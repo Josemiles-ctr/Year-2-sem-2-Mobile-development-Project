@@ -143,7 +143,7 @@ private fun LoginFormCard(
                 value = uiState.password,
                 onValueChange = { onEvent(SignInEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_hint_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signin_password_input")

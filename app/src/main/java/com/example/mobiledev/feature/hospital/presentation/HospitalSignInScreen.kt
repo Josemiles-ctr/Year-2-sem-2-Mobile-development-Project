@@ -116,7 +116,7 @@ fun HospitalSignInScreen(
                         value = uiState.password,
                         onValueChange = onPasswordChange,
                         label = "Password",
-                        visualTransformation = PasswordVisualTransformation(),
+                        isPassword = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
