@@ -1,4 +1,4 @@
-package com.example.mobiledev.data.repository
+package com.example.mobiledev.data.services
 
 import com.example.mobiledev.data.model.*
 import retrofit2.Response

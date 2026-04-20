@@ -12,8 +12,8 @@ import com.example.mobiledev.data.repository.FirebaseUserRepository
 import com.example.mobiledev.ResQApplication
 import com.example.mobiledev.data.repository.ApiEmergencyRepository
 import com.example.mobiledev.data.repository.ApiStaffRepository
-import com.example.mobiledev.data.repository.EmergencyApiService
-import com.example.mobiledev.data.repository.StaffApiService
+import com.example.mobiledev.data.services.EmergencyApiService
+import com.example.mobiledev.data.services.StaffApiService
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModelFactory
