@@ -3,6 +3,7 @@ package com.example.mobiledev.feature.hospital.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.data.local.entity.HospitalStatus
 import com.example.mobiledev.data.repository.ResQRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,19 +47,16 @@ class HospitalSignInViewModel(
             
             if (hospital != null) {
                 when (hospital.status) {
-                    "APPROVED" -> {
+                    HospitalStatus.APPROVED -> {
                         val token = "jwt_token_hospital_${hospital.id}"
                         _uiState.update { it.copy(isLoading = false, jwtToken = token) }
                         _navigationEvents.emit(NavigationEvent.NavigateToDashboard(hospital.id))
                     }
-                    "PENDING" -> {
+                    HospitalStatus.PENDING -> {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "Hospital pending verification") }
                     }
-                    "REJECTED" -> {
+                    HospitalStatus.REJECTED -> {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "Hospital account rejected") }
-                    }
-                    else -> {
-                        _uiState.update { it.copy(isLoading = false, errorMessage = "Unknown account status") }
                     }
                 }
             } else {

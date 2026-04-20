@@ -9,6 +9,7 @@ import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
+import org.mindrot.jbcrypt.BCrypt
 
 class OfflineResQRepository(
     private val userDao: UserDao,
@@ -34,7 +35,7 @@ class OfflineResQRepository(
 
     override suspend fun loginHospital(email: String, password: String): HospitalEntity? {
         val hospital = hospitalDao.getHospitalByEmail(email)
-        return if (hospital != null && hospital.password == password) {
+        return if (hospital != null && BCrypt.checkpw(password, hospital.passwordHash)) {
             hospital
         } else {
             null
