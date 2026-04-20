@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 fun EmergencyDashboardScreen(
     viewModel: EmergencyViewModel
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state = viewModel.uiState.collectAsState().value
     EmergencyDashboardContent(
         state = state,
         onEvent = viewModel::onEvent
@@ -37,12 +37,19 @@ fun EmergencyDashboardScreen(
 @Composable
 fun EmergencyDashboardContent(
     state: EmergencyDashboardState,
-    onEvent: (EmergencyDashboardEvent) -> Unit
+    onEvent: (EmergencyDashboardEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Hospital Admin Dashboard") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                ),
                 actions = {
                     Box {
                         IconButton(onClick = { 
@@ -208,9 +215,8 @@ fun EmergencyRequestItem(
     val timeString = dateFormat.format(Date(request.timestamp))
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,6 @@
 package com.example.mobiledev.feature.main.presentation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -7,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Warning
@@ -35,12 +35,12 @@ private data class MainTab(
 @Composable
 fun MainScreen(
     onManageStaffClick: () -> Unit = {},
-    onEmergencyDashboardClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    requestTabContent: @Composable () -> Unit = {},
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val tabs = listOf(
         MainTab(R.string.tab_activity, Icons.Filled.Notifications),
-        MainTab(R.string.tab_requests, Icons.Filled.Home),
+        MainTab(R.string.tab_requests, Icons.Filled.Warning),
         MainTab(R.string.tab_account, Icons.Filled.AccountCircle)
     )
     var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -104,54 +104,49 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                PlaceholderScreen(
-                    title = stringResource(tabs[selectedTabIndex].titleRes),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                )
-                
-                if (selectedTabIndex == 2) { // Account tab
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
-                        ElevatedCard(
-                            onClick = onEmergencyDashboardClick,
+                when (selectedTabIndex) {
+                    1 -> {
+                        requestTabContent()
+                    }
+                    2 -> { // Account tab
+                        PlaceholderScreen(
+                            title = stringResource(tabs[selectedTabIndex].titleRes),
                             modifier = Modifier
-                                .fillMaxWidth(0.8f),
-                            colors = CardDefaults.elevatedCardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                Text("Emergency Dashboard", color = MaterialTheme.colorScheme.onErrorContainer)
-                            }
-                        }
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                        )
 
-                        ElevatedCard(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .clickable { onManageStaffClick() },
-                            colors = CardDefaults.elevatedCardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 16.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .clickable { onManageStaffClick() },
+                                colors = CardDefaults.elevatedCardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
                             ) {
-                                Icon(Icons.Default.People, contentDescription = null)
-                                Text("Manage Staff")
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.People, contentDescription = null)
+                                    Text("Manage Staff")
+                                }
                             }
                         }
+                    }
+                    else -> {
+                        PlaceholderScreen(
+                            title = stringResource(tabs[selectedTabIndex].titleRes),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                        )
                     }
                 }
             }

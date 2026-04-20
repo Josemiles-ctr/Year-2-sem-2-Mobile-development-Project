@@ -41,7 +41,6 @@ sealed class Screen(val route: String) {
     object SignUp : Screen("signup")
     object Main : Screen("main")
     object StaffManagement : Screen("staff_management")
-    object EmergencyDashboard : Screen("emergency_dashboard")
     object HospitalSignIn : Screen("hospital_signin")
     object HospitalDashboard : Screen("hospital_dashboard/{hospitalId}") {
         fun createRoute(hospitalId: String) = "hospital_dashboard/$hospitalId"
@@ -109,12 +108,14 @@ fun NavGraph(
         }
 
         composable(Screen.Main.route) {
+            val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
+            val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
             MainScreen(
                 onManageStaffClick = {
                     navController.navigate(Screen.StaffManagement.route)
                 },
-                onEmergencyDashboardClick = {
-                    navController.navigate(Screen.EmergencyDashboard.route)
+                requestTabContent = {
+                    EmergencyDashboardScreen(viewModel = emergencyViewModel)
                 }
             )
         }
@@ -123,12 +124,6 @@ fun NavGraph(
             val staffViewModelFactory = remember { StaffViewModelFactory(staffRepository) }
             val viewModel: StaffViewModel = viewModel(factory = staffViewModelFactory)
             StaffManagementScreen(viewModel = viewModel)
-        }
-
-        composable(Screen.EmergencyDashboard.route) {
-            val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
-            val viewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
-            EmergencyDashboardScreen(viewModel = viewModel)
         }
 
         composable(Screen.HospitalSignIn.route) {
