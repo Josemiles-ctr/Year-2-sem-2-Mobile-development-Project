@@ -118,9 +118,9 @@ fun MainScreen(
                         modifier = Modifier.padding(top = 16.dp)
                     ) {
                         ElevatedCard(
+                            onClick = onEmergencyDashboardClick,
                             modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .clickable { onEmergencyDashboardClick() },
+                                .fillMaxWidth(0.8f),
                             colors = CardDefaults.elevatedCardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer
                             )
