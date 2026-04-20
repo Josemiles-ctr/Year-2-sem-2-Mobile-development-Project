@@ -9,6 +9,7 @@ import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
+import org.mindrot.jbcrypt.BCrypt
 
 class OfflineResQRepository(
     private val userDao: UserDao,
@@ -31,6 +32,15 @@ class OfflineResQRepository(
     override suspend fun insertHospital(hospital: HospitalEntity) = hospitalDao.insertHospital(hospital)
     override suspend fun updateHospital(hospital: HospitalEntity) = hospitalDao.updateHospital(hospital)
     override suspend fun deleteHospital(hospital: HospitalEntity) = hospitalDao.deleteHospital(hospital)
+
+    override suspend fun loginHospital(email: String, password: String): HospitalEntity? {
+        val hospital = hospitalDao.getHospitalByEmail(email)
+        return if (hospital != null && BCrypt.checkpw(password, hospital.passwordHash)) {
+            hospital
+        } else {
+            null
+        }
+    }
 
     // Ambulance
     override fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>> = ambulanceDao.getAllAmbulances()

@@ -23,4 +23,7 @@ interface HospitalDao {
 
     @Query("SELECT * FROM HOSPITAL WHERE admin_id = :adminId")
     suspend fun getHospitalByAdminId(adminId: String): HospitalEntity?
+
+    @Query("SELECT * FROM HOSPITAL WHERE email = :email")
+    suspend fun getHospitalByEmail(email: String): HospitalEntity?
 }
