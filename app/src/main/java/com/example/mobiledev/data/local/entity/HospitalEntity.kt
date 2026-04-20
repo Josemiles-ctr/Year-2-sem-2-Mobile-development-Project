@@ -25,6 +25,8 @@ data class HospitalEntity(
     val latitude: Double?,
     val longitude: Double?,
     val uuid: String?,
+    val password: String = "password123", // Default password for existing records
+    val status: String = "APPROVED", // APPROVED, PENDING, REJECTED
     @ColumnInfo(name = "active_ambulances") val activeAmbulances: Int = 0,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long

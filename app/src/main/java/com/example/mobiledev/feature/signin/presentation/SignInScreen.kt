@@ -41,7 +41,8 @@ import kotlinx.coroutines.flow.collectLatest
 fun SignInRoute(
     viewModel: SignInViewModel,
     onSignUpClick: () -> Unit = {},
-    onAuthSuccess: () -> Unit = {}
+    onAuthSuccess: () -> Unit = {},
+    onHospitalSignInClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -56,7 +57,8 @@ fun SignInRoute(
     SignInScreen(
         uiState = uiState,
         onEvent = viewModel::onEvent,
-        onSignUpClick = onSignUpClick
+        onSignUpClick = onSignUpClick,
+        onHospitalSignInClick = onHospitalSignInClick
     )
 }
 
@@ -65,6 +67,7 @@ fun SignInScreen(
     uiState: SignInUiState,
     onEvent: (SignInEvent) -> Unit,
     onSignUpClick: () -> Unit,
+    onHospitalSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AuthScreenContainer(modifier = modifier) {
@@ -81,7 +84,8 @@ fun SignInScreen(
             LoginFormCard(
                 uiState = uiState,
                 onEvent = onEvent,
-                onSignUpClick = onSignUpClick
+                onSignUpClick = onSignUpClick,
+                onHospitalSignInClick = onHospitalSignInClick
             )
         }
     }
@@ -91,7 +95,8 @@ fun SignInScreen(
 private fun LoginFormCard(
     uiState: SignInUiState,
     onEvent: (SignInEvent) -> Unit,
-    onSignUpClick: () -> Unit
+    onSignUpClick: () -> Unit,
+    onHospitalSignInClick: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -181,6 +186,17 @@ private fun LoginFormCard(
                     Text(text = stringResource(R.string.sign_up_label))
                 }
             }
+
+            TextButton(
+                onClick = onHospitalSignInClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Hospital Admin? Login here",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -192,7 +208,8 @@ private fun SignInScreenPreview() {
         SignInScreen(
             uiState = SignInUiState(),
             onEvent = {},
-            onSignUpClick = {}
+            onSignUpClick = {},
+            onHospitalSignInClick = {}
         )
     }
 }

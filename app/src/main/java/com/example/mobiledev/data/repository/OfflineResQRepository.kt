@@ -32,6 +32,15 @@ class OfflineResQRepository(
     override suspend fun updateHospital(hospital: HospitalEntity) = hospitalDao.updateHospital(hospital)
     override suspend fun deleteHospital(hospital: HospitalEntity) = hospitalDao.deleteHospital(hospital)
 
+    override suspend fun loginHospital(email: String, password: String): HospitalEntity? {
+        val hospital = hospitalDao.getHospitalByEmail(email)
+        return if (hospital != null && hospital.password == password) {
+            hospital
+        } else {
+            null
+        }
+    }
+
     // Ambulance
     override fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>> = ambulanceDao.getAllAmbulances()
     override fun getAmbulancesByHospitalStream(hospitalId: String): Flow<List<AmbulanceEntity>> = 
