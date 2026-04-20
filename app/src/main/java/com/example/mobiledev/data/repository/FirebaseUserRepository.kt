@@ -1,16 +1,26 @@
 package com.example.mobiledev.data.repository
 
+import android.content.Context
 import com.example.mobiledev.data.model.User
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import org.mindrot.jbcrypt.BCrypt
 
 class FirebaseUserRepository(
-    firebaseDatabase: FirebaseDatabase = FirebaseDatabase.getInstance()
+    context: Context,
+    firebaseDatabase: FirebaseDatabase? = null
 ) : UserRepository {
 
-    private val usersRef = firebaseDatabase.getReference(USERS_NODE)
+    private val db: FirebaseDatabase by lazy {
+        if (FirebaseApp.getApps(context).isEmpty()) {
+            FirebaseApp.initializeApp(context)
+        }
+        firebaseDatabase ?: FirebaseDatabase.getInstance()
+    }
+
+    private val usersRef by lazy { db.getReference(USERS_NODE) }
 
     override suspend fun getUsers(): List<User> {
         val snapshot = usersRef.get().await()
@@ -121,4 +131,3 @@ class FirebaseUserRepository(
         const val USER_PHONE_KEY_FIELD = "phoneKey"
     }
 }
-
