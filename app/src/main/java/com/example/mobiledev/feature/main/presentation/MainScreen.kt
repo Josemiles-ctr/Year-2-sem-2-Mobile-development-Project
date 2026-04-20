@@ -1,26 +1,17 @@
 package com.example.mobiledev.feature.main.presentation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,7 +33,11 @@ private data class MainTab(
 )
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(
+    onManageStaffClick: () -> Unit = {},
+    onEmergencyDashboardClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val tabs = listOf(
         MainTab(R.string.tab_activity, Icons.Filled.Notifications),
         MainTab(R.string.tab_requests, Icons.Filled.Home),
@@ -103,12 +98,63 @@ fun MainScreen(modifier: Modifier = Modifier) {
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.18f))
             )
-            PlaceholderScreen(
-                title = stringResource(tabs[selectedTabIndex].titleRes),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
+            
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                PlaceholderScreen(
+                    title = stringResource(tabs[selectedTabIndex].titleRes),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                )
+                
+                if (selectedTabIndex == 2) { // Account tab
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .clickable { onEmergencyDashboardClick() },
+                            colors = CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                Text("Emergency Dashboard", color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
+                        }
+
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .clickable { onManageStaffClick() },
+                            colors = CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.People, contentDescription = null)
+                                Text("Manage Staff")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -154,4 +200,3 @@ private fun PlaceholderScreen(
         }
     }
 }
-

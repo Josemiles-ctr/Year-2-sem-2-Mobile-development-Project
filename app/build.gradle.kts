@@ -1,12 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.google.services)
     alias(libs.plugins.dependency.check)
-}
-
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
@@ -51,16 +47,9 @@ android {
     }
 }
 
-// ── OWASP Dependency-Check ────────────────────────────────────────────────────
-// Scans all dependencies for known CVEs from the NVD database.
-// Run locally:  ./gradlew :app:dependencyCheckAnalyze
-// Report:       app/build/reports/dependency-check-report.html
-//
-// Add NVD_API_KEY to GitHub Actions secrets for faster NVD downloads.
-// Get a free key at: https://nvd.nist.gov/developers/request-an-api-key
 dependencyCheck {
-    failBuildOnCVSS = 7.0f          // fail on HIGH severity (CVSS ≥ 7) and above
-    formats = listOf("HTML", "SARIF") // HTML for humans; SARIF for GitHub Code Scanning
+    failBuildOnCVSS = 7.0f
+    formats = listOf("HTML", "SARIF")
     nvd.apiKey = System.getenv("NVD_API_KEY") ?: ""
     suppressionFile = "${projectDir}/dependency-check-suppressions.xml"
 }
@@ -80,9 +69,12 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.jbcrypt)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
