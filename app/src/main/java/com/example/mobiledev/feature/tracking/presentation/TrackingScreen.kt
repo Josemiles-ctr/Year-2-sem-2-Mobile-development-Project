@@ -2,7 +2,6 @@ package com.example.mobiledev.feature.tracking.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -23,18 +22,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.mobiledev.BuildConfig
-import com.example.mobiledev.feature.tracking.data.DirectionsApi
-import com.example.mobiledev.feature.tracking.data.PolylineDecoder
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +35,57 @@ fun TrackingScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onConfirmClick: () -> Unit = {},
-    onCallClick: () -> Unit = {}
+    onCallClick: () -> Unit = {},
+    viewModel: TrackingViewModel = viewModel(factory = TrackingViewModel.Factory)
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(0.3136, 32.5811), 13f)
+    }
+
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasLocationPermission = granted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    val fusedLocationClient: FusedLocationProviderClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        val userLatLng = LatLng(it.latitude, it.longitude)
+                        viewModel.updateUserLocation(userLatLng)
+                        cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
+                    }
+                }
+            } catch (e: SecurityException) {
+                // Handle exception
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -72,188 +114,48 @@ fun TrackingScreen(
             )
         }
     ) { paddingValues ->
-        val context = LocalContext.current
-
-        var hasLocationPermission by remember {
-            mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-            )
-        }
-
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { granted ->
-            hasLocationPermission = granted
-        }
-
-        LaunchedEffect(Unit) {
-            if (!hasLocationPermission) {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
-
-        // Get user location
-        val fusedLocationClient: FusedLocationProviderClient = remember {
-            LocationServices.getFusedLocationProviderClient(context)
-        }
-
-        val directionsApi = remember {
-            Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(DirectionsApi::class.java)
-        }
-
-        var userLocation by remember { mutableStateOf<Location?>(null) }
-
-        LaunchedEffect(hasLocationPermission) {
-            if (hasLocationPermission) {
-                try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                        userLocation = location
-                    }
-                } catch (e: SecurityException) {
-                    // Handle exception if needed
-                }
-            }
-        }
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val kampala = remember { LatLng(0.3136, 32.5811) }
-            val mulago = remember { LatLng(0.3476, 32.5825) }
-            val nsambya = remember { LatLng(0.3031, 32.5811) }
-            val ambulance1 = remember { LatLng(0.3400, 32.5750) }
-            val ambulance2 = remember { LatLng(0.3550, 32.5900) }
-
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(kampala, 13f)
-            }
-
-            val hospitals = remember {
-                listOf(
-                    "Mulago Hospital" to mulago,
-                    "Nsambya Hospital" to nsambya
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(
+                    isMyLocationEnabled = hasLocationPermission
                 )
-            }
-
-            var nearestHospital by remember { mutableStateOf<Pair<String, LatLng>?>(null) }
-            var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
-
-            LaunchedEffect(userLocation) {
-                userLocation?.let { location ->
-                    val userLatLng = LatLng(location.latitude, location.longitude)
-                    
-                    // Find nearest hospital
-                    val nearest = hospitals.minByOrNull { hospital ->
-                        val results = FloatArray(1)
-                        Location.distanceBetween(
-                            userLatLng.latitude, userLatLng.longitude,
-                            hospital.second.latitude, hospital.second.longitude,
-                            results
-                        )
-                        results[0]
-                    }
-                    
-                    nearestHospital = nearest
-                    
-                    // Update camera
-                    cameraPositionState.animate(
-                        update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f)
+            ) {
+                // Draw Route
+                if (uiState.routePoints.isNotEmpty()) {
+                    Polyline(
+                        points = uiState.routePoints,
+                        color = MaterialTheme.colorScheme.primary,
+                        width = 12f,
+                        jointType = JointType.ROUND,
+                        startCap = RoundCap(),
+                        endCap = RoundCap()
                     )
+                }
 
-                    // Fetch actual directions from Google Maps Directions API
-                    nearest?.let { hospital ->
-                        try {
-                            val origin = "${location.latitude},${location.longitude}"
-                            val destination = "${hospital.second.latitude},${hospital.second.longitude}"
-                            
-                            // Use your API Key from BuildConfig (provided by secrets plugin)
-                            val apiKey = BuildConfig.MAPS_API_KEY
-                            
-                            val response = withContext(Dispatchers.IO) {
-                                directionsApi.getDirections(origin, destination, apiKey)
-                            }
-                            
-                            if (response.routes.isNotEmpty()) {
-                                val encodedPolyline = response.routes[0].overview_polyline.points
-                                routePoints = PolylineDecoder.decode(encodedPolyline)
-                            } else {
-                                // Fallback to straight line if no route found
-                                routePoints = listOf(userLatLng, hospital.second)
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Fallback to straight line on error
-                            routePoints = listOf(userLatLng, hospital.second)
-                        }
+                // Hospitals
+                uiState.hospitals.forEach { hospital ->
+                    if (hospital.latitude != null && hospital.longitude != null) {
+                        Marker(
+                            state = MarkerState(position = LatLng(hospital.latitude, hospital.longitude)),
+                            title = hospital.name,
+                            snippet = hospital.location,
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                        )
                     }
                 }
-            }
 
-            var isMapLoaded by remember { mutableStateOf(false) }
-
-            // Map Container
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    properties = MapProperties(
-                        isMyLocationEnabled = hasLocationPermission
-                    ),
-                    onMapLoaded = { isMapLoaded = true }
-                ) {
-                    // Draw Route
-                    if (routePoints.isNotEmpty()) {
-                        Polyline(
-                            points = routePoints,
-                            color = MaterialTheme.colorScheme.primary,
-                            width = 12f,
-                            jointType = JointType.ROUND,
-                            startCap = RoundCap(),
-                            endCap = RoundCap()
-                        )
-                    }
-
-                    // 🏥 Hospitals (RED)
+                // Ambulances
+                uiState.ambulances.forEach { ambulance ->
                     Marker(
-                        state = MarkerState(position = mulago),
-                        title = "Mulago Hospital",
-                        snippet = "Referral Hospital",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                    )
-
-                    Marker(
-                        state = MarkerState(position = nsambya),
-                        title = "Nsambya Hospital",
-                        snippet = "Private Hospital",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                    )
-
-                    // 🚑 Ambulances (BLUE)
-                    Marker(
-                        state = MarkerState(position = ambulance1),
-                        title = "Ambulance MA-202",
-                        snippet = "Available",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                    )
-
-                    Marker(
-                        state = MarkerState(position = ambulance2),
-                        title = "Ambulance MA-305",
-                        snippet = "En Route",
+                        state = MarkerState(position = LatLng(ambulance.latitude, ambulance.longitude)),
+                        title = "Ambulance ${ambulance.registrationNo}",
+                        snippet = ambulance.status,
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
                     )
                 }
@@ -280,7 +182,7 @@ fun TrackingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = nearestHospital?.first ?: "Searching...",
+                            text = uiState.nearestHospital?.name ?: "Searching...",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.ExtraBold
                             ),
@@ -288,12 +190,12 @@ fun TrackingScreen(
                             modifier = Modifier.weight(1f)
                         )
                         Surface(
-                            color = Color(0xFFE8F5E9), // Light success green
+                            color = Color(0xFFE8F5E9),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = "En Route",
-                                color = Color(0xFF2E7D32), // Dark success green
+                                color = Color(0xFF2E7D32),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                             )
@@ -314,7 +216,7 @@ fun TrackingScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = " MA-202",
+                                text = " ${uiState.nearestAmbulance?.registrationNo ?: "N/A"}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 4.dp)
@@ -328,7 +230,7 @@ fun TrackingScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = " 1 minute",
+                                text = if (uiState.routePoints.isNotEmpty()) " 12 mins" else " Calculating...",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 4.dp)
@@ -339,7 +241,7 @@ fun TrackingScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
-                        text = "Estimated Arrival: 1 minute",
+                        text = if (uiState.routePoints.isNotEmpty()) "Estimated Arrival: 10:45 AM" else "Estimated Arrival: Calculating...",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
