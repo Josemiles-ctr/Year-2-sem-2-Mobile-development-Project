@@ -87,6 +87,34 @@ object MockActivityData {
             value = "15",
             period = "This week",
             type = ActivityMetricType.ACCOUNT
+        ),
+        ActivitySummaryMock(
+            title = "Vehicle Maintenance",
+            description = "Routine checks performed on fleet.",
+            value = "4",
+            period = "This week",
+            type = ActivityMetricType.EN_ROUTE
+        ),
+        ActivitySummaryMock(
+            title = "Training Sessions",
+            description = "First responder workshops completed.",
+            value = "2",
+            period = "This month",
+            type = ActivityMetricType.STAFF
+        ),
+        ActivitySummaryMock(
+            title = "System Updates",
+            description = "Security patches applied to dashboard.",
+            value = "1",
+            period = "Yesterday",
+            type = ActivityMetricType.ACCOUNT
+        ),
+        ActivitySummaryMock(
+            title = "Inventory Alerts",
+            description = "Medical supply levels checked.",
+            value = "5",
+            period = "Today",
+            type = ActivityMetricType.REQUEST
         )
     )
 }

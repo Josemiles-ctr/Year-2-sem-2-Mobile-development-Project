@@ -3,6 +3,7 @@ package com.example.mobiledev.feature.main.presentation
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,14 +11,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
@@ -61,6 +63,7 @@ private data class ActivitySummary(
 )
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun MainScreen(
     currentPrincipal: AuthPrincipal,
     currentUser: User?,
@@ -74,6 +77,7 @@ fun MainScreen(
         MainTab(R.string.tab_account, Icons.Filled.AccountCircle)
     )
     var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
 
     // Keep back behavior natural for tab UIs: return to default tab before exiting app.
     BackHandler(enabled = selectedTabIndex != 0) {
@@ -83,27 +87,7 @@ fun MainScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = stringResource(tabs[selectedTabIndex].titleRes),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        val subtitle = currentUser?.name ?: "ResQ dashboard"
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
+            GlassyMainTopBar()
         },
         bottomBar = {
             NavigationBar {
@@ -205,12 +189,60 @@ fun MainScreen(
                     }
                     else -> {
                         PlaceholderScreen(
-                            title = stringResource(tabs[selectedTabIndex].titleRes),
+                            title = stringResource(selectedTab.titleRes),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.28f),
+                    shape = MaterialTheme.shapes.extraLarge
+                ),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.26f),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.splash_screen),
+                    contentDescription = "ResQ Brand",
+                    modifier = Modifier
+                        .height(30.dp)
+                        .wrapContentWidth(),
+                    contentScale = ContentScale.Fit
+                )
+
+                IconButton(onClick = { /* TODO: Open Menu */ }) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open menu",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
@@ -355,10 +387,17 @@ private fun ActivityMiniStat(
     modifier: Modifier = Modifier
 ) {
     ElevatedCard(
-        modifier = modifier,
+        modifier = modifier
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.medium
+            ),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier
@@ -395,14 +434,14 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .border(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.18f),
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
                 shape = MaterialTheme.shapes.large
             ),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -462,7 +501,7 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
 
 private fun ActivityMetricType.toIcon(): ImageVector {
     return when (this) {
-        ActivityMetricType.AUTH -> Icons.Default.Login
+        ActivityMetricType.AUTH -> Icons.AutoMirrored.Filled.Login
         ActivityMetricType.REQUEST -> Icons.Default.Warning
         ActivityMetricType.ASSIGNMENT -> Icons.Default.AssignmentTurnedIn
         ActivityMetricType.EN_ROUTE -> Icons.Default.LocalShipping
