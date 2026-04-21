@@ -3,8 +3,10 @@ package com.example.mobiledev.feature.hospital.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.mobiledev.data.local.entity.HospitalStatus
-import com.example.mobiledev.data.repository.ResQRepository
+import com.example.mobiledev.data.repository.UserRepository
+import com.example.mobiledev.data.security.AppRole
+import com.example.mobiledev.data.security.AuthPrincipal
+import com.example.mobiledev.data.security.AuthSessionManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,7 +17,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HospitalSignInViewModel(
-    private val repository: ResQRepository
+    private val repository: UserRepository,
+    private val authSessionManager: AuthSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HospitalSignInUiState())
@@ -43,22 +46,21 @@ class HospitalSignInViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val hospital = repository.loginHospital(email, password)
-            
-            if (hospital != null) {
-                when (hospital.status) {
-                    HospitalStatus.APPROVED -> {
-                        val token = "jwt_token_hospital_${hospital.id}"
-                        _uiState.update { it.copy(isLoading = false, jwtToken = token) }
-                        _navigationEvents.emit(NavigationEvent.NavigateToDashboard(hospital.id))
-                    }
-                    HospitalStatus.PENDING -> {
-                        _uiState.update { it.copy(isLoading = false, errorMessage = "Hospital pending verification") }
-                    }
-                    HospitalStatus.REJECTED -> {
-                        _uiState.update { it.copy(isLoading = false, errorMessage = "Hospital account rejected") }
-                    }
-                }
+            val hospitalAdmin = repository.authenticateHospital(email, password)
+
+            if (hospitalAdmin != null) {
+                authSessionManager.setPrincipal(
+                    AuthPrincipal(
+                        userId = hospitalAdmin.id,
+                        hospitalId = hospitalAdmin.hospitalId,
+                        role = AppRole.HOSPITAL_ADMIN
+                    )
+                )
+                val token = "jwt_token_hospital_${hospitalAdmin.hospitalId ?: hospitalAdmin.id}"
+                _uiState.update { it.copy(isLoading = false, jwtToken = token) }
+                _navigationEvents.emit(
+                    NavigationEvent.NavigateToDashboard(hospitalAdmin.hospitalId ?: hospitalAdmin.id)
+                )
             } else {
                 _uiState.update { it.copy(isLoading = false, errorMessage = "Invalid email or password") }
             }
@@ -71,12 +73,13 @@ class HospitalSignInViewModel(
 }
 
 class HospitalSignInViewModelFactory(
-    private val repository: ResQRepository
+    private val repository: UserRepository,
+    private val authSessionManager: AuthSessionManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HospitalSignInViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HospitalSignInViewModel(repository) as T
+            return HospitalSignInViewModel(repository, authSessionManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

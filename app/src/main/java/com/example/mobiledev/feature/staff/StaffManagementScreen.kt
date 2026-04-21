@@ -20,7 +20,7 @@ import com.example.mobiledev.data.model.*
 fun StaffManagementScreen(
     viewModel: StaffViewModel
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state = viewModel.uiState.collectAsState().value
     StaffManagementContent(
         state = state,
         onEvent = viewModel::onEvent

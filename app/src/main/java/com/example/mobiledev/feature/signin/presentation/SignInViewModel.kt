@@ -4,6 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.data.security.AppRole
+import com.example.mobiledev.data.security.AuthPrincipal
+import com.example.mobiledev.data.security.AuthSessionManager
 import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.domain.validation.Validator
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +18,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class SignInViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authSessionManager: AuthSessionManager
 ) : ViewModel() {
 
     sealed interface NavigationEvent {
@@ -71,11 +75,23 @@ class SignInViewModel(
 
         viewModelScope.launch {
             try {
-                val isAuthenticated = userRepository.authenticateUser(
+                val user = userRepository.authenticateUser(
                     emailOrPhone = emailOrPhone,
                     password = password
                 )
-                if (isAuthenticated) {
+                if (user != null) {
+                    val role = runCatching { AppRole.valueOf(user.role) }.getOrDefault(AppRole.PATIENT)
+                    if (role == AppRole.HOSPITAL_ADMIN) {
+                        _uiState.value = state.copy(errorMessage = "Use Hospital Admin login for this account.")
+                        return@launch
+                    }
+                    authSessionManager.setPrincipal(
+                        AuthPrincipal(
+                            userId = user.id,
+                            hospitalId = user.hospitalId,
+                            role = role
+                        )
+                    )
                     _uiState.value = state.copy(errorMessage = null)
                     _navigationEvents.send(NavigationEvent.NavigateToDashboard)
                 } else {
@@ -111,14 +127,15 @@ class SignInViewModel(
 }
 
 class SignInViewModelFactory(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authSessionManager: AuthSessionManager
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(SignInViewModel::class.java)) {
             "Unknown ViewModel class: ${modelClass.name}"
         }
-        return SignInViewModel(userRepository) as T
+        return SignInViewModel(userRepository, authSessionManager) as T
     }
 }
 

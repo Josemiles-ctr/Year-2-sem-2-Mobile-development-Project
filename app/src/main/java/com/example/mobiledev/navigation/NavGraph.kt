@@ -2,6 +2,7 @@ package com.example.mobiledev.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -10,9 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mobiledev.data.repository.FirebaseUserRepository
 import com.example.mobiledev.ResQApplication
-import com.example.mobiledev.data.repository.ApiEmergencyRepository
 import com.example.mobiledev.data.repository.ApiStaffRepository
-import com.example.mobiledev.data.services.EmergencyApiService
 import com.example.mobiledev.data.services.StaffApiService
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
@@ -52,7 +51,10 @@ fun NavGraph(
     navController: NavHostController = rememberNavController()
 ) {
     val context = LocalContext.current
-    val resQRepository = (context.applicationContext as ResQApplication).container.resQRepository
+    val container = (context.applicationContext as ResQApplication).container
+    val resQRepository = container.resQRepository
+    val authSessionManager = container.authSessionManager
+    val emergencyRepository = container.emergencyRepository
     val userRepository = remember(context) { FirebaseUserRepository(context) }
     val retrofit = remember {
         Retrofit.Builder()
@@ -63,16 +65,15 @@ fun NavGraph(
     val staffRepository = remember(retrofit) {
         ApiStaffRepository(retrofit.create(StaffApiService::class.java))
     }
-    val emergencyRepository = remember(retrofit) {
-        ApiEmergencyRepository(retrofit.create(EmergencyApiService::class.java))
-    }
 
     NavHost(
         navController = navController,
         startDestination = Screen.SignIn.route
     ) {
         composable(Screen.SignIn.route) {
-            val signInFactory = remember(userRepository) { SignInViewModelFactory(userRepository) }
+            val signInFactory = remember(userRepository, authSessionManager) {
+                SignInViewModelFactory(userRepository, authSessionManager)
+            }
             val viewModel: SignInViewModel = viewModel(factory = signInFactory)
             SignInRoute(
                 viewModel = viewModel,
@@ -91,7 +92,9 @@ fun NavGraph(
             )
         }
         composable(Screen.SignUp.route) {
-            val signUpFactory = remember(userRepository) { SignUpViewModelFactory(userRepository) }
+            val signUpFactory = remember(userRepository, authSessionManager) {
+                SignUpViewModelFactory(userRepository, authSessionManager)
+            }
             val viewModel: SignUpViewModel = viewModel(factory = signUpFactory)
             SignUpRoute(
                 viewModel = viewModel,
@@ -128,7 +131,7 @@ fun NavGraph(
 
         composable(Screen.HospitalSignIn.route) {
             val viewModel: HospitalSignInViewModel = viewModel(
-                factory = HospitalSignInViewModelFactory(resQRepository)
+                factory = HospitalSignInViewModelFactory(userRepository, authSessionManager)
             )
             HospitalSignInRoute(
                 viewModel = viewModel,
@@ -142,10 +145,14 @@ fun NavGraph(
 
         composable(Screen.HospitalDashboard.route) { backStackEntry ->
             val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
-            val viewModel: HospitalDashboardViewModel = viewModel(
-                factory = HospitalDashboardViewModelFactory(resQRepository, hospitalId)
-            )
-            HospitalDashboardScreen(viewModel = viewModel)
+            if (hospitalId.isBlank()) {
+                Text("Invalid hospital session. Please sign in again.")
+            } else {
+                val viewModel: HospitalDashboardViewModel = viewModel(
+                    factory = HospitalDashboardViewModelFactory(resQRepository, hospitalId)
+                )
+                HospitalDashboardScreen(viewModel = viewModel)
+            }
         }
     }
 }

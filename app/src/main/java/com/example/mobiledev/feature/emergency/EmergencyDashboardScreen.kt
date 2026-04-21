@@ -45,7 +45,7 @@ fun EmergencyDashboardContent(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Hospital Admin Dashboard") },
+                title = { },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     scrolledContainerColor = Color.Transparent
@@ -138,10 +138,37 @@ fun EmergencyDashboardContent(
                 )
             }
 
-            state.error?.let {
-                Snackbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-                ) { Text(it) }
+            state.error?.let { errorMsg ->
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth(0.9f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            errorMsg,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -153,7 +180,7 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f))
     ) {
         Row(
             modifier = Modifier
@@ -181,7 +208,11 @@ fun FilterSection(
     selectedStatus: EmergencyStatus?,
     onStatusSelected: (EmergencyStatus?) -> Unit
 ) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+    ) {
         Text("Filter by Status", style = MaterialTheme.typography.labelMedium)
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -216,7 +247,8 @@ fun EmergencyRequestItem(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.93f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
