@@ -20,9 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,9 +69,14 @@ fun TrackingScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val kampala = remember { LatLng(0.3476, 32.5825) }
+            val kampala = remember { LatLng(0.3136, 32.5811) }
+            val mulago = remember { LatLng(0.3476, 32.5825) }
+            val nsambya = remember { LatLng(0.3031, 32.5811) }
+            val ambulance1 = remember { LatLng(0.3400, 32.5750) }
+            val ambulance2 = remember { LatLng(0.3550, 32.5900) }
+
             val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(kampala, 15f)
+                position = CameraPosition.fromLatLngZoom(kampala, 13f)
             }
             var isMapLoaded by remember { mutableStateOf(false) }
 
@@ -83,7 +91,37 @@ fun TrackingScreen(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
                     onMapLoaded = { isMapLoaded = true }
-                )
+                ) {
+                    // 🏥 Hospitals (RED)
+                    Marker(
+                        state = MarkerState(position = mulago),
+                        title = "Mulago Hospital",
+                        snippet = "Referral Hospital",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    )
+
+                    Marker(
+                        state = MarkerState(position = nsambya),
+                        title = "Nsambya Hospital",
+                        snippet = "Private Hospital",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    )
+
+                    // 🚑 Ambulances (BLUE)
+                    Marker(
+                        state = MarkerState(position = ambulance1),
+                        title = "Ambulance MA-202",
+                        snippet = "Available",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                    )
+
+                    Marker(
+                        state = MarkerState(position = ambulance2),
+                        title = "Ambulance MA-305",
+                        snippet = "En Route",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                    )
+                }
             }
 
             // Bottom Info Card
