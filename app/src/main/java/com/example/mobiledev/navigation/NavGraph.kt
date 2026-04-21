@@ -137,6 +137,13 @@ fun NavGraph(
                 onManageStaffClick = {
                     navController.navigate(Screen.StaffManagement.route)
                 },
+                onLogoutClick = {
+                    authSessionManager.clear()
+                    navController.navigate(Screen.SignIn.route) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
                 requestTabContent = {
                     EmergencyDashboardScreen(viewModel = emergencyViewModel)
                 }

@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,7 +67,7 @@ fun EmergencyDashboardContent(
                         )
                     )
             )
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
                 AnalyticsSummary(state)
                 
                 FilterSection(
@@ -206,9 +208,24 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
 
 @Composable
 fun AnalyticsItem(label: String, value: String, color: Color = Color.Unspecified) {
+    val valueColor = if (color == Color.Unspecified) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        glassReadableAccent(color)
+    }
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = color)
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -359,19 +376,21 @@ fun EmergencyRequestItem(
 
 @Composable
 fun StatusChip(status: EmergencyStatus) {
-    val color = when(status) {
-        EmergencyStatus.PENDING -> Color.Red
-        EmergencyStatus.ASSIGNED -> Color(0xFFFBC02D) // Yellow/Orange
-        EmergencyStatus.EN_ROUTE -> Color.Blue
-        EmergencyStatus.ARRIVED -> Color.Cyan
-        EmergencyStatus.COMPLETED -> Color.Green
-        EmergencyStatus.CANCELLED -> Color.Gray
+    val baseColor = when(status) {
+        EmergencyStatus.PENDING -> Color(0xFFD32F2F)
+        EmergencyStatus.ASSIGNED -> Color(0xFFE65100)
+        EmergencyStatus.EN_ROUTE -> Color(0xFF1565C0)
+        EmergencyStatus.ARRIVED -> Color(0xFF00838F)
+        EmergencyStatus.COMPLETED -> Color(0xFF2E7D32)
+        EmergencyStatus.CANCELLED -> Color(0xFF546E7A)
     }
+    val color = glassReadableAccent(baseColor)
+
     Surface(
-        color = color.copy(alpha = 0.14f),
+        color = color.copy(alpha = 0.18f),
         contentColor = color,
         shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, color.copy(alpha = 0.9f))
+        border = BorderStroke(0.8.dp, color.copy(alpha = 0.95f))
     ) {
         Text(
             text = status.name,
@@ -379,6 +398,15 @@ fun StatusChip(status: EmergencyStatus) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+private fun glassReadableAccent(color: Color): Color {
+    val luminance = color.luminance()
+    return when {
+        luminance > 0.58f -> lerp(color, Color.Black, 0.42f)
+        luminance < 0.18f -> lerp(color, Color.White, 0.18f)
+        else -> color
     }
 }
 

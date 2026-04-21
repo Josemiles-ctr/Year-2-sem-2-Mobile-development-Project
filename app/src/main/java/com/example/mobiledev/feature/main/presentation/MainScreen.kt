@@ -3,7 +3,6 @@ package com.example.mobiledev.feature.main.presentation
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Badge
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -40,7 +41,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
@@ -70,6 +70,7 @@ fun MainScreen(
     currentPrincipal: AuthPrincipal,
     currentUser: User?,
     onManageStaffClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
     requestTabContent: @Composable () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
@@ -158,36 +159,14 @@ fun MainScreen(
                         AccountDetailsPanel(
                             principal = currentPrincipal,
                             currentUser = currentUser,
+                            canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
+                                currentPrincipal.role == AppRole.SYSTEM_ADMIN,
+                            onManageStaffClick = onManageStaffClick,
+                            onLogoutClick = onLogoutClick,
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .padding(horizontal = 20.dp)
                         )
-
-                        if (currentPrincipal.role == AppRole.HOSPITAL_ADMIN || currentPrincipal.role == AppRole.SYSTEM_ADMIN) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(top = 16.dp)
-                            ) {
-                                ElevatedCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.8f)
-                                        .clickable { onManageStaffClick() },
-                                    colors = CardDefaults.elevatedCardColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.People, contentDescription = null)
-                                        Text("Manage Staff")
-                                    }
-                                }
-                            }
-                        }
                     }
                     else -> {
                         PlaceholderScreen(
@@ -249,51 +228,273 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
 private fun AccountDetailsPanel(
     principal: AuthPrincipal,
     currentUser: User?,
+    canManageStaff: Boolean,
+    onManageStaffClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(
+    LazyColumn(
         modifier = modifier,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
+        contentPadding = PaddingValues(top = 6.dp, bottom = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.large
+                    ),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .size(24.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = currentUser?.name ?: "Active User",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${principal.role.name.replace('_', ' ')} account",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     Text(
-                        text = currentUser?.name ?: "Active User",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = currentUser?.accountStatus ?: "Unknown",
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Role: ${principal.role.name.replace('_', ' ')}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+        }
 
-            HorizontalDivider()
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.large
+                    ),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Session Details",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-            AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
-            AccountDetailRow(label = "Phone", value = currentUser?.phone ?: "Not available")
-            AccountDetailRow(label = "User ID", value = principal.userId ?: "Not signed in")
-            AccountDetailRow(label = "Hospital ID", value = principal.hospitalId ?: "N/A")
-            AccountDetailRow(label = "Account Status", value = currentUser?.accountStatus ?: "Unknown")
+                    AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
+                    AccountDetailRow(label = "Phone", value = currentUser?.phone ?: "Not available")
+                    AccountDetailRow(label = "User ID", value = principal.userId ?: "Not signed in")
+                    AccountDetailRow(label = "Hospital ID", value = principal.hospitalId ?: "N/A")
+                }
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.large
+                    ),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Security & Preferences",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Two-step verification: Disabled",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Alert notifications: Enabled",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.large
+                    ),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Quick Actions",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (canManageStaff) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onManageStaffClick() },
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.People, contentDescription = null)
+                                Text("Manage Staff")
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.ManageAccounts, contentDescription = null)
+                            Text("Profile update tools coming soon")
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.large
+                    ),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = onLogoutClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.88f),
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Logout")
+                    }
+                }
+            }
         }
     }
 }
@@ -425,6 +626,8 @@ private fun ActivityMiniStat(
 
 @Composable
 private fun ActivitySummaryCard(activity: ActivitySummary) {
+    val readableAccent = glassReadableAccent(activity.accent)
+
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -448,12 +651,12 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
         ) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = activity.accent.copy(alpha = 0.14f)
+                color = readableAccent.copy(alpha = 0.18f)
             ) {
                 Icon(
                     imageVector = activity.icon,
                     contentDescription = null,
-                    tint = activity.accent,
+                    tint = readableAccent,
                     modifier = Modifier
                         .padding(10.dp)
                         .size(22.dp)
@@ -483,7 +686,7 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
                 Text(
                     text = activity.value,
                     style = MaterialTheme.typography.titleLarge,
-                    color = glassReadableAccent(activity.accent)
+                    color = readableAccent
                 )
                 Text(
                     text = activity.period,
