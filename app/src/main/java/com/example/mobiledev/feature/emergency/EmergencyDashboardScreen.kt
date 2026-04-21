@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,22 +49,31 @@ fun EmergencyDashboardContent(
             TopAppBar(
                 title = { },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.18f),
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 actions = {
                     Box {
-                        IconButton(onClick = { 
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.18f),
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            shape = MaterialTheme.shapes.large,
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f))
+                        ) {
+                            IconButton(onClick = {
                             onEvent(EmergencyDashboardEvent.RefreshData)
                             onEvent(EmergencyDashboardEvent.ClearNewRequestBadge)
-                        }) {
+                            }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
                         }
                         if (state.newRequestsCount > 0) {
                             Badge(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
-                                    .padding(4.dp)
+                                    .offset(x = (-4).dp, y = 4.dp)
                             ) {
                                 Text(state.newRequestsCount.toString())
                             }
@@ -73,6 +84,19 @@ fun EmergencyDashboardContent(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0C2C39).copy(alpha = 0.26f),
+                                Color.Transparent,
+                                Color(0xFF0C2C39).copy(alpha = 0.34f)
+                            )
+                        )
+                    )
+            )
             Column(modifier = Modifier.fillMaxSize()) {
                 AnalyticsSummary(state)
                 
@@ -180,7 +204,11 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f))
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
         Row(
             modifier = Modifier
@@ -213,7 +241,11 @@ fun FilterSection(
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
     ) {
-        Text("Filter by Status", style = MaterialTheme.typography.labelMedium)
+        Text(
+            "Filter by Status",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
@@ -222,14 +254,34 @@ fun FilterSection(
                 FilterChip(
                     selected = selectedStatus == null,
                     onClick = { onStatusSelected(null) },
-                    label = { Text("All") }
+                    label = { Text("All") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+                        borderColor = Color.White.copy(alpha = 0.18f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                    )
                 )
             }
             items(EmergencyStatus.entries) { status ->
                 FilterChip(
                     selected = selectedStatus == status,
                     onClick = { onStatusSelected(status) },
-                    label = { Text(status.name) }
+                    label = { Text(status.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+                        borderColor = Color.White.copy(alpha = 0.18f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                    )
                 )
             }
         }
@@ -248,17 +300,25 @@ fun EmergencyRequestItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.93f))
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "#${request.id.takeLast(4).uppercase()}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(timeString, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    timeString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -266,13 +326,15 @@ fun EmergencyRequestItem(
             Text(
                 request.patientName,
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 "Location: ${request.location}",
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -306,10 +368,10 @@ fun StatusChip(status: EmergencyStatus) {
         EmergencyStatus.CANCELLED -> Color.Gray
     }
     Surface(
-        color = color.copy(alpha = 0.1f),
+        color = color.copy(alpha = 0.14f),
         contentColor = color,
         shape = MaterialTheme.shapes.small,
-        border = androidx.compose.foundation.BorderStroke(1.dp, color)
+        border = BorderStroke(1.dp, color.copy(alpha = 0.9f))
     ) {
         Text(
             text = status.name,
@@ -331,7 +393,7 @@ fun RequestDetailsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Emergency Request Details") },
+        title = { Text("Emergency Request Details", color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 DetailRow("Request ID", request.id)
@@ -356,7 +418,8 @@ fun RequestDetailsDialog(
                     Text(
                         text = "Available Ambulances: $availableAmbulancesCount",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -377,8 +440,8 @@ fun RequestDetailsDialog(
 @Composable
 fun DetailRow(label: String, value: String) {
     Column {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
