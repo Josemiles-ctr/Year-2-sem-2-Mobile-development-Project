@@ -15,6 +15,7 @@ coreSplashscreen = "1.2.0"
 room = "2.7.0-alpha11"
 ksp = "2.0.20-1.0.25"
 googleServices = "4.4.4"
+playServicesLocation = "21.3.0"
 dependencyCheck = "12.2.0"
 jbcrypt = "0.4"
 secrets = "2.0.1"
@@ -45,6 +46,7 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt" }
 
 [plugins]

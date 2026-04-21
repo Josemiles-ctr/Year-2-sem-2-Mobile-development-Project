@@ -1,5 +1,10 @@
 package com.example.mobiledev.feature.tracking.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,23 +15,21 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +67,48 @@ fun TrackingScreen(
             )
         }
     ) { paddingValues ->
+        val context = LocalContext.current
+
+        var hasLocationPermission by remember {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            )
+        }
+
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            hasLocationPermission = granted
+        }
+
+        LaunchedEffect(Unit) {
+            if (!hasLocationPermission) {
+                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+
+        // Get user location
+        val fusedLocationClient: FusedLocationProviderClient = remember {
+            LocationServices.getFusedLocationProviderClient(context)
+        }
+
+        var userLocation by remember { mutableStateOf<Location?>(null) }
+
+        LaunchedEffect(hasLocationPermission) {
+            if (hasLocationPermission) {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                        userLocation = location
+                    }
+                } catch (e: SecurityException) {
+                    // Handle exception if needed
+                }
+            }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -78,6 +123,16 @@ fun TrackingScreen(
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(kampala, 13f)
             }
+
+            LaunchedEffect(userLocation) {
+                userLocation?.let {
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    cameraPositionState.animate(
+                        update = CameraUpdateFactory.newLatLngZoom(latLng, 15f)
+                    )
+                }
+            }
+
             var isMapLoaded by remember { mutableStateOf(false) }
 
             // Map Container
@@ -90,6 +145,9 @@ fun TrackingScreen(
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
+                    properties = MapProperties(
+                        isMyLocationEnabled = hasLocationPermission
+                    ),
                     onMapLoaded = { isMapLoaded = true }
                 ) {
                     // 🏥 Hospitals (RED)
