@@ -48,85 +48,72 @@ object MockEmergencyDashboardData {
 
     private fun baseRequests(): List<EmergencyRequest> {
         val timestamp = now
-        return listOf(
-            EmergencyRequest(
-                id = "REQ-MOCK-1001",
-                patientName = "Grace N.",
-                location = "Kampala Road, CBD",
-                phoneNumber = "0701122334",
-                description = "Severe chest pain and dizziness.",
-                status = EmergencyStatus.PENDING,
-                timestamp = timestamp - 6 * 60 * 1000L
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1002",
-                patientName = "Joseph M.",
-                location = "Kololo Hill Drive",
-                phoneNumber = "0707788445",
-                description = "Road traffic accident with bleeding.",
-                status = EmergencyStatus.ASSIGNED,
-                timestamp = timestamp - 12 * 60 * 1000L,
-                assignedAmbulanceId = "AMB-MOCK-02"
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1003",
-                patientName = "Aisha K.",
-                location = "Ntinda Trading Center",
-                phoneNumber = "0709211882",
-                description = "Breathing difficulty and wheezing.",
-                status = EmergencyStatus.EN_ROUTE,
-                timestamp = timestamp - 18 * 60 * 1000L,
-                assignedAmbulanceId = "AMB-MOCK-03"
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1004",
-                patientName = "Peter T.",
-                location = "Wandegeya Market",
-                phoneNumber = "0703344556",
-                description = "Unconscious adult found on roadside.",
-                status = EmergencyStatus.ARRIVED,
-                timestamp = timestamp - 27 * 60 * 1000L,
-                assignedAmbulanceId = "AMB-MOCK-01"
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1005",
-                patientName = "Mary A.",
-                location = "Najjera Estate",
-                phoneNumber = "0709988776",
-                description = "Suspected stroke with slurred speech.",
-                status = EmergencyStatus.COMPLETED,
-                timestamp = timestamp - 49 * 60 * 1000L,
-                assignedAmbulanceId = "AMB-MOCK-05"
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1006",
-                patientName = "Daniel R.",
-                location = "Muyenga Tank Hill",
-                phoneNumber = "0700012211",
-                description = "Minor injury, request cancelled by caller.",
-                status = EmergencyStatus.CANCELLED,
-                timestamp = timestamp - 70 * 60 * 1000L
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1007",
-                patientName = "Sarah B.",
-                location = "Nakasero Hospital Road",
-                phoneNumber = "0703321456",
-                description = "High fever and convulsions in child.",
-                status = EmergencyStatus.PENDING,
-                timestamp = timestamp - 3 * 60 * 1000L
-            ),
-            EmergencyRequest(
-                id = "REQ-MOCK-1008",
-                patientName = "Ronald C.",
-                location = "Makerere Main Gate",
-                phoneNumber = "0708456123",
-                description = "Possible fracture after fall from stairs.",
-                status = EmergencyStatus.ASSIGNED,
-                timestamp = timestamp - 35 * 60 * 1000L,
-                assignedAmbulanceId = "AMB-MOCK-01"
-            )
+        val names = listOf(
+            "Grace N.", "Joseph M.", "Aisha K.", "Peter T.", "Mary A.",
+            "Daniel R.", "Sarah B.", "Ronald C.", "Faith L.", "Kevin O.",
+            "Martha I.", "Brian W."
         )
+        val locations = listOf(
+            "Kampala Road, CBD",
+            "Kololo Hill Drive",
+            "Ntinda Trading Center",
+            "Wandegeya Market",
+            "Najjera Estate",
+            "Muyenga Tank Hill",
+            "Nakasero Hospital Road",
+            "Makerere Main Gate",
+            "Bukoto Junction",
+            "Kisaasi Central"
+        )
+        val descriptions = listOf(
+            "Severe chest pain and dizziness.",
+            "Road traffic accident with bleeding.",
+            "Breathing difficulty and wheezing.",
+            "Unconscious adult found on roadside.",
+            "Suspected stroke with slurred speech.",
+            "High fever and convulsions in child.",
+            "Possible fracture after fall from stairs.",
+            "Persistent abdominal pain and vomiting."
+        )
+        val statuses = listOf(
+            EmergencyStatus.PENDING,
+            EmergencyStatus.ASSIGNED,
+            EmergencyStatus.EN_ROUTE,
+            EmergencyStatus.ARRIVED,
+            EmergencyStatus.COMPLETED,
+            EmergencyStatus.CANCELLED
+        )
+
+        return buildList {
+            var index = 0
+            statuses.forEach { status ->
+                repeat(10) {
+                    val requestNumber = 1001 + index
+                    val assignedAmbulanceId = when (status) {
+                        EmergencyStatus.ASSIGNED -> "AMB-MOCK-01"
+                        EmergencyStatus.EN_ROUTE -> "AMB-MOCK-03"
+                        EmergencyStatus.ARRIVED -> "AMB-MOCK-02"
+                        EmergencyStatus.COMPLETED -> "AMB-MOCK-05"
+                        else -> null
+                    }
+
+                    add(
+                        EmergencyRequest(
+                            id = "REQ-MOCK-$requestNumber",
+                            patientName = names[index % names.size],
+                            location = locations[index % locations.size],
+                            phoneNumber = "07${(10000000 + index).toString().takeLast(8)}",
+                            description = descriptions[index % descriptions.size],
+                            status = status,
+                            timestamp = timestamp - (index + 1) * 4L * 60 * 1000L,
+                            assignedAmbulanceId = assignedAmbulanceId
+                        )
+                    )
+
+                    index += 1
+                }
+            }
+        }
     }
 
     fun getEmergencyRequests(

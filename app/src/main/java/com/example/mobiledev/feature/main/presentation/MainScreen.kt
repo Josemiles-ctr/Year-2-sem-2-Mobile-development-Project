@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -73,7 +75,7 @@ fun MainScreen(
 ) {
     val tabs = listOf(
         MainTab(R.string.tab_activity, Icons.Filled.Notifications),
-        MainTab(R.string.tab_requests, Icons.Filled.Warning),
+        MainTab(R.string.tab_requests, Icons.Filled.AssignmentTurnedIn),
         MainTab(R.string.tab_account, Icons.Filled.AccountCircle)
     )
     var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -206,16 +208,10 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = Color.White.copy(alpha = 0.28f),
-                    shape = MaterialTheme.shapes.extraLarge
-                ),
+            modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.26f),
             tonalElevation = 0.dp,
@@ -224,7 +220,7 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -487,7 +483,7 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
                 Text(
                     text = activity.value,
                     style = MaterialTheme.typography.titleLarge,
-                    color = activity.accent
+                    color = glassReadableAccent(activity.accent)
                 )
                 Text(
                     text = activity.period,
@@ -496,6 +492,15 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
                 )
             }
         }
+    }
+}
+
+private fun glassReadableAccent(color: Color): Color {
+    val luminance = color.luminance()
+    return when {
+        luminance > 0.58f -> lerp(color, Color.Black, 0.42f)
+        luminance < 0.18f -> lerp(color, Color.White, 0.18f)
+        else -> color
     }
 }
 

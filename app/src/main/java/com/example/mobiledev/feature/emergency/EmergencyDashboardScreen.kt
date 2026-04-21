@@ -1,11 +1,13 @@
 package com.example.mobiledev.feature.emergency
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
@@ -15,10 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mobiledev.R
 import com.example.mobiledev.data.model.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,44 +49,7 @@ fun EmergencyDashboardContent(
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.18f),
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                actions = {
-                    Box {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.18f),
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            shape = MaterialTheme.shapes.large,
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f))
-                        ) {
-                            IconButton(onClick = {
-                            onEvent(EmergencyDashboardEvent.RefreshData)
-                            onEvent(EmergencyDashboardEvent.ClearNewRequestBadge)
-                            }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                        }
-                        }
-                        if (state.newRequestsCount > 0) {
-                            Badge(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = (-4).dp, y = 4.dp)
-                            ) {
-                                Text(state.newRequestsCount.toString())
-                            }
-                        }
-                    }
-                }
-            )
-        }
+        containerColor = Color.Transparent
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             Box(
@@ -163,14 +131,21 @@ fun EmergencyDashboardContent(
             }
 
             state.error?.let { errorMsg ->
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(16.dp)
-                        .fillMaxWidth(0.9f),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f)
-                    )
+                        .fillMaxWidth(0.9f)
+                        .border(
+                            width = 0.5.dp,
+                            color = Color.White.copy(alpha = 0.2f),
+                            shape = MaterialTheme.shapes.large
+                        ),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                    shape = MaterialTheme.shapes.large
                 ) {
                     Row(
                         modifier = Modifier
@@ -200,15 +175,21 @@ fun EmergencyDashboardContent(
 
 @Composable
 fun AnalyticsSummary(state: EmergencyDashboardState) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
+            .padding(16.dp)
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.large
+            ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
     ) {
         Row(
             modifier = Modifier
@@ -236,49 +217,65 @@ fun FilterSection(
     selectedStatus: EmergencyStatus?,
     onStatusSelected: (EmergencyStatus?) -> Unit
 ) {
-    Column(
+    ElevatedCard(
         modifier = Modifier
-            .padding(horizontal = 16.dp)
             .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.large
+            ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
     ) {
-        Text(
-            "Filter by Status",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            item {
-                FilterChip(
-                    selected = selectedStatus == null,
-                    onClick = { onStatusSelected(null) },
-                    label = { Text("All") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+            Text(
+                "Filter by Status",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedStatus == null,
+                        onClick = { onStatusSelected(null) },
+                        label = { Text("All") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     )
-                )
-            }
-            items(EmergencyStatus.entries) { status ->
-                FilterChip(
-                    selected = selectedStatus == status,
-                    onClick = { onStatusSelected(status) },
-                    label = { Text(status.name) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.12f),
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+                }
+                items(EmergencyStatus.entries) { status ->
+                    FilterChip(
+                        selected = selectedStatus == status,
+                        onClick = { onStatusSelected(status) },
+                        label = { Text(status.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -293,14 +290,21 @@ fun EmergencyRequestItem(
     val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val timeString = dateFormat.format(Date(request.timestamp))
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.medium
+            ),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
