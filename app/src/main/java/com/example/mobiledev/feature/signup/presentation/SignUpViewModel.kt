@@ -50,7 +50,7 @@ class SignUpViewModel(
             is SignUpEvent.EmailChanged -> onEmailChange(event.value)
             is SignUpEvent.PasswordChanged -> onPasswordChange(event.value)
             is SignUpEvent.ConfirmPasswordChanged -> onConfirmPasswordChange(event.value)
-            SignUpEvent.Submit -> submitSignUp()
+            SignUpEvent.Submit -> if (!_signUpUiState.value.isLoading) submitSignUp()
         }
     }
 
@@ -106,9 +106,11 @@ class SignUpViewModel(
 
         if (error != null) {
             _errorMessage.value = error
-            _signUpUiState.value = state.copy(errorMessage = error)
+            _signUpUiState.value = state.copy(isLoading = false, errorMessage = error)
             return
         }
+
+        _signUpUiState.value = state.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
             try {
@@ -126,7 +128,7 @@ class SignUpViewModel(
                     )
                 )
                 _errorMessage.value = null
-                _signUpUiState.value = state.copy(errorMessage = null)
+                _signUpUiState.value = _signUpUiState.value.copy(isLoading = false, errorMessage = null)
                 _navigationEvents.send(NavigationEvent.NavigateToDashboard)
 
                 // Refresh is the best effort and should not block successful navigation.
@@ -138,7 +140,7 @@ class SignUpViewModel(
                 val message = toUserMessage(exception)
                 Log.e(TAG, "Sign-up submit failed while accessing Firebase.", exception)
                 _errorMessage.value = message
-                _signUpUiState.value = state.copy(errorMessage = message)
+                _signUpUiState.value = _signUpUiState.value.copy(isLoading = false, errorMessage = message)
             }
         }
     }

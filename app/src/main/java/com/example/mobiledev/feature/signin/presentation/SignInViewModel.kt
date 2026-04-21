@@ -36,7 +36,7 @@ class SignInViewModel(
         when (event) {
             is SignInEvent.EmailOrPhoneChanged -> onEmailOrPhoneChange(event.value)
             is SignInEvent.PasswordChanged -> onPasswordChange(event.value)
-            SignInEvent.Submit -> submitSignIn()
+            SignInEvent.Submit -> if (!_uiState.value.isLoading) submitSignIn()
         }
     }
 
@@ -69,9 +69,11 @@ class SignInViewModel(
         }
 
         if (error != null) {
-            _uiState.value = state.copy(errorMessage = error)
+            _uiState.value = state.copy(isLoading = false, errorMessage = error)
             return
         }
+
+        _uiState.value = state.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
             try {
@@ -82,7 +84,10 @@ class SignInViewModel(
                 if (user != null) {
                     val role = runCatching { AppRole.valueOf(user.role) }.getOrDefault(AppRole.PATIENT)
                     if (role == AppRole.HOSPITAL_ADMIN) {
-                        _uiState.value = state.copy(errorMessage = "Use Hospital Admin login for this account.")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "Use Hospital Admin login for this account."
+                        )
                         return@launch
                     }
                     authSessionManager.setPrincipal(
@@ -92,15 +97,18 @@ class SignInViewModel(
                             role = role
                         )
                     )
-                    _uiState.value = state.copy(errorMessage = null)
+                    _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = null)
                     _navigationEvents.send(NavigationEvent.NavigateToDashboard)
                 } else {
-                    _uiState.value = state.copy(errorMessage = ERROR_INVALID_CREDENTIALS)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = ERROR_INVALID_CREDENTIALS
+                    )
                 }
             } catch (exception: Exception) {
                 val userMessage = toUserMessage(exception)
                 Log.e(TAG, "Sign-in failed while accessing Firebase.", exception)
-                _uiState.value = state.copy(errorMessage = userMessage)
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = userMessage)
             }
         }
     }

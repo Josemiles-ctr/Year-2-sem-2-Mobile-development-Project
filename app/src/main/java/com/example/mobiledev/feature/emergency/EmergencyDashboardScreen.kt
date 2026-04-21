@@ -67,13 +67,23 @@ fun EmergencyDashboardContent(
                         )
                     )
             )
-            Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+            Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
                 AnalyticsSummary(state)
                 
                 FilterSection(
                     selectedStatus = state.statusFilter,
                     onStatusSelected = { onEvent(EmergencyDashboardEvent.FilterByStatus(it)) }
                 )
+
+                if (state.isLoading && state.requests.isNotEmpty()) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                    )
+                }
 
                 if (state.isLoading && state.requests.isEmpty()) {
                     Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -180,7 +190,7 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
             .border(
                 width = 0.5.dp,
                 color = Color.White.copy(alpha = 0.2f),
@@ -195,7 +205,7 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
@@ -217,7 +227,7 @@ fun AnalyticsItem(label: String, value: String, color: Color = Color.Unspecified
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = valueColor
         )

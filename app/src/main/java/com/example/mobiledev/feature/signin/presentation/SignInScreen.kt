@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -160,12 +161,21 @@ private fun LoginFormCard(
 
             Button(
                 onClick = { onEvent(SignInEvent.Submit) },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .testTag("signin_submit_button")
             ) {
-                Text(text = stringResource(R.string.sign_in_cta_label))
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.sign_in_cta_label))
+                }
             }
 
             Row(
@@ -180,6 +190,7 @@ private fun LoginFormCard(
                 )
                 TextButton(
                     onClick = onSignUpClick,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.testTag("signin_signup_button")
                 ) {
                     Text(text = stringResource(R.string.sign_up_label))
@@ -188,6 +199,7 @@ private fun LoginFormCard(
 
             TextButton(
                 onClick = onHospitalSignInClick,
+                enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(

@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -178,12 +179,21 @@ private fun SignUpFormCard(
 
             Button(
                 onClick = { onEvent(SignUpEvent.Submit) },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .testTag("signup_submit_button")
             ) {
-                Text(text = stringResource(R.string.create_account_label))
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.create_account_label))
+                }
             }
 
             Row(
@@ -198,6 +208,7 @@ private fun SignUpFormCard(
                 )
                 TextButton(
                     onClick = onLoginClick,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.testTag("signup_signin_button")
                 ) {
                     Text(text = stringResource(R.string.sign_in_cta_label))
