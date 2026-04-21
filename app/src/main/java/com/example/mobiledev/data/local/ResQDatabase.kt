@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.mobiledev.data.mock.MockSeedData
 import com.example.mobiledev.data.local.dao.AmbulanceDao
 import com.example.mobiledev.data.local.dao.EmergencyRequestDao
 import com.example.mobiledev.data.local.dao.HospitalDao
@@ -29,7 +30,7 @@ import org.mindrot.jbcrypt.BCrypt
         AmbulanceEntity::class,
         EmergencyRequestEntity::class
     ],
-    version = 4, // Bumped version to ensure schema refresh
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(ResQDatabase.Converters::class)
@@ -92,138 +93,33 @@ abstract class ResQDatabase : RoomDatabase() {
             val ambulanceDao = db.ambulanceDao()
             val requestDao = db.emergencyRequestDao()
 
-            // Hash the default password for the seed data
             val hashedPW = BCrypt.hashpw("password123", BCrypt.gensalt())
+            val now = System.currentTimeMillis()
 
-            // 1. Seed Hospital (Check if it exists to make seeding idempotent)
-            val existingHospital = hospitalDao.getHospitalById("HOSPITAL_1")
-            if (existingHospital == null) {
-                val hospital = HospitalEntity(
-                    id = "HOSPITAL_1",
-                    adminId = "ADMIN_1",
-                    name = "City Central Hospital",
-                    email = "contact@cityhospital.com",
-                    phone = "555-0100",
-                    location = "123 Healthcare Ave",
-                    latitude = 40.7128,
-                    longitude = -74.0060,
-                    uuid = "UUID_1",
-                    passwordHash = hashedPW,
-                    status = HospitalStatus.APPROVED,
-                    activeAmbulances = 0,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                hospitalDao.insertHospital(hospital)
+            val mockSeed = MockSeedData.create(now = now, passwordHash = hashedPW)
+
+            mockSeed.hospitals.forEach { hospital ->
+                if (hospitalDao.getHospitalById(hospital.id) == null) {
+                    hospitalDao.insertHospital(hospital)
+                }
             }
 
-            // 2. Seed Users (Drivers link to Hospital)
-            if (userDao.getUserById("USER_1") == null) {
-                val user1 = UserEntity(
-                    id = "USER_1",
-                    hospitalId = null,
-                    name = "John Doe",
-                    email = "john@example.com",
-                    phone = "123456789",
-                    location = "User Location 1",
-                    userType = "PATIENT",
-                    uuid = "UUID_USER_1",
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                userDao.insertUser(user1)
-            }
-            
-            if (userDao.getUserById("USER_2") == null) {
-                val user2 = UserEntity(
-                    id = "USER_2",
-                    hospitalId = null,
-                    name = "Jane Smith",
-                    email = "jane@example.com",
-                    phone = "987654321",
-                    location = "User Location 2",
-                    userType = "PATIENT",
-                    uuid = "UUID_USER_2",
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                userDao.insertUser(user2)
+            mockSeed.users.forEach { user ->
+                if (userDao.getUserById(user.id) == null) {
+                    userDao.insertUser(user)
+                }
             }
 
-            if (userDao.getUserById("DRIVER_1") == null) {
-                val driver1 = UserEntity(
-                    id = "DRIVER_1",
-                    hospitalId = "HOSPITAL_1",
-                    name = "Driver One",
-                    email = "driver1@example.com",
-                    phone = "555-0001",
-                    location = "Ambulance Station",
-                    userType = "DRIVER",
-                    uuid = "UUID_DRIVER_1",
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                userDao.insertUser(driver1)
+            mockSeed.ambulances.forEach { ambulance ->
+                if (ambulanceDao.getAmbulanceById(ambulance.id) == null) {
+                    ambulanceDao.insertAmbulance(ambulance)
+                }
             }
 
-            // 3. Seed Ambulances (Link to Hospital and Driver)
-            if (ambulanceDao.getAmbulanceById("AMB_1") == null) {
-                val ambulance1 = AmbulanceEntity(
-                    id = "AMB_1",
-                    hospitalId = "HOSPITAL_1",
-                    driverId = "DRIVER_1",
-                    registrationNo = "NYC-001",
-                    licenseNo = "LIC-999",
-                    status = "AVAILABLE",
-                    latitude = 40.7130,
-                    longitude = -74.0065,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                ambulanceDao.insertAmbulance(ambulance1)
-            }
-
-            // 4. Seed Mock Requests
-            if (requestDao.getRequestById("REQ_1") == null) {
-                val request1 = EmergencyRequestEntity(
-                    id = "REQ_1",
-                    userId = "USER_1",
-                    hospitalId = "HOSPITAL_1",
-                    ambulanceId = null,
-                    status = "PENDING",
-                    description = "Severe chest pain, possible heart attack",
-                    location = "Times Square, NY",
-                    latitude = 40.7580,
-                    longitude = -73.9855,
-                    priority = "CRITICAL",
-                    estimatedTimeMins = null,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
-                    completedAt = null,
-                    isDeleted = false
-                )
-                requestDao.insertRequest(request1)
-            }
-            
-            if (requestDao.getRequestById("REQ_2") == null) {
-                val request2 = EmergencyRequestEntity(
-                    id = "REQ_2",
-                    userId = "USER_2",
-                    hospitalId = "HOSPITAL_1",
-                    ambulanceId = null,
-                    status = "PENDING",
-                    description = "Minor car accident, one injury",
-                    location = "Central Park West",
-                    latitude = 40.7812,
-                    longitude = -73.9665,
-                    priority = "MEDIUM",
-                    estimatedTimeMins = null,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
-                    completedAt = null,
-                    isDeleted = false
-                )
-                requestDao.insertRequest(request2)
+            mockSeed.requests.forEach { request ->
+                if (requestDao.getRequestById(request.id) == null) {
+                    requestDao.insertRequest(request)
+                }
             }
         }
     }

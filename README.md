@@ -21,6 +21,7 @@ Android app for emergency request coordination, built with Jetpack Compose and M
 Each implemented area has its own documentation page:
 
 - [Feature Documentation Index](docs/features/README.md)
+- [Current Implementation Overview](docs/features/implementation-overview.md)
 - [Authentication Flow](docs/features/auth.md)
 - [Splash / App Launch Experience](docs/features/splash.md)
 - [Dashboard & Bottom Navigation](docs/features/dashboard.md)

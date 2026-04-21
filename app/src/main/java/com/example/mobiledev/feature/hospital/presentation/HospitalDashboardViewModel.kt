@@ -17,37 +17,62 @@ class HospitalDashboardViewModel(
     val uiState: StateFlow<HospitalDashboardUiState> = _uiState.asStateFlow()
 
     init {
-        loadDashboardData()
-        observeAmbulances()
+        if (hospitalId.isBlank()) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = "Invalid hospital session. Please sign in again."
+                )
+            }
+        } else {
+            loadDashboardData()
+            observeAmbulances()
+        }
     }
 
     private fun loadDashboardData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            // Get Hospital Details
-            val hospital = repository.getHospitalById(hospitalId)
-            _uiState.update { it.copy(hospitalName = hospital?.name ?: "Hospital Dashboard") }
+            try {
+                _uiState.update { it.copy(isLoading = true, error = null) }
 
-            // Observe Active Requests
-            repository.getRequestsByHospitalStream(hospitalId)
-                .onEach { requests ->
-                    _uiState.update { it.copy(activeRequests = requests, isLoading = false) }
+                val hospital = repository.getHospitalById(hospitalId)
+                _uiState.update { it.copy(hospitalName = hospital?.name ?: "Hospital Dashboard") }
+
+                repository.getRequestsByHospitalStream(hospitalId)
+                    .onEach { requests ->
+                        _uiState.update { it.copy(activeRequests = requests, isLoading = false) }
+                    }
+                    .catch { e ->
+                        _uiState.update { it.copy(error = e.message, isLoading = false) }
+                    }
+                    .collect()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load hospital dashboard"
+                    )
                 }
-                .catch { e ->
-                    _uiState.update { it.copy(error = e.message, isLoading = false) }
-                }
-                .collect()
+            }
         }
     }
 
     private fun observeAmbulances() {
         viewModelScope.launch {
-            repository.getAvailableAmbulancesStream(hospitalId)
-                .onEach { ambulances ->
-                    _uiState.update { it.copy(availableAmbulances = ambulances) }
+            try {
+                repository.getAvailableAmbulancesStream(hospitalId)
+                    .onEach { ambulances ->
+                        _uiState.update { it.copy(availableAmbulances = ambulances) }
+                    }
+                    .catch { e ->
+                        _uiState.update { it.copy(error = e.message) }
+                    }
+                    .collect()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Failed to load available ambulances")
                 }
-                .collect()
+            }
         }
     }
 
@@ -57,46 +82,55 @@ class HospitalDashboardViewModel(
 
     fun assignAmbulance(requestId: String, ambulanceId: String) {
         viewModelScope.launch {
-            val request = repository.getRequestById(requestId)
-            val ambulance = repository.getAmbulanceById(ambulanceId)
+            try {
+                val request = repository.getRequestById(requestId)
+                val ambulance = repository.getAmbulanceById(ambulanceId)
 
-            if (request != null && ambulance != null) {
-                // Update Request
-                val updatedRequest = request.copy(
-                    ambulanceId = ambulanceId,
-                    status = "ASSIGNED",
-                    updatedAt = System.currentTimeMillis()
-                )
-                repository.updateRequest(updatedRequest)
+                if (request != null && ambulance != null) {
+                    val updatedRequest = request.copy(
+                        ambulanceId = ambulanceId,
+                        status = "ASSIGNED",
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    repository.updateRequest(updatedRequest)
 
-                // Update Ambulance Status
-                val updatedAmbulance = ambulance.copy(
-                    status = "BUSY",
-                    updatedAt = System.currentTimeMillis()
-                )
-                repository.updateAmbulance(updatedAmbulance)
-                
-                // Clear selection
-                onRequestSelected(null)
+                    val updatedAmbulance = ambulance.copy(
+                        status = "BUSY",
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    repository.updateAmbulance(updatedAmbulance)
+
+                    onRequestSelected(null)
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Failed to assign ambulance")
+                }
             }
         }
     }
 
     fun addAmbulance(registrationNo: String, driverId: String) {
         viewModelScope.launch {
-            val newAmbulance = com.example.mobiledev.data.local.entity.AmbulanceEntity(
-                id = "AMB_${System.currentTimeMillis()}",
-                hospitalId = hospitalId,
-                driverId = driverId,
-                registrationNo = registrationNo,
-                licenseNo = "LIC-${System.currentTimeMillis()}", // Mock license
-                status = "AVAILABLE",
-                latitude = 0.0,
-                longitude = 0.0,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
-            )
-            repository.insertAmbulance(newAmbulance)
+            try {
+                val newAmbulance = com.example.mobiledev.data.local.entity.AmbulanceEntity(
+                    id = "AMB_${System.currentTimeMillis()}",
+                    hospitalId = hospitalId,
+                    driverId = driverId,
+                    registrationNo = registrationNo,
+                    licenseNo = "LIC-${System.currentTimeMillis()}",
+                    status = "AVAILABLE",
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                repository.insertAmbulance(newAmbulance)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Failed to add ambulance")
+                }
+            }
         }
     }
 }

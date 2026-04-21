@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
@@ -151,7 +151,7 @@ private fun SignUpFormCard(
                 value = uiState.password,
                 onValueChange = { onEvent(SignUpEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_password_input")
@@ -161,7 +161,7 @@ private fun SignUpFormCard(
                 value = uiState.confirmPassword,
                 onValueChange = { onEvent(SignUpEvent.ConfirmPasswordChanged(it)) },
                 label = stringResource(R.string.confirm_password_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_confirm_password_input")
@@ -179,12 +179,21 @@ private fun SignUpFormCard(
 
             Button(
                 onClick = { onEvent(SignUpEvent.Submit) },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .testTag("signup_submit_button")
             ) {
-                Text(text = stringResource(R.string.create_account_label))
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.create_account_label))
+                }
             }
 
             Row(
@@ -199,6 +208,7 @@ private fun SignUpFormCard(
                 )
                 TextButton(
                     onClick = onLoginClick,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.testTag("signup_signin_button")
                 ) {
                     Text(text = stringResource(R.string.sign_in_cta_label))

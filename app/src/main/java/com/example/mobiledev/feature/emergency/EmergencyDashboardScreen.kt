@@ -1,10 +1,13 @@
 package com.example.mobiledev.feature.emergency
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
@@ -12,11 +15,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mobiledev.R
 import com.example.mobiledev.data.model.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -26,7 +35,7 @@ import java.util.concurrent.TimeUnit
 fun EmergencyDashboardScreen(
     viewModel: EmergencyViewModel
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state = viewModel.uiState.collectAsState().value
     EmergencyDashboardContent(
         state = state,
         onEvent = viewModel::onEvent
@@ -37,42 +46,44 @@ fun EmergencyDashboardScreen(
 @Composable
 fun EmergencyDashboardContent(
     state: EmergencyDashboardState,
-    onEvent: (EmergencyDashboardEvent) -> Unit
+    onEvent: (EmergencyDashboardEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Hospital Admin Dashboard") },
-                actions = {
-                    Box {
-                        IconButton(onClick = { 
-                            onEvent(EmergencyDashboardEvent.RefreshData)
-                            onEvent(EmergencyDashboardEvent.ClearNewRequestBadge)
-                        }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                        }
-                        if (state.newRequestsCount > 0) {
-                            Badge(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(4.dp)
-                            ) {
-                                Text(state.newRequestsCount.toString())
-                            }
-                        }
-                    }
-                }
-            )
-        }
+        modifier = modifier,
+        containerColor = Color.Transparent
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0C2C39).copy(alpha = 0.26f),
+                                Color.Transparent,
+                                Color(0xFF0C2C39).copy(alpha = 0.34f)
+                            )
+                        )
+                    )
+            )
+            Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
                 AnalyticsSummary(state)
                 
                 FilterSection(
                     selectedStatus = state.statusFilter,
                     onStatusSelected = { onEvent(EmergencyDashboardEvent.FilterByStatus(it)) }
                 )
+
+                if (state.isLoading && state.requests.isNotEmpty()) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                    )
+                }
 
                 if (state.isLoading && state.requests.isEmpty()) {
                     Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -131,10 +142,44 @@ fun EmergencyDashboardContent(
                 )
             }
 
-            state.error?.let {
-                Snackbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-                ) { Text(it) }
+            state.error?.let { errorMsg ->
+                ElevatedCard(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth(0.9f)
+                        .border(
+                            width = 0.5.dp,
+                            color = Color.White.copy(alpha = 0.2f),
+                            shape = MaterialTheme.shapes.large
+                        ),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            errorMsg,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -142,15 +187,25 @@ fun EmergencyDashboardContent(
 
 @Composable
 fun AnalyticsSummary(state: EmergencyDashboardState) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.large
+            ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
@@ -163,9 +218,24 @@ fun AnalyticsSummary(state: EmergencyDashboardState) {
 
 @Composable
 fun AnalyticsItem(label: String, value: String, color: Color = Color.Unspecified) {
+    val valueColor = if (color == Color.Unspecified) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        glassReadableAccent(color)
+    }
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = color)
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -174,25 +244,65 @@ fun FilterSection(
     selectedStatus: EmergencyStatus?,
     onStatusSelected: (EmergencyStatus?) -> Unit
 ) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text("Filter by Status", style = MaterialTheme.typography.labelMedium)
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.large
+            ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            item {
-                FilterChip(
-                    selected = selectedStatus == null,
-                    onClick = { onStatusSelected(null) },
-                    label = { Text("All") }
-                )
-            }
-            items(EmergencyStatus.entries) { status ->
-                FilterChip(
-                    selected = selectedStatus == status,
-                    onClick = { onStatusSelected(status) },
-                    label = { Text(status.name) }
-                )
+            Text(
+                "Filter by Status",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedStatus == null,
+                        onClick = { onStatusSelected(null) },
+                        label = { Text("All") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
+                items(EmergencyStatus.entries) { status ->
+                    FilterChip(
+                        selected = selectedStatus == status,
+                        onClick = { onStatusSelected(status) },
+                        label = { Text(status.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
             }
         }
     }
@@ -207,20 +317,35 @@ fun EmergencyRequestItem(
     val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val timeString = dateFormat.format(Date(request.timestamp))
 
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.medium
+            ),
+        onClick = onClick,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "#${request.id.takeLast(4).uppercase()}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(timeString, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    timeString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -228,13 +353,15 @@ fun EmergencyRequestItem(
             Text(
                 request.patientName,
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 "Location: ${request.location}",
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -259,19 +386,21 @@ fun EmergencyRequestItem(
 
 @Composable
 fun StatusChip(status: EmergencyStatus) {
-    val color = when(status) {
-        EmergencyStatus.PENDING -> Color.Red
-        EmergencyStatus.ASSIGNED -> Color(0xFFFBC02D) // Yellow/Orange
-        EmergencyStatus.EN_ROUTE -> Color.Blue
-        EmergencyStatus.ARRIVED -> Color.Cyan
-        EmergencyStatus.COMPLETED -> Color.Green
-        EmergencyStatus.CANCELLED -> Color.Gray
+    val baseColor = when(status) {
+        EmergencyStatus.PENDING -> Color(0xFFD32F2F)
+        EmergencyStatus.ASSIGNED -> Color(0xFFE65100)
+        EmergencyStatus.EN_ROUTE -> Color(0xFF1565C0)
+        EmergencyStatus.ARRIVED -> Color(0xFF00838F)
+        EmergencyStatus.COMPLETED -> Color(0xFF2E7D32)
+        EmergencyStatus.CANCELLED -> Color(0xFF546E7A)
     }
+    val color = glassReadableAccent(baseColor)
+
     Surface(
-        color = color.copy(alpha = 0.1f),
+        color = color.copy(alpha = 0.18f),
         contentColor = color,
         shape = MaterialTheme.shapes.small,
-        border = androidx.compose.foundation.BorderStroke(1.dp, color)
+        border = BorderStroke(0.8.dp, color.copy(alpha = 0.95f))
     ) {
         Text(
             text = status.name,
@@ -279,6 +408,15 @@ fun StatusChip(status: EmergencyStatus) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+private fun glassReadableAccent(color: Color): Color {
+    val luminance = color.luminance()
+    return when {
+        luminance > 0.58f -> lerp(color, Color.Black, 0.42f)
+        luminance < 0.18f -> lerp(color, Color.White, 0.18f)
+        else -> color
     }
 }
 
@@ -293,7 +431,7 @@ fun RequestDetailsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Emergency Request Details") },
+        title = { Text("Emergency Request Details", color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 DetailRow("Request ID", request.id)
@@ -318,7 +456,8 @@ fun RequestDetailsDialog(
                     Text(
                         text = "Available Ambulances: $availableAmbulancesCount",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -339,8 +478,8 @@ fun RequestDetailsDialog(
 @Composable
 fun DetailRow(label: String, value: String) {
     Column {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

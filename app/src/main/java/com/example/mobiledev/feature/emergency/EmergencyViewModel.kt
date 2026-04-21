@@ -64,61 +64,75 @@ class EmergencyViewModel(private val repository: EmergencyRepository) : ViewMode
     private fun startPolling() {
         viewModelScope.launch {
             while (true) {
-                delay(30000) // 30 seconds polling
-                pollForNewRequests()
+                try {
+                    delay(30000) // 30 seconds polling
+                    pollForNewRequests()
+                } catch (e: Exception) {
+                    // Silently fail polling, don't crash the UI
+                }
             }
         }
     }
 
     private suspend fun pollForNewRequests() {
-        val currentState = _uiState.value
-        repository.getEmergencyRequests(
-            status = currentState.statusFilter?.name,
-            dateFrom = currentState.dateRangeStart,
-            dateTo = currentState.dateRangeEnd,
-            limit = 1
-        ).collect { latestRequests ->
-            val latest = latestRequests.firstOrNull()
-            val currentFirst = currentState.requests.firstOrNull()
-            
-            if (latest != null && currentFirst != null && latest.id != currentFirst.id && latest.timestamp > currentFirst.timestamp) {
-                _uiState.update { it.copy(newRequestsCount = it.newRequestsCount + 1) }
+        try {
+            val currentState = _uiState.value
+            repository.getEmergencyRequests(
+                status = currentState.statusFilter?.name,
+                dateFrom = currentState.dateRangeStart,
+                dateTo = currentState.dateRangeEnd,
+                limit = 1
+            ).collect { latestRequests ->
+                val latest = latestRequests.firstOrNull()
+                val currentFirst = currentState.requests.firstOrNull()
+                
+                if (latest != null && currentFirst != null && latest.id != currentFirst.id && latest.timestamp > currentFirst.timestamp) {
+                    _uiState.update { it.copy(newRequestsCount = it.newRequestsCount + 1) }
+                }
             }
+        } catch (e: Exception) {
+            // Silently fail polling
         }
     }
 
     private fun loadData(isPolling: Boolean = false, isNextPage: Boolean = false) {
         viewModelScope.launch {
-            if (!isPolling) _uiState.update { it.copy(isLoading = true) }
-            
-            val currentState = _uiState.value
-            
-            repository.getEmergencyRequests(
-                status = currentState.statusFilter?.name,
-                dateFrom = currentState.dateRangeStart,
-                dateTo = currentState.dateRangeEnd,
-                limit = currentState.limit,
-                offset = currentState.offset
-            ).catch { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
-            }.collect { newRequests ->
-                val updatedList = if (isNextPage) currentState.requests + newRequests else newRequests
-                val sortedRequests = updatedList.sortedByDescending { it.timestamp }
+            try {
+                if (!isPolling) _uiState.update { it.copy(isLoading = true, error = null) }
+                
+                val currentState = _uiState.value
+                
+                repository.getEmergencyRequests(
+                    status = currentState.statusFilter?.name,
+                    dateFrom = currentState.dateRangeStart,
+                    dateTo = currentState.dateRangeEnd,
+                    limit = currentState.limit,
+                    offset = currentState.offset
+                ).catch { e ->
+                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load requests") }
+                }.collect { newRequests ->
+                    val updatedList = if (isNextPage) currentState.requests + newRequests else newRequests
+                    val sortedRequests = updatedList.sortedByDescending { it.timestamp }
 
-                _uiState.update { 
-                    it.copy(
-                        requests = sortedRequests,
-                        filteredRequests = sortedRequests,
-                        isLoading = false,
-                        error = null,
-                        hasMore = newRequests.size >= currentState.limit
-                    )
+                    _uiState.update { 
+                        it.copy(
+                            requests = sortedRequests,
+                            filteredRequests = sortedRequests,
+                            isLoading = false,
+                            error = null,
+                            hasMore = newRequests.size >= currentState.limit
+                        )
+                    }
+                    calculateAnalytics()
                 }
-                calculateAnalytics()
-            }
-            
-            repository.getAmbulances().catch {}.collect { ambulances ->
-                _uiState.update { it.copy(ambulances = ambulances) }
+                
+                repository.getAmbulances().catch { e ->
+                    _uiState.update { it.copy(error = e.message ?: "Failed to load ambulances") }
+                }.collect { ambulances ->
+                    _uiState.update { it.copy(ambulances = ambulances) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "An unexpected error occurred") }
             }
         }
     }

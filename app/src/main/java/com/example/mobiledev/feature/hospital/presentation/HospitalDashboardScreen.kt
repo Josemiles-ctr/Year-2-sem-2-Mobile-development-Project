@@ -10,13 +10,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,12 +26,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.mobiledev.R
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 
-import com.example.mobiledev.ui.theme.MobileDevTheme
+private data class HospitalDashboardTab(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +42,11 @@ fun HospitalDashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddAmbulanceDialog by remember { mutableStateOf(false) }
+    val tabs = listOf(
+        HospitalDashboardTab(label = "Dashboard", icon = Icons.Default.Notifications),
+        HospitalDashboardTab(label = "Hospital", icon = Icons.Default.AccountCircle)
+    )
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -51,21 +59,23 @@ fun HospitalDashboardScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Emergency Dashboard",
+                            text = if (selectedTabIndex == 0) "Emergency Dashboard" else "Hospital Information",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
-                        showAddAmbulanceDialog = true 
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Add, 
-                            contentDescription = "Add Ambulance",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    if (selectedTabIndex == 0) {
+                        IconButton(onClick = {
+                            showAddAmbulanceDialog = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Ambulance",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     IconButton(onClick = { /* TODO: Notifications */ }) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notifications")
@@ -76,6 +86,18 @@ fun HospitalDashboardScreen(
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+        },
+        bottomBar = {
+            NavigationBar {
+                tabs.forEachIndexed { index, tab ->
+                    NavigationBarItem(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        icon = { Icon(tab.icon, contentDescription = tab.label) },
+                        label = { Text(tab.label) }
+                    )
+                }
+            }
         }
     ) { padding ->
         // Background matching the Auth screens
@@ -108,52 +130,85 @@ fun HospitalDashboardScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Stats Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    StatCard(
-                        title = "Active Requests",
-                        count = uiState.activeRequests.size.toString(),
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        title = "Available Ambulances",
-                        count = uiState.availableAmbulances.size.toString(),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Recent Emergency Requests",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                if (selectedTabIndex == 0) {
+                    // Dashboard tab
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        StatCard(
+                            title = "Active Requests",
+                            count = uiState.activeRequests.size.toString(),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatCard(
+                            title = "Available Ambulances",
+                            count = uiState.availableAmbulances.size.toString(),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                } else if (uiState.activeRequests.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No active emergency requests", color = Color.Gray)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "Recent Emergency Requests",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    if (uiState.isLoading) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (uiState.activeRequests.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No active emergency requests", color = Color.Gray)
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(uiState.activeRequests) { request ->
+                                EmergencyRequestItem(
+                                    request = request,
+                                    onClick = { viewModel.onRequestSelected(request) }
+                                )
+                            }
+                        }
                     }
                 } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
+                    // Hospital tab
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                        )
                     ) {
-                        items(uiState.activeRequests) { request ->
-                            EmergencyRequestItem(
-                                request = request,
-                                onClick = { viewModel.onRequestSelected(request) }
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "Hospital Profile",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
+                            Text("Name: ${uiState.hospitalName}")
+                            Text("Active Requests: ${uiState.activeRequests.size}")
+                            Text("Available Ambulances: ${uiState.availableAmbulances.size}")
+                            uiState.error?.let { message ->
+                                Text(
+                                    text = message,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     }
                 }
