@@ -1,6 +1,6 @@
 package com.example.mobiledev.feature.emergency
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -261,9 +261,7 @@ fun FilterSection(
                         selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        borderColor = Color.White.copy(alpha = 0.18f),
-                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }
@@ -278,9 +276,7 @@ fun FilterSection(
                         selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                         selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        borderColor = Color.White.copy(alpha = 0.18f),
-                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                        selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }
