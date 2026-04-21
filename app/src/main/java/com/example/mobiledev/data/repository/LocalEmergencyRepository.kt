@@ -1,6 +1,7 @@
 package com.example.mobiledev.data.repository
 
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
+import com.example.mobiledev.data.mock.MockEmergencyDashboardData
 import com.example.mobiledev.data.model.Ambulance
 import com.example.mobiledev.data.model.AmbulanceStatus
 import com.example.mobiledev.data.model.EmergencyRequest
@@ -41,7 +42,7 @@ class LocalEmergencyRepository(
         }
 
         return requestFlow.map { requests ->
-            mapAndFilterRequests(
+            val primary = mapAndFilterRequests(
                 requests = requests,
                 status = status,
                 dateFrom = dateFrom,
@@ -49,15 +50,27 @@ class LocalEmergencyRepository(
                 limit = limit,
                 offset = offset
             )
+
+            if (primary.isNotEmpty()) {
+                primary
+            } else {
+                MockEmergencyDashboardData.getEmergencyRequests(
+                    status = status,
+                    dateFrom = dateFrom,
+                    dateTo = dateTo,
+                    limit = limit,
+                    offset = offset
+                )
+            }
         }
     }
 
     override fun getAmbulances(): Flow<List<Ambulance>> {
         val principal = authSessionManager.currentPrincipal
         return when (principal.role) {
-            AppRole.PATIENT, AppRole.GUEST -> flowOf(emptyList())
+            AppRole.PATIENT, AppRole.GUEST -> flowOf(MockEmergencyDashboardData.ambulances)
             else -> resQRepository.getAllAmbulancesStream().map { ambulances ->
-                ambulances.map { entity ->
+                val primary = ambulances.map { entity ->
                     Ambulance(
                         id = entity.id,
                         plateNumber = entity.registrationNo,
@@ -66,6 +79,8 @@ class LocalEmergencyRepository(
                         currentEmergencyId = null
                     )
                 }
+
+                if (primary.isNotEmpty()) primary else MockEmergencyDashboardData.ambulances
             }
         }
     }

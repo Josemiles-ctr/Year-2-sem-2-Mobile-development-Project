@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -40,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
 import com.example.mobiledev.data.mock.ActivityMetricType
 import com.example.mobiledev.data.mock.MockActivityData
+import com.example.mobiledev.data.model.User
+import com.example.mobiledev.data.security.AppRole
+import com.example.mobiledev.data.security.AuthPrincipal
 
 private data class MainTab(
     val titleRes: Int,
@@ -57,6 +61,8 @@ private data class ActivitySummary(
 
 @Composable
 fun MainScreen(
+    currentPrincipal: AuthPrincipal,
+    currentUser: User?,
     onManageStaffClick: () -> Unit = {},
     requestTabContent: @Composable () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
@@ -139,33 +145,36 @@ fun MainScreen(
                         requestTabContent()
                     }
                     2 -> { // Account tab
-                        PlaceholderScreen(
-                            title = stringResource(tabs[selectedTabIndex].titleRes),
+                        AccountDetailsPanel(
+                            principal = currentPrincipal,
+                            currentUser = currentUser,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
+                                .padding(horizontal = 20.dp)
                         )
 
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 16.dp)
-                        ) {
-                            ElevatedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .clickable { onManageStaffClick() },
-                                colors = CardDefaults.elevatedCardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                                )
+                        if (currentPrincipal.role == AppRole.HOSPITAL_ADMIN || currentPrincipal.role == AppRole.SYSTEM_ADMIN) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(top = 16.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ElevatedCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .clickable { onManageStaffClick() },
+                                    colors = CardDefaults.elevatedCardColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 ) {
-                                    Icon(Icons.Default.People, contentDescription = null)
-                                    Text("Manage Staff")
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.People, contentDescription = null)
+                                        Text("Manage Staff")
+                                    }
                                 }
                             }
                         }
@@ -181,6 +190,79 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AccountDetailsPanel(
+    principal: AuthPrincipal,
+    currentUser: User?,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        modifier = modifier,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = currentUser?.name ?: "Active User",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Role: ${principal.role.name.replace('_', ' ')}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
+            AccountDetailRow(label = "Phone", value = currentUser?.phone ?: "Not available")
+            AccountDetailRow(label = "User ID", value = principal.userId ?: "Not signed in")
+            AccountDetailRow(label = "Hospital ID", value = principal.hospitalId ?: "N/A")
+            AccountDetailRow(label = "Account Status", value = currentUser?.accountStatus ?: "Unknown")
+        }
+    }
+}
+
+@Composable
+private fun AccountDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

@@ -1,6 +1,9 @@
 package com.example.mobiledev.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext
@@ -113,7 +116,23 @@ fun NavGraph(
         composable(Screen.Main.route) {
             val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
             val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
+            val principal by authSessionManager.principal.collectAsState()
+            var signedInUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.mobiledev.data.model.User?>(null) }
+
+            LaunchedEffect(principal.userId) {
+                val activeUserId = principal.userId
+                signedInUser = if (activeUserId.isNullOrBlank()) {
+                    null
+                } else {
+                    runCatching {
+                        userRepository.getUsers().firstOrNull { it.id == activeUserId }
+                    }.getOrNull()
+                }
+            }
+
             MainScreen(
+                currentPrincipal = principal,
+                currentUser = signedInUser,
                 onManageStaffClick = {
                     navController.navigate(Screen.StaffManagement.route)
                 },
