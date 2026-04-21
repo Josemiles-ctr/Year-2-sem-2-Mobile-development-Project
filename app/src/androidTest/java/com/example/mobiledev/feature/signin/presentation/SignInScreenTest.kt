@@ -19,7 +19,8 @@ class SignInScreenTest {
                 SignInScreen(
                     uiState = SignInUiState(),
                     onEvent = {},
-                    onSignUpClick = {}
+                    onSignUpClick = {},
+                    onHospitalSignInClick = {}
                 )
             }
         }
