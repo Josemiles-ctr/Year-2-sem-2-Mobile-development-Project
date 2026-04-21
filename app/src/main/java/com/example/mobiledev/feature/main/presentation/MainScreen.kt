@@ -5,11 +5,22 @@ import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -26,10 +38,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
+import com.example.mobiledev.data.mock.ActivityMetricType
+import com.example.mobiledev.data.mock.MockActivityData
 
 private data class MainTab(
     val titleRes: Int,
     val icon: ImageVector
+)
+
+private data class ActivitySummary(
+    val title: String,
+    val description: String,
+    val value: String,
+    val period: String,
+    val icon: ImageVector,
+    val accent: Color
 )
 
 @Composable
@@ -105,6 +128,13 @@ fun MainScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 when (selectedTabIndex) {
+                    0 -> {
+                        ActivitySummarySection(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                        )
+                    }
                     1 -> {
                         requestTabContent()
                     }
@@ -151,6 +181,208 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ActivitySummarySection(
+    modifier: Modifier = Modifier
+) {
+    val summaries = MockActivityData.summaries.map { summary ->
+        ActivitySummary(
+            title = summary.title,
+            description = summary.description,
+            value = summary.value,
+            period = summary.period,
+            icon = summary.type.toIcon(),
+            accent = summary.type.toAccentColor()
+        )
+    }
+
+    val miniStats = MockActivityData.miniStats
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Activity Overview",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ActivityMiniStat(
+                label = miniStats[0].label,
+                value = miniStats[0].value,
+                icon = Icons.Default.Schedule,
+                modifier = Modifier.weight(1f)
+            )
+            ActivityMiniStat(
+                label = miniStats[1].label,
+                value = miniStats[1].value,
+                icon = Icons.Default.LocalShipping,
+                modifier = Modifier.weight(1f)
+            )
+            ActivityMiniStat(
+                label = miniStats[2].label,
+                value = miniStats[2].value,
+                icon = Icons.Default.Warning,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(summaries) { activity ->
+                ActivitySummaryCard(activity = activity)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityMiniStat(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        modifier = modifier,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActivitySummaryCard(activity: ActivitySummary) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.18f),
+                shape = MaterialTheme.shapes.large
+            ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = activity.accent.copy(alpha = 0.14f)
+            ) {
+                Icon(
+                    imageVector = activity.icon,
+                    contentDescription = null,
+                    tint = activity.accent,
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(22.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = activity.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = activity.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = activity.value,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = activity.accent
+                )
+                Text(
+                    text = activity.period,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private fun ActivityMetricType.toIcon(): ImageVector {
+    return when (this) {
+        ActivityMetricType.AUTH -> Icons.Default.Login
+        ActivityMetricType.REQUEST -> Icons.Default.Warning
+        ActivityMetricType.ASSIGNMENT -> Icons.Default.AssignmentTurnedIn
+        ActivityMetricType.EN_ROUTE -> Icons.Default.LocalShipping
+        ActivityMetricType.ARRIVAL -> Icons.Default.MedicalServices
+        ActivityMetricType.COMPLETION -> Icons.Default.CheckCircle
+        ActivityMetricType.STAFF -> Icons.Default.Badge
+        ActivityMetricType.ACCOUNT -> Icons.Default.ManageAccounts
+    }
+}
+
+private fun ActivityMetricType.toAccentColor(): Color {
+    return when (this) {
+        ActivityMetricType.AUTH -> Color(0xFF2E7D32)
+        ActivityMetricType.REQUEST -> Color(0xFFD32F2F)
+        ActivityMetricType.ASSIGNMENT -> Color(0xFF0D47A1)
+        ActivityMetricType.EN_ROUTE -> Color(0xFF1565C0)
+        ActivityMetricType.ARRIVAL -> Color(0xFF00838F)
+        ActivityMetricType.COMPLETION -> Color(0xFF2E7D32)
+        ActivityMetricType.STAFF -> Color(0xFF6A1B9A)
+        ActivityMetricType.ACCOUNT -> Color(0xFF455A64)
     }
 }
 
