@@ -23,13 +23,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.mobiledev.BuildConfig
+import com.example.mobiledev.feature.tracking.data.DirectionsApi
+import com.example.mobiledev.feature.tracking.data.PolylineDecoder
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +100,14 @@ fun TrackingScreen(
             LocationServices.getFusedLocationProviderClient(context)
         }
 
+        val directionsApi = remember {
+            Retrofit.Builder()
+                .baseUrl("https://maps.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(DirectionsApi::class.java)
+        }
+
         var userLocation by remember { mutableStateOf<Location?>(null) }
 
         LaunchedEffect(hasLocationPermission) {
@@ -124,12 +137,64 @@ fun TrackingScreen(
                 position = CameraPosition.fromLatLngZoom(kampala, 13f)
             }
 
+            val hospitals = remember {
+                listOf(
+                    "Mulago Hospital" to mulago,
+                    "Nsambya Hospital" to nsambya
+                )
+            }
+
+            var nearestHospital by remember { mutableStateOf<Pair<String, LatLng>?>(null) }
+            var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+
             LaunchedEffect(userLocation) {
-                userLocation?.let {
-                    val latLng = LatLng(it.latitude, it.longitude)
+                userLocation?.let { location ->
+                    val userLatLng = LatLng(location.latitude, location.longitude)
+                    
+                    // Find nearest hospital
+                    val nearest = hospitals.minByOrNull { hospital ->
+                        val results = FloatArray(1)
+                        Location.distanceBetween(
+                            userLatLng.latitude, userLatLng.longitude,
+                            hospital.second.latitude, hospital.second.longitude,
+                            results
+                        )
+                        results[0]
+                    }
+                    
+                    nearestHospital = nearest
+                    
+                    // Update camera
                     cameraPositionState.animate(
-                        update = CameraUpdateFactory.newLatLngZoom(latLng, 15f)
+                        update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f)
                     )
+
+                    // Fetch actual directions from Google Maps Directions API
+                    nearest?.let { hospital ->
+                        try {
+                            val origin = "${location.latitude},${location.longitude}"
+                            val destination = "${hospital.second.latitude},${hospital.second.longitude}"
+                            
+                            // Use your API Key from BuildConfig (provided by secrets plugin)
+                            val apiKey = BuildConfig.MAPS_API_KEY
+                            
+                            val response = withContext(Dispatchers.IO) {
+                                directionsApi.getDirections(origin, destination, apiKey)
+                            }
+                            
+                            if (response.routes.isNotEmpty()) {
+                                val encodedPolyline = response.routes[0].overview_polyline.points
+                                routePoints = PolylineDecoder.decode(encodedPolyline)
+                            } else {
+                                // Fallback to straight line if no route found
+                                routePoints = listOf(userLatLng, hospital.second)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Fallback to straight line on error
+                            routePoints = listOf(userLatLng, hospital.second)
+                        }
+                    }
                 }
             }
 
@@ -150,6 +215,18 @@ fun TrackingScreen(
                     ),
                     onMapLoaded = { isMapLoaded = true }
                 ) {
+                    // Draw Route
+                    if (routePoints.isNotEmpty()) {
+                        Polyline(
+                            points = routePoints,
+                            color = MaterialTheme.colorScheme.primary,
+                            width = 12f,
+                            jointType = JointType.ROUND,
+                            startCap = RoundCap(),
+                            endCap = RoundCap()
+                        )
+                    }
+
                     // 🏥 Hospitals (RED)
                     Marker(
                         state = MarkerState(position = mulago),
@@ -203,7 +280,7 @@ fun TrackingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Mulago Referral Hospital",
+                            text = nearestHospital?.first ?: "Searching...",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.ExtraBold
                             ),
