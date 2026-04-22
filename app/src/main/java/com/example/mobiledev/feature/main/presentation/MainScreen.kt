@@ -736,6 +736,7 @@ private fun ActivityMetricType.toAccentColor(): Color {
 @Composable
 private fun PlaceholderScreen(
     title: String,
+    onTrackingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -743,6 +744,9 @@ private fun PlaceholderScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
+        androidx.compose.material3.Button(onClick = onTrackingClick) {
+            Text("Go to Tracking")
+        }
         ElevatedCard(
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.elevatedCardColors(

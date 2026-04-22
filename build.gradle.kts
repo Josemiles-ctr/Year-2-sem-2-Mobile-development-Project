@@ -5,4 +5,5 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.dependency.check) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.secrets) apply false
 }
