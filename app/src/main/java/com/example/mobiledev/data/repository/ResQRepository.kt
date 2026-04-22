@@ -22,6 +22,7 @@ interface ResQRepository {
     suspend fun insertHospital(hospital: HospitalEntity)
     suspend fun updateHospital(hospital: HospitalEntity)
     suspend fun deleteHospital(hospital: HospitalEntity)
+    suspend fun loginHospital(email: String, password: String): HospitalEntity?
 
     // Ambulance
     fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>>

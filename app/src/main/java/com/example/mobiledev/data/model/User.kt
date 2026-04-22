@@ -5,6 +5,11 @@ data class User(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
-    val password: String = ""
+    val password: String = "",
+    val role: String = "PATIENT",
+    val hospitalId: String? = null,
+    val accountStatus: String = "ACTIVE",
+    val emailKey: String = "",
+    val phoneKey: String = ""
 )
 

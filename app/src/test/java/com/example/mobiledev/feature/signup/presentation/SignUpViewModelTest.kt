@@ -2,6 +2,7 @@ package com.example.mobiledev.feature.signup.presentation
 
 import com.example.mobiledev.data.model.User
 import com.example.mobiledev.data.repository.UserRepository
+import com.example.mobiledev.data.security.AuthSessionManager
 import com.example.mobiledev.test.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -24,7 +25,7 @@ class SignUpViewModelTest {
 
     @Before
     fun setUp() {
-        viewModel = SignUpViewModel(FakeUserRepository())
+        viewModel = SignUpViewModel(FakeUserRepository(), AuthSessionManager())
     }
 
     // ── Initial state ─────────────────────────────────────────────────────────
@@ -144,23 +145,36 @@ class SignUpViewModelTest {
 
         override suspend fun getUsers(): List<User> = users.toList()
 
-        override suspend fun addUser(name: String, email: String, phone: String, password: String): User {
+        override suspend fun addUser(
+            name: String,
+            email: String,
+            phone: String,
+            password: String,
+            role: String,
+            hospitalId: String?,
+            accountStatus: String
+        ): User {
             val user = User(
                 id = (users.size + 1).toString(),
                 name = name,
                 email = email,
                 phone = phone,
-                password = password
+                password = password,
+                role = role,
+                hospitalId = hospitalId,
+                accountStatus = accountStatus
             )
             users += user
             return user
         }
 
-        override suspend fun authenticateUser(emailOrPhone: String, password: String): Boolean =
-            users.any { user ->
+        override suspend fun authenticateUser(emailOrPhone: String, password: String): User? =
+            users.firstOrNull { user ->
                 (user.email.equals(emailOrPhone, ignoreCase = true) || user.phone == emailOrPhone) &&
                     user.password == password
             }
+
+        override suspend fun authenticateHospital(email: String, password: String): User? = null
 
         override suspend fun removeUser(userId: String) {
             users.removeAll { it.id == userId }

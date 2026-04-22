@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
@@ -41,7 +41,8 @@ import kotlinx.coroutines.flow.collectLatest
 fun SignInRoute(
     viewModel: SignInViewModel,
     onSignUpClick: () -> Unit = {},
-    onAuthSuccess: () -> Unit = {}
+    onAuthSuccess: () -> Unit = {},
+    onHospitalSignInClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -56,7 +57,8 @@ fun SignInRoute(
     SignInScreen(
         uiState = uiState,
         onEvent = viewModel::onEvent,
-        onSignUpClick = onSignUpClick
+        onSignUpClick = onSignUpClick,
+        onHospitalSignInClick = onHospitalSignInClick
     )
 }
 
@@ -65,6 +67,7 @@ fun SignInScreen(
     uiState: SignInUiState,
     onEvent: (SignInEvent) -> Unit,
     onSignUpClick: () -> Unit,
+    onHospitalSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AuthScreenContainer(modifier = modifier) {
@@ -81,7 +84,8 @@ fun SignInScreen(
             LoginFormCard(
                 uiState = uiState,
                 onEvent = onEvent,
-                onSignUpClick = onSignUpClick
+                onSignUpClick = onSignUpClick,
+                onHospitalSignInClick = onHospitalSignInClick
             )
         }
     }
@@ -91,7 +95,8 @@ fun SignInScreen(
 private fun LoginFormCard(
     uiState: SignInUiState,
     onEvent: (SignInEvent) -> Unit,
-    onSignUpClick: () -> Unit
+    onSignUpClick: () -> Unit,
+    onHospitalSignInClick: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -138,7 +143,7 @@ private fun LoginFormCard(
                 value = uiState.password,
                 onValueChange = { onEvent(SignInEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_hint_label),
-                visualTransformation = PasswordVisualTransformation(),
+                isPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signin_password_input")
@@ -156,12 +161,21 @@ private fun LoginFormCard(
 
             Button(
                 onClick = { onEvent(SignInEvent.Submit) },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .testTag("signin_submit_button")
             ) {
-                Text(text = stringResource(R.string.sign_in_cta_label))
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.sign_in_cta_label))
+                }
             }
 
             Row(
@@ -176,10 +190,23 @@ private fun LoginFormCard(
                 )
                 TextButton(
                     onClick = onSignUpClick,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.testTag("signin_signup_button")
                 ) {
                     Text(text = stringResource(R.string.sign_up_label))
                 }
+            }
+
+            TextButton(
+                onClick = onHospitalSignInClick,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Hospital Admin? Login here",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -192,7 +219,8 @@ private fun SignInScreenPreview() {
         SignInScreen(
             uiState = SignInUiState(),
             onEvent = {},
-            onSignUpClick = {}
+            onSignUpClick = {},
+            onHospitalSignInClick = {}
         )
     }
 }

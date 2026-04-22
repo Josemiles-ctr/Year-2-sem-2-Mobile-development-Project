@@ -6,6 +6,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+enum class HospitalStatus {
+    PENDING,
+    APPROVED,
+    REJECTED
+}
+
 @Entity(
     tableName = "HOSPITAL",
     indices = [
@@ -25,6 +31,8 @@ data class HospitalEntity(
     val latitude: Double?,
     val longitude: Double?,
     val uuid: String?,
+    val passwordHash: String,
+    val status: HospitalStatus = HospitalStatus.APPROVED,
     @ColumnInfo(name = "active_ambulances") val activeAmbulances: Int = 0,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long
