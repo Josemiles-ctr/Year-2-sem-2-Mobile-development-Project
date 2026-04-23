@@ -58,7 +58,12 @@ class PatientHospitalsViewModel(
         hospitalsJob = viewModelScope.launch {
             repository.getApprovedHospitalsStream()
                 .onStart {
-                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    _uiState.update { current ->
+                        current.copy(
+                            isLoading = current.hospitals.isEmpty(),
+                            errorMessage = null
+                        )
+                    }
                 }
                 .catch { throwable ->
                     _uiState.update {
