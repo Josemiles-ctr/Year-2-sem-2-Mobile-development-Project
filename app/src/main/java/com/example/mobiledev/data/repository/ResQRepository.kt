@@ -17,6 +17,7 @@ interface ResQRepository {
 
     // Hospital
     fun getAllHospitalsStream(): Flow<List<HospitalEntity>>
+    fun getApprovedHospitalsStream(): Flow<List<HospitalEntity>>
     suspend fun getHospitalById(id: String): HospitalEntity?
     suspend fun getHospitalByAdminId(adminId: String): HospitalEntity?
     suspend fun insertHospital(hospital: HospitalEntity)

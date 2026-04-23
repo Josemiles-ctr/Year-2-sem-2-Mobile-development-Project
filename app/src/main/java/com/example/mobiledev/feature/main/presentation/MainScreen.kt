@@ -51,7 +51,7 @@ import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
 
 private data class MainTab(
-    val titleRes: Int,
+    val title: String,
     val icon: ImageVector
 )
 
@@ -71,13 +71,21 @@ fun MainScreen(
     currentUser: User?,
     onManageStaffClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
+    homeTabContent: @Composable (Modifier) -> Unit = { modifier ->
+        ActivitySummarySection(modifier = modifier)
+    },
     requestTabContent: @Composable () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
+    val firstTabTitle = if (currentPrincipal.role == AppRole.PATIENT) {
+        "Hospitals"
+    } else {
+        stringResource(R.string.tab_activity)
+    }
     val tabs = listOf(
-        MainTab(R.string.tab_activity, Icons.Filled.Notifications),
-        MainTab(R.string.tab_requests, Icons.Filled.AssignmentTurnedIn),
-        MainTab(R.string.tab_account, Icons.Filled.AccountCircle)
+        MainTab(firstTabTitle, Icons.Filled.Notifications),
+        MainTab(stringResource(R.string.tab_requests), Icons.Filled.AssignmentTurnedIn),
+        MainTab(stringResource(R.string.tab_account), Icons.Filled.AccountCircle)
     )
     var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
     val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
@@ -105,10 +113,10 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = tab.icon,
-                                    contentDescription = stringResource(tab.titleRes)
+                                    contentDescription = tab.title
                                 )
                                 Text(
-                                    text = stringResource(tab.titleRes),
+                                    text = tab.title,
                                     style = MaterialTheme.typography.labelSmall,
                                     textAlign = TextAlign.Center
                                 )
@@ -146,8 +154,8 @@ fun MainScreen(
             ) {
                 when (selectedTabIndex) {
                     0 -> {
-                        ActivitySummarySection(
-                            modifier = Modifier
+                        homeTabContent(
+                            Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp)
                         )
@@ -170,7 +178,7 @@ fun MainScreen(
                     }
                     else -> {
                         PlaceholderScreen(
-                            title = stringResource(selectedTab.titleRes),
+                            title = selectedTab.title,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)

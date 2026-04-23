@@ -15,6 +15,7 @@ enum class AppRole {
 enum class Permission {
     VIEW_SYSTEM_DATA,
     VIEW_HOSPITAL_DATA,
+    VIEW_APPROVED_HOSPITALS,
     VIEW_OWN_REQUESTS,
     CREATE_REQUEST,
     MANAGE_REQUESTS,
@@ -47,7 +48,11 @@ class AuthSessionManager {
 object RbacPolicy {
     private val grants: Map<AppRole, Set<Permission>> = mapOf(
         AppRole.GUEST to emptySet(),
-        AppRole.PATIENT to setOf(Permission.CREATE_REQUEST, Permission.VIEW_OWN_REQUESTS),
+        AppRole.PATIENT to setOf(
+            Permission.CREATE_REQUEST,
+            Permission.VIEW_OWN_REQUESTS,
+            Permission.VIEW_APPROVED_HOSPITALS
+        ),
         AppRole.DRIVER to setOf(Permission.VIEW_HOSPITAL_DATA),
         AppRole.HOSPITAL_ADMIN to setOf(
             Permission.VIEW_HOSPITAL_DATA,
