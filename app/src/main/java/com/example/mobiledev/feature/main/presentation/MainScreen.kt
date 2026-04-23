@@ -78,7 +78,7 @@ fun MainScreen(
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val firstTabTitle = if (currentPrincipal.role == AppRole.PATIENT) {
-        "Hospitals"
+        stringResource(R.string.tab_hospitals)
     } else {
         stringResource(R.string.tab_activity)
     }
