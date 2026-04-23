@@ -27,6 +27,6 @@ interface HospitalDao {
     @Query("SELECT * FROM HOSPITAL WHERE email = :email")
     suspend fun getHospitalByEmail(email: String): HospitalEntity?
 
-    @Query("SELECT * FROM HOSPITAL WHERE status = 'APPROVED'")
+    @Query("SELECT * FROM HOSPITAL WHERE status = 'APPROVED' ORDER BY name ASC")
     fun getApprovedHospitals(): Flow<List<HospitalEntity>>
 }
