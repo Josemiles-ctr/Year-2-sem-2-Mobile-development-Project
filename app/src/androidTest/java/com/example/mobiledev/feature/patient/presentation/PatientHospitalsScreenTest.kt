@@ -32,6 +32,7 @@ class PatientHospitalsScreenTest {
             PatientHospitalsScreen(viewModel = viewModel)
         }
 
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("hospitalCard_H1").assertIsDisplayed()
         composeRule.onNodeWithTag("hospitalCard_H2").assertIsDisplayed()
         composeRule.onNodeWithText("City Central Hospital").assertIsDisplayed()
