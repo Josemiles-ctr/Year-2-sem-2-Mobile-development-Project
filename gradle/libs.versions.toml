@@ -47,6 +47,7 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-compose-material = { group = "androidx.compose.material", name = "material" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
@@ -57,8 +58,6 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt" }
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
