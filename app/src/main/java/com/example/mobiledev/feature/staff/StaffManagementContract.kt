@@ -11,8 +11,7 @@ data class StaffManagementState(
     val isLoading: Boolean = false,
     val isInviteDialogOpen: Boolean = false,
     val staffToRemove: StaffMember? = null,
-    val invitationToCancel: StaffInvitation? = null,
-    val error: String? = null
+    val invitationToCancel: StaffInvitation? = null
 )
 
 sealed class StaffManagementEvent {

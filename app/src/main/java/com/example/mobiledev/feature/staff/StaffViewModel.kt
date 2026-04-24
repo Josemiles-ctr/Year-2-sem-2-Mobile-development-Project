@@ -50,12 +50,12 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
                     it.copy(
                         staffList = staff,
                         invitations = invitations,
-                        isLoading = false,
-                        error = null
+                        isLoading = false
                     )
                 }
             }.catch { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }.collect()
         }
     }
@@ -68,7 +68,8 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
                 showSuccess("Staff invited successfully")
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -78,7 +79,7 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
             repository.updateStaff(id, role, status).onSuccess {
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(error = e.message) }
+                handleError(e)
             }
         }
     }
@@ -91,7 +92,7 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
                 handleError(e)
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -114,7 +115,7 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
                 handleError(e)
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }

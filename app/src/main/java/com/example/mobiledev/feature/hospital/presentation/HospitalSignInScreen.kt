@@ -31,7 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.mobiledev.R
 import com.example.mobiledev.core.error.AppError
+import com.example.mobiledev.core.error.toUserMessage
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.components.BrandHeader
@@ -58,19 +60,13 @@ fun HospitalSignInRoute(
 
     LaunchedEffect(appError) {
         appError?.let { error ->
-            val message = when (error) {
-                is AppError.NetworkError -> "Network error. Please try again."
-                is AppError.TimeoutError -> "Request timed out."
-                is AppError.NoInternetError -> "No internet connection."
-                is AppError.ValidationError -> error.message
-                is AppError.PermissionError -> error.message
-                is AppError.ApiError -> error.message
-                is AppError.UnknownError -> error.message
-            }
+            val message = error.toUserMessage(context)
 
             val result = snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) "Retry" else null
+                actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
+                    context.getString(R.string.action_retry)
+                } else null
             )
 
             if (result == SnackbarResult.ActionPerformed) {
