@@ -17,6 +17,7 @@
     <string name="sign_up_label">Sign Up</string>
     <string name="sign_in_cta_label">Sign In</string>
     <string name="tab_activity">Activity</string>
+    <string name="tab_hospitals">Hospitals</string>
     <string name="tab_requests">Request</string>
     <string name="tab_account">Account</string>
     <string name="placeholder_screen_text">%1$s screen placeholder</string>

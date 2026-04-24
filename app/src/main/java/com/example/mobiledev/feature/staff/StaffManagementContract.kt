@@ -10,6 +10,8 @@ data class StaffManagementState(
     val invitations: List<StaffInvitation> = emptyList(),
     val isLoading: Boolean = false,
     val isInviteDialogOpen: Boolean = false,
+    val staffToRemove: StaffMember? = null,
+    val invitationToCancel: StaffInvitation? = null,
     val error: String? = null
 )
 
@@ -21,5 +23,7 @@ sealed class StaffManagementEvent {
     data class ResendInvitation(val id: String) : StaffManagementEvent()
     data class CancelInvitation(val id: String) : StaffManagementEvent()
     data class ToggleInviteDialog(val isOpen: Boolean) : StaffManagementEvent()
+    data class ShowRemoveStaffConfirmation(val staff: StaffMember?) : StaffManagementEvent()
+    data class ShowCancelInvitationConfirmation(val invitation: StaffInvitation?) : StaffManagementEvent()
 }
 

@@ -4,24 +4,25 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.core.base.BaseViewModel
+import com.example.mobiledev.data.model.User
+import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
 import com.example.mobiledev.data.security.AuthSessionManager
-import com.example.mobiledev.data.model.User
-import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.domain.validation.Validator
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 class SignUpViewModel(
     private val userRepository: UserRepository,
     private val authSessionManager: AuthSessionManager
-) : ViewModel() {
+) : BaseViewModel() {
 
     sealed interface NavigationEvent {
         data object NavigateToDashboard : NavigationEvent
@@ -137,8 +138,8 @@ class SignUpViewModel(
                         Log.w(TAG, "User list refresh failed after successful sign-up.", exception)
                     }
             } catch (exception: Exception) {
+                handleError(exception)
                 val message = toUserMessage(exception)
-                Log.e(TAG, "Sign-up submit failed while accessing Firebase.", exception)
                 _errorMessage.value = message
                 _signUpUiState.value = _signUpUiState.value.copy(isLoading = false, errorMessage = message)
             }
@@ -151,8 +152,8 @@ class SignUpViewModel(
                 userRepository.removeUser(userId)
                 refreshUsers()
             } catch (exception: Exception) {
+                handleError(exception)
                 val message = toUserMessage(exception)
-                Log.e(TAG, "removeUser failed while accessing Firebase.", exception)
                 _errorMessage.value = message
             }
         }
@@ -163,8 +164,8 @@ class SignUpViewModel(
             try {
                 refreshUsers()
             } catch (exception: Exception) {
+                handleError(exception)
                 val message = toUserMessage(exception)
-                Log.e(TAG, "Initial user load failed while accessing Firebase.", exception)
                 _errorMessage.value = message
             }
         }

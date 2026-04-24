@@ -16,11 +16,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.data.model.*
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.mobiledev.ui.components.dialog.ConfirmationDialog
+import kotlinx.coroutines.flow.collectLatest
+
 @Composable
 fun StaffManagementScreen(
     viewModel: StaffViewModel
 ) {
-    val state = viewModel.uiState.collectAsState().value
+    val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.successMessage.collectLatest { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     StaffManagementContent(
         state = state,
         onEvent = viewModel::onEvent
@@ -59,7 +72,7 @@ fun StaffManagementContent(
                                 val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
                                 onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
                             },
-                            onRemove = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) }
+                            onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
                         )
                     }
                 }
@@ -71,7 +84,7 @@ fun StaffManagementContent(
                         InvitationItem(
                             invitation = invitation,
                             onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
-                            onCancel = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) }
+                            onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
                         )
                     }
                 }
@@ -81,6 +94,28 @@ fun StaffManagementContent(
                 InviteStaffDialog(
                     onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
                     onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
+                )
+            }
+
+            state.staffToRemove?.let { staff ->
+                ConfirmationDialog(
+                    title = "Remove Staff",
+                    message = "Are you sure you want to remove ${staff.name} from the staff list?",
+                    confirmButtonText = "Remove",
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
+                )
+            }
+
+            state.invitationToCancel?.let { invitation ->
+                ConfirmationDialog(
+                    title = "Cancel Invitation",
+                    message = "Are you sure you want to cancel the invitation for ${invitation.email}?",
+                    confirmButtonText = "Cancel Invitation",
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
                 )
             }
 

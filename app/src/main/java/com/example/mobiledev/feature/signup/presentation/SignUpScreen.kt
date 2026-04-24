@@ -1,5 +1,7 @@
 package com.example.mobiledev.feature.signup.presentation
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,25 +19,32 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
+import com.example.mobiledev.core.error.AppError
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.BrandHeader
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.theme.MobileDevTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SignUpRoute(
@@ -44,6 +53,9 @@ fun SignUpRoute(
     onAuthSuccess: () -> Unit = {}
 ) {
     val uiState by viewModel.signUpUiState.collectAsState()
+    val appError by viewModel.appError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -53,8 +65,39 @@ fun SignUpRoute(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.successMessage.collectLatest { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(appError) {
+        appError?.let { error ->
+            val message = when (error) {
+                is AppError.NetworkError -> "Network error. Please try again."
+                is AppError.TimeoutError -> "Request timed out."
+                is AppError.NoInternetError -> "No internet connection."
+                is AppError.ValidationError -> error.message
+                is AppError.PermissionError -> error.message
+                is AppError.ApiError -> error.message
+                is AppError.UnknownError -> error.message
+            }
+
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) "Retry" else null
+            )
+
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.onEvent(SignUpEvent.Submit)
+            }
+            viewModel.clearError()
+        }
+    }
+
     SignUpScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onLoginClick = onLoginClick
     )
@@ -63,21 +106,28 @@ fun SignUpRoute(
 @Composable
 fun SignUpScreen(
     uiState: SignUpUiState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (SignUpEvent) -> Unit,
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    AuthScreenContainer(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            BrandHeader()
-            SignUpFormCard(uiState = uiState, onEvent = onEvent, onLoginClick = onLoginClick)
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent,
+        modifier = modifier
+    ) { padding ->
+        AuthScreenContainer(modifier = Modifier.padding(padding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                BrandHeader()
+                SignUpFormCard(uiState = uiState, onEvent = onEvent, onLoginClick = onLoginClick)
+            }
         }
     }
 }
@@ -124,6 +174,7 @@ private fun SignUpFormCard(
                 value = uiState.fullName,
                 onValueChange = { onEvent(SignUpEvent.FullNameChanged(it)) },
                 label = stringResource(R.string.full_name_label),
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_full_name_input")
@@ -133,6 +184,7 @@ private fun SignUpFormCard(
                 value = uiState.phoneNumber,
                 onValueChange = { onEvent(SignUpEvent.PhoneNumberChanged(it)) },
                 label = stringResource(R.string.phone_number_label),
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_phone_input")
@@ -142,6 +194,7 @@ private fun SignUpFormCard(
                 value = uiState.email,
                 onValueChange = { onEvent(SignUpEvent.EmailChanged(it)) },
                 label = stringResource(R.string.email_label),
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_email_input")
@@ -152,6 +205,7 @@ private fun SignUpFormCard(
                 onValueChange = { onEvent(SignUpEvent.PasswordChanged(it)) },
                 label = stringResource(R.string.password_label),
                 isPassword = true,
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_password_input")
@@ -162,6 +216,7 @@ private fun SignUpFormCard(
                 onValueChange = { onEvent(SignUpEvent.ConfirmPasswordChanged(it)) },
                 label = stringResource(R.string.confirm_password_label),
                 isPassword = true,
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("signup_confirm_password_input")
@@ -225,6 +280,7 @@ private fun SignUpScreenPreview() {
     MobileDevTheme {
         SignUpScreen(
             uiState = SignUpUiState(),
+            snackbarHostState = remember { SnackbarHostState() },
             onEvent = {},
             onLoginClick = {}
         )

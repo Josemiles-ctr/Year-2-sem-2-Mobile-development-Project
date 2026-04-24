@@ -3,6 +3,7 @@ package com.example.mobiledev.feature.hospital.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.core.base.BaseViewModel
 import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 class HospitalSignInViewModel(
     private val repository: UserRepository,
     private val authSessionManager: AuthSessionManager
-) : ViewModel() {
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(HospitalSignInUiState())
     val uiState: StateFlow<HospitalSignInUiState> = _uiState.asStateFlow()
@@ -45,24 +46,29 @@ class HospitalSignInViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val hospitalAdmin = repository.authenticateHospital(email, password)
+            try {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                val hospitalAdmin = repository.authenticateHospital(email, password)
 
-            if (hospitalAdmin != null) {
-                authSessionManager.setPrincipal(
-                    AuthPrincipal(
-                        userId = hospitalAdmin.id,
-                        hospitalId = hospitalAdmin.hospitalId,
-                        role = AppRole.HOSPITAL_ADMIN
+                if (hospitalAdmin != null) {
+                    authSessionManager.setPrincipal(
+                        AuthPrincipal(
+                            userId = hospitalAdmin.id,
+                            hospitalId = hospitalAdmin.hospitalId,
+                            role = AppRole.HOSPITAL_ADMIN
+                        )
                     )
-                )
-                val token = "jwt_token_hospital_${hospitalAdmin.hospitalId ?: hospitalAdmin.id}"
-                _uiState.update { it.copy(isLoading = false, jwtToken = token) }
-                _navigationEvents.emit(
-                    NavigationEvent.NavigateToDashboard(hospitalAdmin.hospitalId ?: hospitalAdmin.id)
-                )
-            } else {
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Invalid email or password") }
+                    val token = "jwt_token_hospital_${hospitalAdmin.hospitalId ?: hospitalAdmin.id}"
+                    _uiState.update { it.copy(isLoading = false, jwtToken = token) }
+                    _navigationEvents.emit(
+                        NavigationEvent.NavigateToDashboard(hospitalAdmin.hospitalId ?: hospitalAdmin.id)
+                    )
+                } else {
+                    _uiState.update { it.copy(isLoading = false, errorMessage = "Invalid email or password") }
+                }
+            } catch (exception: Exception) {
+                handleError(exception)
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Connection failed. Please try again.") }
             }
         }
     }

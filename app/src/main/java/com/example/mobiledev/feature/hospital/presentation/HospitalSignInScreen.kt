@@ -16,15 +16,22 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.mobiledev.core.error.AppError
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.components.BrandHeader
@@ -36,6 +43,8 @@ fun HospitalSignInRoute(
     onSignInSuccess: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val appError by viewModel.appError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -47,8 +56,33 @@ fun HospitalSignInRoute(
         }
     }
 
+    LaunchedEffect(appError) {
+        appError?.let { error ->
+            val message = when (error) {
+                is AppError.NetworkError -> "Network error. Please try again."
+                is AppError.TimeoutError -> "Request timed out."
+                is AppError.NoInternetError -> "No internet connection."
+                is AppError.ValidationError -> error.message
+                is AppError.PermissionError -> error.message
+                is AppError.ApiError -> error.message
+                is AppError.UnknownError -> error.message
+            }
+
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) "Retry" else null
+            )
+
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.onSignInClick()
+            }
+            viewModel.clearError()
+        }
+    }
+
     HospitalSignInScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onEmailChange = viewModel::onEmailChanged,
         onPasswordChange = viewModel::onPasswordChanged,
         onSignInClick = viewModel::onSignInClick
@@ -58,91 +92,99 @@ fun HospitalSignInRoute(
 @Composable
 fun HospitalSignInScreen(
     uiState: HospitalSignInUiState,
+    snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onSignInClick: () -> Unit
 ) {
-    AuthScreenContainer {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            BrandHeader()
-
-            ElevatedCard(
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { padding ->
+        AuthScreenContainer(modifier = Modifier.padding(padding)) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
-                        ),
-                        MaterialTheme.shapes.extraLarge
-                    ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-                )
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
+                BrandHeader()
+
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .border(
+                            BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
+                            ),
+                            MaterialTheme.shapes.extraLarge
+                        ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+                    )
                 ) {
-                    Text(
-                        text = "Hospital Admin Login",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    AuthInputField(
-                        value = uiState.email,
-                        onValueChange = onEmailChange,
-                        label = "Hospital Email",
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    AuthInputField(
-                        value = uiState.password,
-                        onValueChange = onPasswordChange,
-                        label = "Password",
-                        isPassword = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    if (uiState.errorMessage != null) {
-                        Text(
-                            text = uiState.errorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Button(
-                        onClick = onSignInClick,
-                        enabled = !uiState.isLoading,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.height(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
+                        Text(
+                            text = "Hospital Admin Login",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        AuthInputField(
+                            value = uiState.email,
+                            onValueChange = onEmailChange,
+                            label = "Hospital Email",
+                            enabled = !uiState.isLoading,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        AuthInputField(
+                            value = uiState.password,
+                            onValueChange = onPasswordChange,
+                            label = "Password",
+                            isPassword = true,
+                            enabled = !uiState.isLoading,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (uiState.errorMessage != null) {
+                            Text(
+                                text = uiState.errorMessage,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                        } else {
-                            Text(text = "Login")
+                        }
+
+                        Button(
+                            onClick = onSignInClick,
+                            enabled = !uiState.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.height(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(text = "Login")
+                            }
                         }
                     }
                 }

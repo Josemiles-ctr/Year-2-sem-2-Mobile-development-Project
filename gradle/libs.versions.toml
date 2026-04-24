@@ -16,12 +16,12 @@ room = "2.7.0-alpha11"
 ksp = "2.0.20-1.0.25"
 googleServices = "4.4.4"
 playServicesLocation = "21.3.0"
+crashlyticsPlugin = "3.0.7"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 dependencyCheck = "12.2.0"
 jbcrypt = "0.4"
 secrets = "2.0.1"
-retrofit = "3.0.0"
 
 [libraries]
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -31,6 +31,7 @@ logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-intercep
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBomVersion" }
 firebase-database = { module = "com.google.firebase:firebase-database" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -66,3 +67,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependencyCheck" }
 secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
