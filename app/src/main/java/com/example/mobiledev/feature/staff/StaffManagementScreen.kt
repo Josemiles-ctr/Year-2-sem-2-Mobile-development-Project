@@ -16,13 +16,48 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.data.model.*
 
+import androidx.compose.ui.res.stringResource
+import com.example.mobiledev.R
+import com.example.mobiledev.core.error.AppError
+import com.example.mobiledev.core.error.toUserMessage
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.mobiledev.ui.components.dialog.ConfirmationDialog
+import kotlinx.coroutines.flow.collectLatest
+
 @Composable
 fun StaffManagementScreen(
     viewModel: StaffViewModel
 ) {
-    val state = viewModel.uiState.collectAsState().value
+    val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.successMessage.collectLatest { message ->
+            val userMessage = when (message) {
+                "Staff invited successfully" -> context.getString(R.string.success_staff_invited)
+                "Staff member removed" -> context.getString(R.string.success_staff_removed)
+                "Invitation cancelled" -> context.getString(R.string.success_invitation_cancelled)
+                else -> message
+            }
+            Toast.makeText(context, userMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val appError by viewModel.appError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(appError) {
+        appError?.let { error ->
+            val message = error.toUserMessage(context)
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     StaffManagementContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent
     )
 }
@@ -31,9 +66,11 @@ fun StaffManagementScreen(
 @Composable
 fun StaffManagementContent(
     state: StaffManagementState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (StaffManagementEvent) -> Unit
 ) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = { Text("Staff Management") })
         },
@@ -59,7 +96,7 @@ fun StaffManagementContent(
                                 val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
                                 onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
                             },
-                            onRemove = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) }
+                            onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
                         )
                     }
                 }
@@ -71,7 +108,7 @@ fun StaffManagementContent(
                         InvitationItem(
                             invitation = invitation,
                             onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
-                            onCancel = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) }
+                            onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
                         )
                     }
                 }
@@ -81,6 +118,30 @@ fun StaffManagementContent(
                 InviteStaffDialog(
                     onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
                     onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
+                )
+            }
+
+            state.staffToRemove?.let { staff ->
+                ConfirmationDialog(
+                    title = stringResource(R.string.dialog_remove_staff_title),
+                    message = stringResource(R.string.dialog_remove_staff_message, staff.name),
+                    confirmButtonText = stringResource(R.string.dialog_confirm),
+                    dismissButtonText = stringResource(R.string.dialog_cancel),
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
+                )
+            }
+
+            state.invitationToCancel?.let { invitation ->
+                ConfirmationDialog(
+                    title = stringResource(R.string.dialog_cancel_invitation_title),
+                    message = stringResource(R.string.dialog_cancel_invitation_message, invitation.email),
+                    confirmButtonText = stringResource(R.string.dialog_confirm),
+                    dismissButtonText = stringResource(R.string.dialog_cancel),
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
                 )
             }
 
@@ -231,6 +292,10 @@ fun StaffManagementPreview() {
         )
     )
     MaterialTheme {
-        StaffManagementContent(state = mockState, onEvent = {})
+        StaffManagementContent(
+            state = mockState,
+            snackbarHostState = remember { SnackbarHostState() },
+            onEvent = {}
+        )
     }
 }

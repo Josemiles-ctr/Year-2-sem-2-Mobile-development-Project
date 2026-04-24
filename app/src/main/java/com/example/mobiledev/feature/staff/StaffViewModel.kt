@@ -2,13 +2,14 @@ package com.example.mobiledev.feature.staff
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.core.base.BaseViewModel
 import com.example.mobiledev.data.model.StaffRole
 import com.example.mobiledev.data.model.StaffStatus
 import com.example.mobiledev.data.repository.StaffRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
+class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(StaffManagementState())
     val uiState: StateFlow<StaffManagementState> = _uiState.asStateFlow()
@@ -28,6 +29,12 @@ class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
             is StaffManagementEvent.ToggleInviteDialog -> {
                 _uiState.update { it.copy(isInviteDialogOpen = event.isOpen) }
             }
+            is StaffManagementEvent.ShowRemoveStaffConfirmation -> {
+                _uiState.update { it.copy(staffToRemove = event.staff) }
+            }
+            is StaffManagementEvent.ShowCancelInvitationConfirmation -> {
+                _uiState.update { it.copy(invitationToCancel = event.invitation) }
+            }
         }
     }
 
@@ -43,12 +50,12 @@ class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
                     it.copy(
                         staffList = staff,
                         invitations = invitations,
-                        isLoading = false,
-                        error = null
+                        isLoading = false
                     )
                 }
             }.catch { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }.collect()
         }
     }
@@ -58,9 +65,11 @@ class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
             _uiState.update { it.copy(isLoading = true) }
             repository.inviteStaff(email, role).onSuccess {
                 _uiState.update { it.copy(isInviteDialogOpen = false) }
+                showSuccess("Staff invited successfully")
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -70,17 +79,20 @@ class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
             repository.updateStaff(id, role, status).onSuccess {
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(error = e.message) }
+                handleError(e)
             }
         }
     }
 
     private fun removeStaff(id: String) {
         viewModelScope.launch {
+            _uiState.update { it.copy(staffToRemove = null, isLoading = true) }
             repository.removeStaff(id).onSuccess {
+                showSuccess("Staff member removed")
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -97,10 +109,13 @@ class StaffViewModel(private val repository: StaffRepository) : ViewModel() {
 
     private fun cancelInvitation(id: String) {
         viewModelScope.launch {
+            _uiState.update { it.copy(invitationToCancel = null, isLoading = true) }
             repository.cancelInvitation(id).onSuccess {
+                showSuccess("Invitation cancelled")
                 onEvent(StaffManagementEvent.LoadData)
             }.onFailure { e ->
-                _uiState.update { it.copy(error = e.message) }
+                handleError(e)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }

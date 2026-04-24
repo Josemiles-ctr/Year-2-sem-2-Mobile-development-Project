@@ -71,159 +71,54 @@ abstract class ResQDatabase : RoomDatabase() {
         private class DatabaseCallback(
             private val context: Context
         ) : RoomDatabase.Callback() {
+
             override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                val currentTime = System.currentTimeMillis()
-                
+                // Use a post-initialization trigger to seed via DAOs once the DB is ready
                 CoroutineScope(Dispatchers.IO).launch {
-                    val database = getDatabase(context)
-                    val hospitalDao = database.hospitalDao()
-                    val ambulanceDao = database.ambulanceDao()
-                    val userDao = database.userDao()
-
-                    // Seed Hospitals
-                    val mulagoId = UUID.randomUUID().toString()
-                    val nsambyaId = UUID.randomUUID().toString()
-                    
-                    hospitalDao.insertHospital(HospitalEntity(
-                        id = mulagoId,
-                        adminId = "admin1",
-                        name = "Mulago Hospital",
-                        email = "info@mulago.ug",
-                        phone = "+256414554001",
-                        location = "Mulago Hill, Kampala",
-                        latitude = 0.3476,
-                        longitude = 32.5825,
-                        uuid = UUID.randomUUID().toString(),
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-
-                    hospitalDao.insertHospital(HospitalEntity(
-                        id = nsambyaId,
-                        adminId = "admin2",
-                        name = "Nsambya Hospital",
-                        email = "info@nsambyahospital.or.ug",
-                        phone = "+256414267012",
-                        location = "Nsambya, Kampala",
-                        latitude = 0.3031,
-                        longitude = 32.5811,
-                        uuid = UUID.randomUUID().toString(),
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-
-                    // Seed Drivers
-                    val driver1Id = UUID.randomUUID().toString()
-                    val driver2Id = UUID.randomUUID().toString()
-
-                    userDao.insertUser(UserEntity(
-                        id = driver1Id,
-                        hospitalId = mulagoId,
-                        name = "John Driver",
-                        email = "john@resq.com",
-                        phone = "0700000001",
-                        location = "Kampala",
-                        userType = "DRIVER",
-                        uuid = UUID.randomUUID().toString(),
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-
-                    userDao.insertUser(UserEntity(
-                        id = driver2Id,
-                        hospitalId = nsambyaId,
-                        name = "Jane Driver",
-                        email = "jane@resq.com",
-                        phone = "0700000002",
-                        location = "Kampala",
-                        userType = "DRIVER",
-                        uuid = UUID.randomUUID().toString(),
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-
-                    // Seed Ambulances
-                    ambulanceDao.insertAmbulance(AmbulanceEntity(
-                        id = UUID.randomUUID().toString(),
-                        hospitalId = mulagoId,
-                        driverId = driver1Id,
-                        registrationNo = "MA-202",
-                        licenseNo = "L-202",
-                        status = "AVAILABLE",
-                        latitude = 0.3400,
-                        longitude = 32.5750,
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-
-                    ambulanceDao.insertAmbulance(AmbulanceEntity(
-                        id = UUID.randomUUID().toString(),
-                        hospitalId = nsambyaId,
-                        driverId = driver2Id,
-                        registrationNo = "MA-305",
-                        licenseNo = "L-305",
-                        status = "AVAILABLE",
-                        latitude = 0.3550,
-                        longitude = 32.5900,
-                        createdAt = currentTime,
-                        updatedAt = currentTime
-                    ))
-                }
-            }
-        }
-    }
-
-    private class DatabaseCallback(
-        private val context: Context
-    ) : RoomDatabase.Callback() {
-        
-        override fun onCreate(db: SupportSQLiteDatabase) {
-            // Use a post-initialization trigger to seed via DAOs once the DB is ready
-            CoroutineScope(Dispatchers.IO).launch {
-                getDatabase(context).let { database ->
-                    try {
-                        seedData(database)
-                        Log.d("ResQDatabase", "Initial seeding successful")
-                    } catch (e: Exception) {
-                        Log.e("ResQDatabase", "Initial seeding failed: ${e.message}")
+                    getDatabase(context).let { database ->
+                        try {
+                            seedData(database)
+                            Log.d("ResQDatabase", "Initial seeding successful")
+                        } catch (e: Exception) {
+                            Log.e("ResQDatabase", "Initial seeding failed: ${e.message}")
+                        }
                     }
                 }
             }
-        }
 
-        suspend fun seedData(db: ResQDatabase) {
-            val userDao = db.userDao()
-            val hospitalDao = db.hospitalDao()
-            val ambulanceDao = db.ambulanceDao()
-            val requestDao = db.emergencyRequestDao()
+            private suspend fun seedData(db: ResQDatabase) {
+                val userDao = db.userDao()
+                val hospitalDao = db.hospitalDao()
+                val ambulanceDao = db.ambulanceDao()
+                val requestDao = db.emergencyRequestDao()
 
-            val hashedPW = BCrypt.hashpw("password123", BCrypt.gensalt())
-            val now = System.currentTimeMillis()
+                val hashedPW = BCrypt.hashpw("password123", BCrypt.gensalt())
+                val now = System.currentTimeMillis()
 
-            val mockSeed = MockSeedData.create(now = now, passwordHash = hashedPW)
+                val mockSeed = MockSeedData.create(now = now, passwordHash = hashedPW)
 
-            mockSeed.hospitals.forEach { hospital ->
-                if (hospitalDao.getHospitalById(hospital.id) == null) {
-                    hospitalDao.insertHospital(hospital)
+                mockSeed.hospitals.forEach { hospital ->
+                    if (hospitalDao.getHospitalById(hospital.id) == null) {
+                        hospitalDao.insertHospital(hospital)
+                    }
                 }
-            }
 
-            mockSeed.users.forEach { user ->
-                if (userDao.getUserById(user.id) == null) {
-                    userDao.insertUser(user)
+                mockSeed.users.forEach { user ->
+                    if (userDao.getUserById(user.id) == null) {
+                        userDao.insertUser(user)
+                    }
                 }
-            }
 
-            mockSeed.ambulances.forEach { ambulance ->
-                if (ambulanceDao.getAmbulanceById(ambulance.id) == null) {
-                    ambulanceDao.insertAmbulance(ambulance)
+                mockSeed.ambulances.forEach { ambulance ->
+                    if (ambulanceDao.getAmbulanceById(ambulance.id) == null) {
+                        ambulanceDao.insertAmbulance(ambulance)
+                    }
                 }
-            }
 
-            mockSeed.requests.forEach { request ->
-                if (requestDao.getRequestById(request.id) == null) {
-                    requestDao.insertRequest(request)
+                mockSeed.requests.forEach { request ->
+                    if (requestDao.getRequestById(request.id) == null) {
+                        requestDao.insertRequest(request)
+                    }
                 }
             }
         }

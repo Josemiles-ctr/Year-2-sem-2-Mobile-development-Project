@@ -27,7 +27,8 @@ fun AuthInputField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    enabled: Boolean = true
 ) {
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
@@ -35,6 +36,7 @@ fun AuthInputField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
+        enabled = enabled,
         label = { Text(text = label) },
         placeholder = { Text(text = label) },
         singleLine = true,
