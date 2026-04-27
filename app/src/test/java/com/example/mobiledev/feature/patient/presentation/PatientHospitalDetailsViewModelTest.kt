@@ -46,7 +46,6 @@ class PatientHospitalDetailsViewModelTest {
             repository = repository,
             hospitalId = "HOSPITAL_1",
             authSessionManager = session,
-            pollingEnabled = false
         )
 
         advanceUntilIdle()
@@ -69,7 +68,6 @@ class PatientHospitalDetailsViewModelTest {
             repository = repository,
             hospitalId = "HOSPITAL_1",
             authSessionManager = session,
-            pollingEnabled = false
         )
 
         advanceUntilIdle()
@@ -96,7 +94,6 @@ class PatientHospitalDetailsViewModelTest {
             repository = repository,
             hospitalId = "HOSPITAL_1",
             authSessionManager = session,
-            pollingEnabled = false
         )
 
         advanceUntilIdle()

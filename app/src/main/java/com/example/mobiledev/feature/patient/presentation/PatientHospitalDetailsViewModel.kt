@@ -9,15 +9,12 @@ import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.repository.ResQRepository
 import com.example.mobiledev.data.security.AuthSessionManager
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 
@@ -37,22 +34,16 @@ data class PatientHospitalDetailsUiState(
 class PatientHospitalDetailsViewModel(
     private val repository: ResQRepository,
     private val hospitalId: String,
-    private val authSessionManager: AuthSessionManager,
-    private val pollingEnabled: Boolean = true,
-    private val pollingIntervalMs: Long = 30_000L
+    private val authSessionManager: AuthSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatientHospitalDetailsUiState())
     val uiState: StateFlow<PatientHospitalDetailsUiState> = _uiState.asStateFlow()
 
     private var ambulanceStreamJob: Job? = null
-    private var pollingJob: Job? = null
 
     init {
         loadHospitalDetails()
-        if (pollingEnabled) {
-            startPolling()
-        }
     }
 
     private fun loadHospitalDetails() {
@@ -122,33 +113,6 @@ class PatientHospitalDetailsViewModel(
                 errorMessage = null,
                 lastUpdatedAtMillis = System.currentTimeMillis()
             )
-        }
-    }
-
-    private fun startPolling() {
-        pollingJob?.cancel()
-        pollingJob = viewModelScope.launch {
-            while (isActive) {
-                delay(pollingIntervalMs)
-                pollLatestHospitalData()
-            }
-        }
-    }
-
-    private suspend fun pollLatestHospitalData() {
-        runCatching {
-            val hospital = repository.getHospitalById(hospitalId)
-            val ambulances = repository.getAmbulancesByHospitalStream(hospitalId).first()
-            hospital to ambulances
-        }.onSuccess { (hospital, ambulances) ->
-            if (hospital != null) {
-                _uiState.update { it.copy(hospital = hospital, errorMessage = null) }
-                updateAmbulanceState(ambulances)
-            }
-        }.onFailure { throwable ->
-            _uiState.update {
-                it.copy(errorMessage = throwable.message ?: "Unable to refresh ambulance status")
-            }
         }
     }
 
@@ -261,7 +225,6 @@ class PatientHospitalDetailsViewModel(
     }
 
     override fun onCleared() {
-        pollingJob?.cancel()
         ambulanceStreamJob?.cancel()
         super.onCleared()
     }
