@@ -184,7 +184,6 @@ private fun ErrorState(
 }
 
 @Composable
-@Suppress("UNUSED_VALUE")
 private fun DetailsContent(
     hospital: HospitalEntity,
     ambulances: List<AmbulanceEntity>,
