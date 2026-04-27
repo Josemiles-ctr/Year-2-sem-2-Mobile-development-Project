@@ -161,19 +161,31 @@ class PatientHospitalDetailsViewModel(
         when {
             patientId.isNullOrBlank() -> {
                 _uiState.update {
-                    it.copy(submitErrorMessage = "Patient session expired. Please sign in again.")
+                    it.copy(
+                        isSubmittingRequest = false,
+                        submitErrorMessage = "Patient session expired. Please sign in again.",
+                        submitSuccessMessage = null
+                    )
                 }
                 return
             }
             hospital == null -> {
                 _uiState.update {
-                    it.copy(submitErrorMessage = "Hospital details are unavailable.")
+                    it.copy(
+                        isSubmittingRequest = false,
+                        submitErrorMessage = "Hospital details are unavailable.",
+                        submitSuccessMessage = null
+                    )
                 }
                 return
             }
             trimmedDescription.isBlank() -> {
                 _uiState.update {
-                    it.copy(submitErrorMessage = "Please add a short emergency description.")
+                    it.copy(
+                        isSubmittingRequest = false,
+                        submitErrorMessage = "Please add a short emergency description.",
+                        submitSuccessMessage = null
+                    )
                 }
                 return
             }
