@@ -27,64 +27,64 @@ import org.junit.Test
 
 class PatientHospitalDetailsScreenTest {
 
-	@get:Rule
-	val composeRule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-	@Test
-	fun patientHospitalDetails_displaysHospitalAndEmergencyButtonEnabled() {
-		val repository = FakeResQRepository(
-			hospital = sampleHospital(),
-			ambulances = listOf(
-				sampleAmbulance(id = "AMB_1", status = "AVAILABLE"),
-				sampleAmbulance(id = "AMB_2", status = "ON_EMERGENCY")
-			)
-		)
-		val authSession = AuthSessionManager().apply {
-			setPrincipal(AuthPrincipal(userId = "PATIENT_1", role = AppRole.PATIENT))
-		}
-		val viewModel = PatientHospitalDetailsViewModel(repository, "HOSPITAL_1", authSession, pollingEnabled = false)
+    @Test
+    fun patientHospitalDetails_displaysHospitalAndEmergencyButtonEnabled() {
+        val repository = FakeResQRepository(
+            hospital = sampleHospital(),
+            ambulances = listOf(
+                sampleAmbulance(id = "AMB_1", status = "AVAILABLE"),
+                sampleAmbulance(id = "AMB_2", status = "ON_EMERGENCY")
+            )
+        )
+        val authSession = AuthSessionManager().apply {
+            setPrincipal(AuthPrincipal(userId = "PATIENT_1", role = AppRole.PATIENT))
+        }
+        val viewModel = PatientHospitalDetailsViewModel(repository, "HOSPITAL_1", authSession, pollingEnabled = false)
 
-		composeRule.setContent {
-			PatientHospitalDetailsScreen(
-				viewModel = viewModel,
-				onBackClick = {}
-			)
-		}
-		composeRule.waitForIdle()
+        composeRule.setContent {
+            PatientHospitalDetailsScreen(
+                viewModel = viewModel,
+                onBackClick = {}
+            )
+        }
+        composeRule.waitForIdle()
 
-		composeRule.onNodeWithTag("patientHospitalDetailsRoot").assertIsDisplayed()
-		composeRule.onNodeWithText("City Central Hospital").assertIsDisplayed()
-		composeRule.onNodeWithText("Ambulances").assertIsDisplayed()
-		composeRule.onNodeWithText("AVAILABLE").assertIsDisplayed()
-		composeRule.onNodeWithText("ON EMERGENCY").assertIsDisplayed()
-		composeRule.onNodeWithTag("requestEmergencyButton").assertIsEnabled()
-	}
+        composeRule.onNodeWithTag("patientHospitalDetailsRoot").assertIsDisplayed()
+        composeRule.onNodeWithText("City Central Hospital").assertIsDisplayed()
+        composeRule.onNodeWithText("Ambulances").assertIsDisplayed()
+        composeRule.onNodeWithText("AVAILABLE").assertIsDisplayed()
+        composeRule.onNodeWithText("ON EMERGENCY").assertIsDisplayed()
+        composeRule.onNodeWithTag("requestEmergencyButton").assertIsEnabled()
+    }
 
-	@Test
-	fun patientHospitalDetails_showsOfflineMessageAndDisablesEmergencyButton() {
-		val repository = FakeResQRepository(
-			hospital = sampleHospital(),
-			ambulances = listOf(
-				sampleAmbulance(id = "AMB_1", status = "OFFLINE"),
-				sampleAmbulance(id = "AMB_2", status = "OFFLINE")
-			)
-		)
-		val authSession = AuthSessionManager().apply {
-			setPrincipal(AuthPrincipal(userId = "PATIENT_1", role = AppRole.PATIENT))
-		}
-		val viewModel = PatientHospitalDetailsViewModel(repository, "HOSPITAL_1", authSession, pollingEnabled = false)
+    @Test
+    fun patientHospitalDetails_showsOfflineMessageAndDisablesEmergencyButton() {
+        val repository = FakeResQRepository(
+            hospital = sampleHospital(),
+            ambulances = listOf(
+                sampleAmbulance(id = "AMB_1", status = "OFFLINE"),
+                sampleAmbulance(id = "AMB_2", status = "OFFLINE")
+            )
+        )
+        val authSession = AuthSessionManager().apply {
+            setPrincipal(AuthPrincipal(userId = "PATIENT_1", role = AppRole.PATIENT))
+        }
+        val viewModel = PatientHospitalDetailsViewModel(repository, "HOSPITAL_1", authSession, pollingEnabled = false)
 
-		composeRule.setContent {
-			PatientHospitalDetailsScreen(
-				viewModel = viewModel,
-				onBackClick = {}
-			)
-		}
-		composeRule.waitForIdle()
+        composeRule.setContent {
+            PatientHospitalDetailsScreen(
+                viewModel = viewModel,
+                onBackClick = {}
+            )
+        }
+        composeRule.waitForIdle()
 
-		composeRule.onNodeWithTag("offlineHospitalMessage").assertIsDisplayed()
-		composeRule.onNodeWithTag("requestEmergencyButton").assertIsNotEnabled()
-	}
+        composeRule.onNodeWithTag("offlineHospitalMessage").assertIsDisplayed()
+        composeRule.onNodeWithTag("requestEmergencyButton").assertIsNotEnabled()
+    }
 
 	@Test
 	fun patientHospitalDetails_submitsEmergencyRequestFromDialog() {
