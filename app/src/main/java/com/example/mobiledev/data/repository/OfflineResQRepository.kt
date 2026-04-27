@@ -40,6 +40,26 @@ class OfflineResQRepository(
         return principal
     }
 
+    private suspend fun ensureRequestUserExists(request: EmergencyRequestEntity) {
+        if (userDao.getUserById(request.userId) != null) return
+
+        val now = System.currentTimeMillis()
+        val sanitizedId = request.userId.replace(Regex("[^A-Za-z0-9_]"), "_")
+        val fallbackUser = UserEntity(
+            id = request.userId,
+            hospitalId = null,
+            name = "Patient ${request.userId.takeLast(6)}",
+            email = "patient_${sanitizedId}@resq.local",
+            phone = "000-0000",
+            location = request.location,
+            userType = "PATIENT",
+            uuid = request.userId,
+            createdAt = now,
+            updatedAt = now
+        )
+        userDao.insertUser(fallbackUser)
+    }
+
     // User
     override fun getAllUsersStream(): Flow<List<UserEntity>> {
         requirePermission(Permission.VIEW_SYSTEM_DATA)
@@ -261,6 +281,9 @@ class OfflineResQRepository(
             }
             else -> throw SecurityException("Access denied: cannot create emergency requests")
         }
+        // Some authenticated patients may not yet be mirrored in local USER table.
+        // Create a minimal local profile so FK constraints remain valid on request insert.
+        ensureRequestUserExists(request)
         emergencyRequestDao.insertRequest(request)
     }
 
