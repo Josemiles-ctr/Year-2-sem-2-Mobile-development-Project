@@ -231,7 +231,7 @@ fun NavGraph(
             if (hospitalId.isBlank()) {
                 Text("Invalid hospital selection. Please go back and try again.")
             } else {
-                val detailsViewModelFactory = remember(resQRepository, hospitalId) {
+                val detailsViewModelFactory = remember(resQRepository, hospitalId, authSessionManager) {
                     PatientHospitalDetailsViewModelFactory(
                         repository = resQRepository,
                         hospitalId = hospitalId,

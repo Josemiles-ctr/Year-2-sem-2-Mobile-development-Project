@@ -133,7 +133,13 @@ fun PatientHospitalDetailsScreen(
             submitErrorMessage = uiState.submitErrorMessage,
             submitSuccessMessage = uiState.submitSuccessMessage,
             currentLocation = currentLocation,
-            onSubmitEmergencyRequest = viewModel::submitEmergencyRequest,
+            onSubmitEmergencyRequest = { desc ->
+                viewModel.submitEmergencyRequest(
+                    desc,
+                    currentLocation?.latitude,
+                    currentLocation?.longitude
+                )
+            },
             onDismissSubmitMessage = viewModel::clearSubmitMessage,
             onBackClick = onBackClick,
             modifier = modifier

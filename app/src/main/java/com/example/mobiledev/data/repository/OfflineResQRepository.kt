@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import org.mindrot.jbcrypt.BCrypt
+import java.util.UUID
 
 class OfflineResQRepository(
     private val userDao: UserDao,
@@ -44,16 +45,15 @@ class OfflineResQRepository(
         if (userDao.getUserById(request.userId) != null) return
 
         val now = System.currentTimeMillis()
-        val sanitizedId = request.userId.replace(Regex("[^A-Za-z0-9_]"), "_")
         val fallbackUser = UserEntity(
             id = request.userId,
             hospitalId = null,
             name = "Patient ${request.userId.takeLast(6)}",
-            email = "patient_${sanitizedId}@resq.local",
+            email = "patient_${UUID.randomUUID()}@resq.local",
             phone = "000-0000",
             location = request.location,
             userType = "PATIENT",
-            uuid = request.userId,
+            uuid = null,
             createdAt = now,
             updatedAt = now
         )

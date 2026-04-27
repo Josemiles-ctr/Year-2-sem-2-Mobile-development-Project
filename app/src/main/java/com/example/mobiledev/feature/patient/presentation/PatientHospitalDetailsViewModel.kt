@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 
 data class PatientHospitalDetailsUiState(
@@ -117,7 +118,11 @@ class PatientHospitalDetailsViewModel(
     }
 
     @Suppress("unused")
-    fun submitEmergencyRequest(description: String) {
+    fun submitEmergencyRequest(
+        description: String,
+        patientLatitude: Double? = null,
+        patientLongitude: Double? = null
+    ) {
         val patientId = authSessionManager.currentPrincipal.userId
         val hospital = _uiState.value.hospital
         val trimmedDescription = description.trim()
@@ -165,16 +170,21 @@ class PatientHospitalDetailsViewModel(
             }
 
             val now = System.currentTimeMillis()
+            val hasPatientLocation = patientLatitude != null && patientLongitude != null
             val request = EmergencyRequestEntity(
-                id = "REQ_$now",
+                id = "REQ_${UUID.randomUUID()}",
                 userId = patientId,
                 hospitalId = hospitalId,
                 ambulanceId = null,
                 status = "PENDING",
                 description = trimmedDescription,
-                location = hospital.location,
-                latitude = hospital.latitude,
-                longitude = hospital.longitude,
+                location = if (hasPatientLocation) {
+                    String.format("%.6f, %.6f", patientLatitude!!, patientLongitude!!)
+                } else {
+                    hospital.location
+                },
+                latitude = patientLatitude ?: hospital.latitude,
+                longitude = patientLongitude ?: hospital.longitude,
                 priority = "HIGH",
                 estimatedTimeMins = null,
                 createdAt = now,
