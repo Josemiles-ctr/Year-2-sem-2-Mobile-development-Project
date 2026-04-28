@@ -1,5 +1,9 @@
 package com.example.mobiledev.feature.patient.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,18 +29,29 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.example.mobiledev.data.location.Coordinates
+import com.example.mobiledev.data.location.DeviceLocationProvider
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import java.util.Locale
 
 @Composable
 fun PatientHospitalDetailsRoute(
@@ -42,9 +59,50 @@ fun PatientHospitalDetailsRoute(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val locationProvider = remember(context) { DeviceLocationProvider(context) }
+    var currentLocation by remember { mutableStateOf<Coordinates?>(null) }
+    var permissionRequested by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.values.any { it }) {
+            permissionRequested = true
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(permissionRequested) {
+        if (permissionRequested) {
+            currentLocation = locationProvider.getCurrentCoordinates()
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            permissionRequested = true
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
     PatientHospitalDetailsScreen(
         viewModel = viewModel,
         onBackClick = onBackClick,
+        currentLocation = currentLocation,
         modifier = modifier
     )
 }
@@ -53,7 +111,8 @@ fun PatientHospitalDetailsRoute(
 fun PatientHospitalDetailsScreen(
     viewModel: PatientHospitalDetailsViewModel,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentLocation: Coordinates? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val hospital = uiState.hospital
@@ -68,6 +127,20 @@ fun PatientHospitalDetailsScreen(
         hospital != null -> DetailsContent(
             hospital = hospital,
             ambulances = uiState.ambulances,
+            availableAmbulanceCount = uiState.availableAmbulanceCount,
+            isHospitalOffline = uiState.isHospitalOffline,
+            isSubmittingRequest = uiState.isSubmittingRequest,
+            submitErrorMessage = uiState.submitErrorMessage,
+            submitSuccessMessage = uiState.submitSuccessMessage,
+            currentLocation = currentLocation,
+            onSubmitEmergencyRequest = { desc ->
+                viewModel.submitEmergencyRequest(
+                    desc,
+                    currentLocation?.latitude,
+                    currentLocation?.longitude
+                )
+            },
+            onDismissSubmitMessage = viewModel::clearSubmitMessage,
             onBackClick = onBackClick,
             modifier = modifier
         )
@@ -120,9 +193,20 @@ private fun ErrorState(
 private fun DetailsContent(
     hospital: HospitalEntity,
     ambulances: List<AmbulanceEntity>,
+    availableAmbulanceCount: Int,
+    isHospitalOffline: Boolean,
+    isSubmittingRequest: Boolean,
+    submitErrorMessage: String?,
+    submitSuccessMessage: String?,
+    currentLocation: Coordinates?,
+    onSubmitEmergencyRequest: (String) -> Unit,
+    onDismissSubmitMessage: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier
 ) {
+    var showRequestDialog by rememberSaveable { mutableStateOf(false) }
+    var emergencyDescription by rememberSaveable { mutableStateOf("") }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -164,7 +248,84 @@ private fun DetailsContent(
                     }
                     DetailRow(label = "Phone", value = hospital.phone)
                     DetailRow(label = "Address", value = hospital.location)
-                    DetailRow(label = "Active ambulances", value = hospital.activeAmbulances.toString())
+                    val distanceKm = hospitalDistanceKm(hospital, currentLocation)
+                    DetailRow(
+                        label = "Distance",
+                        value = distanceKm?.let {
+                            String.format(Locale.getDefault(), "%.1f km", it)
+                        } ?: "Distance unavailable"
+                    )
+                    DetailRow(label = "Available ambulances", value = availableAmbulanceCount.toString())
+
+                    Button(
+                        onClick = {
+                            emergencyDescription = ""
+                            showRequestDialog = true
+                        },
+                        enabled = !isHospitalOffline && !isSubmittingRequest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("requestEmergencyButton")
+                    ) {
+                        Text(if (isSubmittingRequest) "Submitting..." else "Request emergency")
+                    }
+                }
+            }
+        }
+
+        if (submitSuccessMessage != null) {
+            item {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = submitSuccessMessage,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        TextButton(onClick = onDismissSubmitMessage) {
+                            Text("Dismiss")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (submitErrorMessage != null) {
+            item {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = submitErrorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        TextButton(onClick = onDismissSubmitMessage) {
+                            Text("Dismiss")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isHospitalOffline) {
+            item {
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("offlineHospitalMessage")
+                ) {
+                    Text(
+                        text = "This hospital is currently offline. No active ambulances are available.",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -192,6 +353,41 @@ private fun DetailsContent(
                 AmbulanceCard(ambulance = ambulance)
             }
         }
+    }
+
+    if (showRequestDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRequestDialog = false
+            },
+            title = { Text("Submit emergency request") },
+            text = {
+                OutlinedTextField(
+                    value = emergencyDescription,
+                    onValueChange = { emergencyDescription = it },
+                    label = { Text("Emergency details") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onSubmitEmergencyRequest(emergencyDescription)
+                        showRequestDialog = false
+                    }
+                ) {
+                    Text("Submit")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRequestDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -225,10 +421,25 @@ private fun AmbulanceCard(ambulance: AmbulanceEntity) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Text(text = ambulance.status, style = MaterialTheme.typography.labelMedium)
+                Text(
+                    text = ambulance.status.replace('_', ' '),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ambulanceStatusColor(ambulance.status),
+                    modifier = Modifier.testTag("ambulanceStatus_${ambulance.id}")
+                )
             }
             DetailRow(label = "Location", value = "${ambulance.latitude}, ${ambulance.longitude}")
         }
+    }
+}
+
+@Composable
+private fun ambulanceStatusColor(status: String): Color {
+    return when (status.uppercase()) {
+        "AVAILABLE" -> Color(0xFF2E7D32)
+        "ON_EMERGENCY", "BUSY", "ON_MISSION" -> Color(0xFFC62828)
+        "OFFLINE" -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurface
     }
 }
 

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import org.mindrot.jbcrypt.BCrypt
+import java.util.UUID
 
 class OfflineResQRepository(
     private val userDao: UserDao,
@@ -38,6 +39,25 @@ class OfflineResQRepository(
         val principal = requirePermission(permission)
         RbacPolicy.requireHospitalScope(principal, hospitalId)
         return principal
+    }
+
+    private suspend fun ensureRequestUserExists(request: EmergencyRequestEntity) {
+        if (userDao.getUserById(request.userId) != null) return
+
+        val now = System.currentTimeMillis()
+        val fallbackUser = UserEntity(
+            id = request.userId,
+            hospitalId = null,
+            name = "Patient ${request.userId.takeLast(6)}",
+            email = "patient_${UUID.randomUUID()}@resq.local",
+            phone = "000-0000",
+            location = request.location,
+            userType = "PATIENT",
+            uuid = null,
+            createdAt = now,
+            updatedAt = now
+        )
+        userDao.insertUser(fallbackUser)
     }
 
     // User
@@ -261,6 +281,9 @@ class OfflineResQRepository(
             }
             else -> throw SecurityException("Access denied: cannot create emergency requests")
         }
+        // Some authenticated patients may not yet be mirrored in local USER table.
+        // Create a minimal local profile so FK constraints remain valid on request insert.
+        ensureRequestUserExists(request)
         emergencyRequestDao.insertRequest(request)
     }
 
