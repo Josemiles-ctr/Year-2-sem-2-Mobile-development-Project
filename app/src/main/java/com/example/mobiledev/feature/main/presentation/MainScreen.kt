@@ -1,12 +1,23 @@
 package com.example.mobiledev.feature.main.presentation
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -26,9 +37,24 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,6 +75,8 @@ import com.example.mobiledev.data.mock.MockActivityData
 import com.example.mobiledev.data.model.User
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
+import com.example.mobiledev.ui.components.AppBackgroundContainer
+import com.example.mobiledev.ui.components.GlassyCard
 
 private data class MainTab(
     val title: String,
@@ -75,6 +103,7 @@ fun MainScreen(
         ActivitySummarySection(modifier = modifier)
     },
     requestTabContent: @Composable () -> Unit = {},
+    userManagementTabContent: @Composable () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val firstTabTitle = if (currentPrincipal.role == AppRole.PATIENT) {
@@ -82,12 +111,19 @@ fun MainScreen(
     } else {
         stringResource(R.string.tab_activity)
     }
-    val tabs = listOf(
-        MainTab(firstTabTitle, Icons.Filled.Notifications),
-        MainTab(stringResource(R.string.tab_requests), Icons.Filled.AssignmentTurnedIn),
-        MainTab(stringResource(R.string.tab_account), Icons.Filled.AccountCircle)
-    )
-    var selectedTabIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    val requestTabTitle = stringResource(R.string.tab_requests)
+    val accountTabTitle = stringResource(R.string.tab_account)
+    val tabs = buildList {
+        add(MainTab(firstTabTitle, Icons.Filled.Notifications))
+        add(MainTab(requestTabTitle, Icons.Filled.AssignmentTurnedIn))
+        if (currentPrincipal.role == AppRole.SYSTEM_ADMIN) {
+            add(MainTab("Users", Icons.Filled.People))
+        }
+        add(MainTab(accountTabTitle, Icons.Filled.AccountCircle))
+    }
+    val hasUserManagementTab = currentPrincipal.role == AppRole.SYSTEM_ADMIN
+    val accountTabIndex = if (hasUserManagementTab) 3 else 2
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
 
     // Keep back behavior natural for tab UIs: return to default tab before exiting app.
@@ -97,92 +133,113 @@ fun MainScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             GlassyMainTopBar()
         },
         bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        icon = {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Icon(
-                                    imageVector = tab.icon,
-                                    contentDescription = tab.title
-                                )
-                                Text(
-                                    text = tab.title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        },
-                        label = null,
-                        alwaysShowLabel = false
-                    )
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp
+                    ) {
+                        tabs.forEachIndexed { index, tab ->
+                            NavigationBarItem(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                icon = {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = tab.icon,
+                                            contentDescription = tab.title
+                                        )
+                                        Text(
+                                            text = tab.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                },
+                                label = null,
+                                alwaysShowLabel = false
+                            )
+                        }
+                    }
                 }
             }
         }
     ) { innerPadding ->
-        Box(
+        AppBackgroundContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.background),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.18f))
-            )
-            
-            Column(
                 modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                contentAlignment = Alignment.Center
             ) {
-                when (selectedTabIndex) {
-                    0 -> {
-                        homeTabContent(
-                            Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp)
-                        )
-                    }
-                    1 -> {
-                        requestTabContent()
-                    }
-                    2 -> { // Account tab
-                        AccountDetailsPanel(
-                            principal = currentPrincipal,
-                            currentUser = currentUser,
-                            canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
-                                currentPrincipal.role == AppRole.SYSTEM_ADMIN,
-                            onManageStaffClick = onManageStaffClick,
-                            onLogoutClick = onLogoutClick,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp)
-                        )
-                    }
-                    else -> {
-                        PlaceholderScreen(
-                            title = selectedTab.title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
-                        )
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    when (selectedTabIndex) {
+                        0 -> {
+                            homeTabContent(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp)
+                            )
+                        }
+                        1 -> {
+                            requestTabContent()
+                        }
+                        2 -> {
+                            if (hasUserManagementTab) {
+                                userManagementTabContent()
+                            } else {
+                                AccountDetailsPanel(
+                                    principal = currentPrincipal,
+                                    currentUser = currentUser,
+                                    canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
+                                        currentPrincipal.role == AppRole.SYSTEM_ADMIN,
+                                    onManageStaffClick = onManageStaffClick,
+                                    onLogoutClick = onLogoutClick,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 20.dp)
+                                )
+                            }
+                        }
+                        accountTabIndex -> {
+                            AccountDetailsPanel(
+                                principal = currentPrincipal,
+                                currentUser = currentUser,
+                                canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
+                                    currentPrincipal.role == AppRole.SYSTEM_ADMIN,
+                                onManageStaffClick = onManageStaffClick,
+                                onLogoutClick = onLogoutClick,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 20.dp)
+                            )
+                        }
+                        else -> {
+                            PlaceholderScreen(
+                                title = selectedTab.title,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -192,17 +249,17 @@ fun MainScreen(
 
 @Composable
 private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
+    var menuExpanded by mutableStateOf(false)
+    
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
-        Surface(
+        GlassyCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.26f),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
         ) {
             Row(
                 modifier = Modifier
@@ -220,12 +277,31 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
                     contentScale = ContentScale.Fit
                 )
 
-                IconButton(onClick = { /* TODO: Open Menu */ }) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Open menu",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                Box {
+                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Open menu",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Settings") },
+                            onClick = { menuExpanded = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Help & Support") },
+                            onClick = { menuExpanded = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("About") },
+                            onClick = { menuExpanded = false }
+                        )
+                    }
                 }
             }
         }
@@ -247,20 +323,7 @@ private fun AccountDetailsPanel(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.large
-                    ),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -305,20 +368,7 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.large
-                    ),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -340,20 +390,7 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.large
-                    ),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -402,20 +439,7 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.large
-                    ),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -466,20 +490,7 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.large
-                    ),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
-            ) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -591,17 +602,8 @@ private fun ActivityMiniStat(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(
-        modifier = modifier
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.medium
-            ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+    GlassyCard(
+        modifier = modifier,
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
@@ -636,19 +638,8 @@ private fun ActivityMiniStat(
 private fun ActivitySummaryCard(activity: ActivitySummary) {
     val readableAccent = glassReadableAccent(activity.accent)
 
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.large
-            ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+    GlassyCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -752,15 +743,13 @@ private fun PlaceholderScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
-        androidx.compose.material3.Button(onClick = onTrackingClick) {
+        Button(onClick = onTrackingClick) {
             Text("Go to Tracking")
         }
-        ElevatedCard(
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-            ),
-            shape = MaterialTheme.shapes.extraLarge
+        GlassyCard(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
         ) {
             Text(
                 text = title,
@@ -769,12 +758,10 @@ private fun PlaceholderScreen(
             )
         }
 
-        ElevatedCard(
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-            ),
-            shape = MaterialTheme.shapes.large
+        GlassyCard(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+            shape = MaterialTheme.shapes.large,
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
         ) {
             Text(
                 text = stringResource(R.string.placeholder_screen_text, title),
