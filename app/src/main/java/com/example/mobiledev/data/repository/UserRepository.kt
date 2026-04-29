@@ -16,6 +16,7 @@ interface UserRepository {
     suspend fun authenticateUser(emailOrPhone: String, password: String): User?
     suspend fun authenticateHospital(email: String, password: String): User?
     suspend fun removeUser(userId: String)
+    suspend fun updateUser(user: User): Result<Unit>
 }
 
 
