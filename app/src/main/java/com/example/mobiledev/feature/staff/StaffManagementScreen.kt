@@ -3,6 +3,8 @@ package com.example.mobiledev.feature.staff
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -23,6 +25,9 @@ import com.example.mobiledev.core.error.toUserMessage
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.example.mobiledev.ui.components.dialog.ConfirmationDialog
+import com.example.mobiledev.ui.components.AppBackgroundContainer
+import com.example.mobiledev.ui.components.GlassyCard
+import com.example.mobiledev.ui.components.AppLoadingIndicator
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -31,13 +36,16 @@ fun StaffManagementScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val successStaffInvited = stringResource(R.string.success_staff_invited)
+    val successStaffRemoved = stringResource(R.string.success_staff_removed)
+    val successInvitationCancelled = stringResource(R.string.success_invitation_cancelled)
 
     LaunchedEffect(Unit) {
         viewModel.successMessage.collectLatest { message ->
             val userMessage = when (message) {
-                "Staff invited successfully" -> context.getString(R.string.success_staff_invited)
-                "Staff member removed" -> context.getString(R.string.success_staff_removed)
-                "Invitation cancelled" -> context.getString(R.string.success_invitation_cancelled)
+                "Staff invited successfully" -> successStaffInvited
+                "Staff member removed" -> successStaffRemoved
+                "Invitation cancelled" -> successInvitationCancelled
                 else -> message
             }
             Toast.makeText(context, userMessage, Toast.LENGTH_SHORT).show()
@@ -71,8 +79,23 @@ fun StaffManagementContent(
 ) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(title = { Text("Staff Management") })
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    TopAppBar(
+                        title = { Text("Staff Management") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { onEvent(StaffManagementEvent.ToggleInviteDialog(true)) }) {
@@ -80,75 +103,71 @@ fun StaffManagementContent(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+        AppBackgroundContainer(modifier = Modifier.padding(padding)) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (state.isLoading) {
+                    AppLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text("Active Staff", style = MaterialTheme.typography.headlineSmall)
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(state.staffList) { staff ->
-                        StaffItem(
-                            staff = staff,
-                            onUpdateRole = { role -> onEvent(StaffManagementEvent.UpdateStaff(staff.id, role, null)) },
-                            onToggleStatus = {
-                                val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
-                                onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
-                            },
-                            onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
-                        )
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Active Staff", style = MaterialTheme.typography.headlineSmall)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(state.staffList) { staff ->
+                            StaffItem(
+                                staff = staff,
+                                onUpdateRole = { role -> onEvent(StaffManagementEvent.UpdateStaff(staff.id, role, null)) },
+                                onToggleStatus = {
+                                    val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
+                                    onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
+                                },
+                                onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Pending Invitations", style = MaterialTheme.typography.headlineSmall)
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(state.invitations) { invitation ->
+                            InvitationItem(
+                                invitation = invitation,
+                                onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
+                                onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Pending Invitations", style = MaterialTheme.typography.headlineSmall)
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(state.invitations) { invitation ->
-                        InvitationItem(
-                            invitation = invitation,
-                            onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
-                            onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
-                        )
-                    }
+                if (state.isInviteDialogOpen) {
+                    InviteStaffDialog(
+                        onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
+                        onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
+                    )
                 }
-            }
 
-            if (state.isInviteDialogOpen) {
-                InviteStaffDialog(
-                    onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
-                    onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
-                )
-            }
+                state.staffToRemove?.let { staff ->
+                    ConfirmationDialog(
+                        title = stringResource(R.string.dialog_remove_staff_title),
+                        message = stringResource(R.string.dialog_remove_staff_message, staff.name),
+                        confirmButtonText = stringResource(R.string.dialog_confirm),
+                        dismissButtonText = stringResource(R.string.dialog_cancel),
+                        isDestructive = true,
+                        onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
+                        onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
+                    )
+                }
 
-            state.staffToRemove?.let { staff ->
-                ConfirmationDialog(
-                    title = stringResource(R.string.dialog_remove_staff_title),
-                    message = stringResource(R.string.dialog_remove_staff_message, staff.name),
-                    confirmButtonText = stringResource(R.string.dialog_confirm),
-                    dismissButtonText = stringResource(R.string.dialog_cancel),
-                    isDestructive = true,
-                    onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
-                    onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
-                )
-            }
-
-            state.invitationToCancel?.let { invitation ->
-                ConfirmationDialog(
-                    title = stringResource(R.string.dialog_cancel_invitation_title),
-                    message = stringResource(R.string.dialog_cancel_invitation_message, invitation.email),
-                    confirmButtonText = stringResource(R.string.dialog_confirm),
-                    dismissButtonText = stringResource(R.string.dialog_cancel),
-                    isDestructive = true,
-                    onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
-                    onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
-                )
-            }
-
-            state.error?.let {
-                Snackbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-                ) { Text(it) }
+                state.invitationToCancel?.let { invitation ->
+                    ConfirmationDialog(
+                        title = stringResource(R.string.dialog_cancel_invitation_title),
+                        message = stringResource(R.string.dialog_cancel_invitation_message, invitation.email),
+                        confirmButtonText = stringResource(R.string.dialog_confirm),
+                        dismissButtonText = stringResource(R.string.dialog_cancel),
+                        isDestructive = true,
+                        onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
+                        onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
+                    )
+                }
             }
         }
     }
@@ -163,7 +182,7 @@ fun StaffItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    GlassyCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -225,7 +244,10 @@ fun InvitationItem(
     onResend: () -> Unit,
     onCancel: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    GlassyCard(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(invitation.email, fontWeight = FontWeight.Bold)
@@ -249,34 +271,60 @@ fun InviteStaffDialog(
     var email by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(StaffRole.REQUEST_REVIEWER) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Invite Staff") },
-        text = {
-            Column {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        GlassyCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Invite Staff",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email Address") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Select Role:")
-                StaffRole.entries.forEach { role ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = selectedRole == role, onClick = { selectedRole = role })
-                        Text(role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() })
+                
+                Text(
+                    "Select Role:",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Column {
+                    StaffRole.entries.forEach { role ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = selectedRole == role, onClick = { selectedRole = role })
+                            Text(
+                                role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onInvite(email, selectedRole) }) { Text("Invite") }
+                }
             }
-        },
-        confirmButton = {
-            Button(onClick = { onInvite(email, selectedRole) }) { Text("Invite") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 @Preview(showBackground = true)

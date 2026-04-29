@@ -102,7 +102,7 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
             repository.resendInvitation(id).onSuccess {
                 // Show success message maybe
             }.onFailure { e ->
-                _uiState.update { it.copy(error = e.message) }
+                handleError(e)
             }
         }
     }

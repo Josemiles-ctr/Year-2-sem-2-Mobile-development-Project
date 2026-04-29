@@ -31,21 +31,23 @@ data class TrackingUiState(
     val ambulances: List<AmbulanceEntity> = emptyList(),
     val nearestHospital: HospitalEntity? = null,
     val nearestAmbulance: AmbulanceEntity? = null,
+    val selectedAmbulance: AmbulanceEntity? = null,
     val routePoints: List<LatLng> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
 class TrackingViewModel(
-    private val repository: ResQRepository
+    private val repository: ResQRepository,
+    private val initialAmbulanceId: String? = null
 ) : ViewModel() {
 
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as ResQApplication)
-                TrackingViewModel(application.container.resQRepository)
-            }
+    class TrackingViewModelFactory(
+        private val repository: ResQRepository,
+        private val ambulanceId: String? = null
+    ) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return TrackingViewModel(repository, ambulanceId) as T
         }
     }
 
@@ -65,26 +67,63 @@ class TrackingViewModel(
     private fun observeTrackingData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            try {
-                // Collect hospitals
-                launch {
+            
+            // Hospitals
+            launch {
+                try {
                     repository.getAllHospitalsStream().collect { hospitals ->
                         _uiState.update { it.copy(hospitals = hospitals) }
                         uiState.value.userLocation?.let { findNearestEntities(it) }
                     }
-                }
-                // Collect ambulances
-                launch {
-                    repository.getAllAmbulancesStream().collect { ambulances ->
-                        _uiState.update { it.copy(ambulances = ambulances) }
+                } catch (e: SecurityException) {
+                    repository.getApprovedHospitalsStream().collect { hospitals ->
+                        _uiState.update { it.copy(hospitals = hospitals) }
                         uiState.value.userLocation?.let { findNearestEntities(it) }
                     }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(error = e.message) }
                 }
-                _uiState.update { it.copy(isLoading = false) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+
+            // Ambulances
+            launch {
+                try {
+                    repository.getAllAmbulancesStream().collect { ambulances ->
+                        handleAmbulancesUpdate(ambulances)
+                    }
+                } catch (e: SecurityException) {
+                    if (initialAmbulanceId != null) {
+                        try {
+                            val ambulance = repository.getAmbulanceById(initialAmbulanceId)
+                            if (ambulance != null) {
+                                repository.getAmbulancesByHospitalStream(ambulance.hospitalId).collect { ambulances ->
+                                    handleAmbulancesUpdate(ambulances)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            _uiState.update { it.copy(error = e.message) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(error = e.message) }
+                }
+            }
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private fun handleAmbulancesUpdate(ambulances: List<AmbulanceEntity>) {
+        _uiState.update { it.copy(ambulances = ambulances) }
+        if (initialAmbulanceId != null) {
+            val selected = ambulances.find { it.id == initialAmbulanceId }
+            _uiState.update { it.copy(selectedAmbulance = selected) }
+            selected?.let { amb ->
+                uiState.value.userLocation?.let { userLoc ->
+                    fetchRoute(LatLng(amb.latitude, amb.longitude), userLoc)
+                }
             }
         }
+        uiState.value.userLocation?.let { findNearestEntities(it) }
     }
 
     fun updateUserLocation(location: LatLng) {
@@ -108,7 +147,9 @@ class TrackingViewModel(
             results[0]
         }
 
-        val nearestAmbulance = if (currentState.ambulances.isNotEmpty()) {
+        val nearestAmbulance = if (initialAmbulanceId != null) {
+            currentState.selectedAmbulance
+        } else if (currentState.ambulances.isNotEmpty()) {
             currentState.ambulances.minByOrNull { ambulance ->
                 val results = FloatArray(1)
                 Location.distanceBetween(

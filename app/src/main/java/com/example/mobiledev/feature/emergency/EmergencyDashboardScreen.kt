@@ -2,6 +2,7 @@ package com.example.mobiledev.feature.emergency
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -27,18 +28,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mobiledev.R
 import com.example.mobiledev.data.model.*
+import com.example.mobiledev.ui.components.AppBackgroundContainer
+import com.example.mobiledev.ui.components.AppLoadingIndicator
+import com.example.mobiledev.ui.components.GlassyCard
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 @Composable
 fun EmergencyDashboardScreen(
-    viewModel: EmergencyViewModel
+    viewModel: EmergencyViewModel,
+    onAmbulanceClick: (String) -> Unit = {}
 ) {
     val state = viewModel.uiState.collectAsState().value
     EmergencyDashboardContent(
         state = state,
-        onEvent = viewModel::onEvent
+        onEvent = viewModel::onEvent,
+        onAmbulanceClick = onAmbulanceClick
     )
 }
 
@@ -47,26 +53,18 @@ fun EmergencyDashboardScreen(
 fun EmergencyDashboardContent(
     state: EmergencyDashboardState,
     onEvent: (EmergencyDashboardEvent) -> Unit,
+    onAmbulanceClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF0C2C39).copy(alpha = 0.26f),
-                                Color.Transparent,
-                                Color(0xFF0C2C39).copy(alpha = 0.34f)
-                            )
-                        )
-                    )
-            )
+        AppBackgroundContainer(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             Column(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
                 AnalyticsSummary(state)
                 
@@ -87,7 +85,7 @@ fun EmergencyDashboardContent(
 
                 if (state.isLoading && state.requests.isEmpty()) {
                     Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        AppLoadingIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                 } else {
                     LazyColumn(
@@ -110,7 +108,7 @@ fun EmergencyDashboardContent(
                                         "No requests found matching criteria.",
                                         modifier = Modifier.align(Alignment.Center),
                                         style = MaterialTheme.typography.bodyLarge,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -138,26 +136,17 @@ fun EmergencyDashboardContent(
                     onDismiss = { onEvent(EmergencyDashboardEvent.CloseAssignmentDialog) },
                     onAssign = { ambulanceId ->
                         onEvent(EmergencyDashboardEvent.AssignAmbulance(request.id, ambulanceId))
-                    }
+                    },
+                    onAmbulanceClick = onAmbulanceClick
                 )
             }
 
             state.error?.let { errorMsg ->
-                ElevatedCard(
+                GlassyCard(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(16.dp)
                         .fillMaxWidth(0.9f)
-                        .border(
-                            width = 0.5.dp,
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = MaterialTheme.shapes.large
-                        ),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-                    ),
-                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                    shape = MaterialTheme.shapes.large
                 ) {
                     Row(
                         modifier = Modifier
@@ -187,21 +176,10 @@ fun EmergencyDashboardContent(
 
 @Composable
 fun AnalyticsSummary(state: EmergencyDashboardState) {
-    ElevatedCard(
+    GlassyCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 10.dp)
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.large
-            ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
     ) {
         Row(
             modifier = Modifier
@@ -244,20 +222,10 @@ fun FilterSection(
     selectedStatus: EmergencyStatus?,
     onStatusSelected: (EmergencyStatus?) -> Unit
 ) {
-    ElevatedCard(
+    GlassyCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.large
-            ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier
@@ -317,20 +285,9 @@ fun EmergencyRequestItem(
     val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val timeString = dateFormat.format(Date(request.timestamp))
 
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.medium
-            ),
+    GlassyCard(
+        modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -429,11 +386,26 @@ fun RequestDetailsDialog(
 ) {
     val timeAgo = getTimeAgo(request.timestamp)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Emergency Request Details", color = MaterialTheme.colorScheme.onSurface) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        GlassyCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Emergency Request Details",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 DetailRow("Request ID", request.id)
                 DetailRow("Status", request.status.name)
                 DetailRow("Patient Name", request.patientName)
@@ -460,19 +432,24 @@ fun RequestDetailsDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-            }
-        },
-        confirmButton = {
-            if (request.status == EmergencyStatus.PENDING) {
-                Button(onClick = onAssignClick) {
-                    Text("Assign Ambulance")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                    if (request.status == EmergencyStatus.PENDING) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = onAssignClick) {
+                            Text("Assign Ambulance")
+                        }
+                    }
                 }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
         }
-    )
+    }
 }
 
 @Composable
@@ -498,35 +475,60 @@ private fun getTimeAgo(timestamp: Long): String {
 fun AssignAmbulanceDialog(
     ambulances: List<Ambulance>,
     onDismiss: () -> Unit,
-    onAssign: (String) -> Unit
+    onAssign: (String) -> Unit,
+    onAmbulanceClick: (String) -> Unit = {}
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Assign Ambulance") },
-        text = {
-            if (ambulances.isEmpty()) {
-                Text("No available ambulances found.")
-            } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                    items(ambulances) { ambulance ->
-                        ListItem(
-                            headlineContent = { Text(ambulance.plateNumber) },
-                            supportingContent = { Text("Driver: ${ambulance.driverName}") },
-                            trailingContent = {
-                                Button(onClick = { onAssign(ambulance.id) }) {
-                                    Text("Assign")
-                                }
-                            }
-                        )
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        GlassyCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Assign Ambulance",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (ambulances.isEmpty()) {
+                    Text(
+                        "No available ambulances found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                        items(ambulances) { ambulance ->
+                            ListItem(
+                                headlineContent = { Text(ambulance.plateNumber) },
+                                supportingContent = { Text("Driver: ${ambulance.driverName}") },
+                                modifier = Modifier.clickable { onAmbulanceClick(ambulance.id) },
+                                trailingContent = {
+                                    Button(onClick = { onAssign(ambulance.id) }) {
+                                        Text("Assign")
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                            )
+                        }
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 @Preview(showBackground = true)

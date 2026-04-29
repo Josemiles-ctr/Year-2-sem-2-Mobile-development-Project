@@ -1,15 +1,13 @@
 package com.example.mobiledev.feature.hospital.presentation
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
@@ -20,15 +18,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.mobiledev.R
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
+import com.example.mobiledev.ui.components.AppBackgroundContainer
+import com.example.mobiledev.ui.components.GlassyCard
+import com.example.mobiledev.ui.components.AppLoadingIndicator
+
 
 private data class HospitalDashboardTab(
     val label: String,
@@ -38,7 +37,9 @@ private data class HospitalDashboardTab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HospitalDashboardScreen(
-    viewModel: HospitalDashboardViewModel
+    viewModel: HospitalDashboardViewModel,
+    onLogoutClick: () -> Unit = {},
+    onAmbulanceClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddAmbulanceDialog by remember { mutableStateOf(false) }
@@ -49,82 +50,81 @@ fun HospitalDashboardScreen(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = uiState.hospitalName,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(
+                                    text = uiState.hospitalName,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (selectedTabIndex == 0) "Emergency Dashboard" else "Hospital Information",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        },
+                        actions = {
+                            if (selectedTabIndex == 0) {
+                                IconButton(onClick = {
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Add Ambulance",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { /* TODO: Notifications */ }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = if (selectedTabIndex == 0) "Emergency Dashboard" else "Hospital Information",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                },
-                actions = {
-                    if (selectedTabIndex == 0) {
-                        IconButton(onClick = {
-                            showAddAmbulanceDialog = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Ambulance",
-                                tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        },
+        bottomBar = {
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp
+                    ) {
+                        tabs.forEachIndexed { index, tab ->
+                            NavigationBarItem(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                label = { Text(tab.label) }
                             )
                         }
                     }
-                    IconButton(onClick = { /* TODO: Notifications */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
-                    )
                 }
             }
         }
     ) { padding ->
-        // Background matching the Auth screens
-        Box(
+        AppBackgroundContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.background),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.26f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-                            )
-                        )
-                    )
-            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -161,11 +161,11 @@ fun HospitalDashboardScreen(
 
                     if (uiState.isLoading) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                            AppLoadingIndicator()
                         }
                     } else if (uiState.activeRequests.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No active emergency requests", color = Color.Gray)
+                            Text("No active emergency requests", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
                         LazyColumn(
@@ -182,13 +182,10 @@ fun HospitalDashboardScreen(
                     }
                 } else {
                     // Hospital tab
-                    ElevatedCard(
+                    GlassyCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-                        )
+                            .padding(top = 8.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -209,6 +206,23 @@ fun HospitalDashboardScreen(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Button(
+                                onClick = onLogoutClick,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.88f)
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Logout")
+                            }
                         }
                     }
                 }
@@ -222,6 +236,11 @@ fun HospitalDashboardScreen(
                     onDismiss = { viewModel.onRequestSelected(null) },
                     onConfirm = { ambulanceId ->
                         viewModel.assignAmbulance(request.id, ambulanceId)
+                        viewModel.onRequestSelected(null)
+                    },
+                    onTrackAmbulance = { ambulanceId ->
+                        viewModel.onRequestSelected(null)
+                        onAmbulanceClick(ambulanceId)
                     }
                 )
             }
@@ -248,11 +267,24 @@ fun AddAmbulanceDialog(
     var regNo by remember { mutableStateOf("") }
     var driverId by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add New Ambulance") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        GlassyCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Add New Ambulance",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
                 OutlinedTextField(
                     value = regNo,
                     onValueChange = { regNo = it },
@@ -265,20 +297,23 @@ fun AddAmbulanceDialog(
                     label = { Text("Driver ID") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { onConfirm(regNo, driverId) },
+                        enabled = regNo.isNotBlank() && driverId.isNotBlank()
+                    ) {
+                        Text("Add")
+                    }
+                }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(regNo, driverId) },
-                enabled = regNo.isNotBlank() && driverId.isNotBlank()
-            ) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 @Composable
@@ -286,47 +321,81 @@ fun AssignmentDialog(
     request: EmergencyRequestEntity,
     availableAmbulances: List<AmbulanceEntity>,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit,
+    onTrackAmbulance: (String) -> Unit = {}
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Assign Ambulance") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        GlassyCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(
-                    "Emergency: ${request.description}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Assign Ambulance",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    "Location: ${request.location}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Select available ambulance:", style = MaterialTheme.typography.labelLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                if (availableAmbulances.isEmpty()) {
-                    Text("No ambulances available", color = MaterialTheme.colorScheme.error)
-                } else {
-                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                        items(availableAmbulances) { ambulance ->
-                            ListItem(
-                                headlineContent = { Text(ambulance.registrationNo) },
-                                supportingContent = { Text("Driver ID: ${ambulance.driverId}") },
-                                modifier = Modifier.clickable { onConfirm(ambulance.id) }
-                            )
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Emergency: ${request.description}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Location: ${request.location}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Select available ambulance:",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    if (availableAmbulances.isEmpty()) {
+                        Text(
+                            "No ambulances available",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(availableAmbulances) { ambulance ->
+                                ListItem(
+                                    headlineContent = { Text(ambulance.registrationNo) },
+                                    supportingContent = { Text("Driver ID: ${ambulance.driverId}") },
+                                    modifier = Modifier.clickable { onTrackAmbulance(ambulance.id) },
+                                    trailingContent = {
+                                        Button(onClick = { onConfirm(ambulance.id) }) {
+                                            Text("Assign")
+                                        }
+                                    },
+                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                )
+                            }
                         }
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 @Composable
@@ -336,19 +405,10 @@ fun StatCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(
-        modifier = modifier.border(
-            BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-            ),
-            RoundedCornerShape(16.dp)
-        ),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = color.copy(alpha = 0.7f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+    GlassyCard(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        containerColor = color.copy(alpha = 0.28f)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -374,22 +434,10 @@ fun EmergencyRequestItem(
     request: EmergencyRequestEntity,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .border(
-                BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                ),
-                RoundedCornerShape(12.dp)
-            ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    GlassyCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
@@ -440,33 +488,47 @@ fun EmergencyRequestItem(
                         Icons.Default.Place,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = request.location,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
             Column(horizontalAlignment = Alignment.End) {
+                val baseColor = when(request.status.uppercase()) {
+                    "PENDING" -> Color(0xFFD32F2F)
+                    "ASSIGNED" -> Color(0xFFE65100)
+                    else -> Color(0xFF2E7D32)
+                }
+                val chipColor = glassReadableAccent(baseColor)
                 Surface(
-                    color = when(request.status) {
-                        "PENDING" -> MaterialTheme.colorScheme.errorContainer
-                        "ASSIGNED" -> MaterialTheme.colorScheme.primaryContainer
-                        else -> MaterialTheme.colorScheme.secondaryContainer
-                    },
-                    shape = RoundedCornerShape(8.dp)
+                    color = chipColor.copy(alpha = 0.18f),
+                    contentColor = chipColor,
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(0.8.dp, chipColor.copy(alpha = 0.95f))
                 ) {
                     Text(
                         text = request.status,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
+    }
+}
+
+private fun glassReadableAccent(color: Color): Color {
+    val luminance = color.luminance()
+    return when {
+        luminance > 0.58f -> androidx.compose.ui.graphics.lerp(color, Color.Black, 0.42f)
+        luminance < 0.18f -> androidx.compose.ui.graphics.lerp(color, Color.White, 0.18f)
+        else -> color
     }
 }

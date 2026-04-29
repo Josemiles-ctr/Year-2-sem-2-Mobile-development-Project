@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mobiledev.ui.components.GlassyCard
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -36,7 +37,7 @@ fun TrackingScreen(
     onBackClick: () -> Unit = {},
     onConfirmClick: () -> Unit = {},
     onCallClick: () -> Unit = {},
-    viewModel: TrackingViewModel = viewModel(factory = TrackingViewModel.Factory)
+    viewModel: TrackingViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -88,30 +89,39 @@ fun TrackingScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Ambulance Tracking",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "Ambulance Tracking",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBackIosNew,
+                                    contentDescription = "Back",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Back",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -162,14 +172,12 @@ fun TrackingScreen(
             }
 
             // Bottom Info Card
-            Surface(
+            GlassyCard(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                shadowElevation = 12.dp,
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
             ) {
                 Column(
                     modifier = Modifier
@@ -190,12 +198,13 @@ fun TrackingScreen(
                             modifier = Modifier.weight(1f)
                         )
                         Surface(
-                            color = Color(0xFFE8F5E9),
-                            shape = RoundedCornerShape(12.dp)
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.24f))
                         ) {
                             Text(
                                 text = "En Route",
-                                color = Color(0xFF2E7D32),
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                             )

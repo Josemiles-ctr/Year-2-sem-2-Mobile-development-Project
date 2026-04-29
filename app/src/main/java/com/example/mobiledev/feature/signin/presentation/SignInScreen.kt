@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +33,8 @@ import com.example.mobiledev.R
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.BrandHeader
 import com.example.mobiledev.ui.components.AuthScreenContainer
+import com.example.mobiledev.ui.components.GlassyCard
+import com.example.mobiledev.ui.components.CompactLoadingIndicator
 import com.example.mobiledev.ui.theme.MobileDevTheme
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
@@ -51,13 +52,13 @@ import kotlinx.coroutines.flow.collectLatest
 fun SignInRoute(
     viewModel: SignInViewModel,
     onSignUpClick: () -> Unit = {},
-    onAuthSuccess: () -> Unit = {},
-    onHospitalSignInClick: () -> Unit = {}
+    onAuthSuccess: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val appError by viewModel.appError.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val retryActionLabel = stringResource(R.string.action_retry)
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -80,7 +81,7 @@ fun SignInRoute(
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
-                    context.getString(R.string.action_retry)
+                    retryActionLabel
                 } else null
             )
 
@@ -95,8 +96,7 @@ fun SignInRoute(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
-        onSignUpClick = onSignUpClick,
-        onHospitalSignInClick = onHospitalSignInClick
+        onSignUpClick = onSignUpClick
     )
 }
 
@@ -106,7 +106,6 @@ fun SignInScreen(
     snackbarHostState: SnackbarHostState,
     onEvent: (SignInEvent) -> Unit,
     onSignUpClick: () -> Unit,
-    onHospitalSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -128,35 +127,22 @@ fun SignInScreen(
             LoginFormCard(
                 uiState = uiState,
                 onEvent = onEvent,
-                onSignUpClick = onSignUpClick,
-                onHospitalSignInClick = onHospitalSignInClick
+                onSignUpClick = onSignUpClick
             )
         }
     }
+}
 }
 
 @Composable
 private fun LoginFormCard(
     uiState: SignInUiState,
     onEvent: (SignInEvent) -> Unit,
-    onSignUpClick: () -> Unit,
-    onHospitalSignInClick: () -> Unit
+    onSignUpClick: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
-                ),
-                MaterialTheme.shapes.extraLarge
-            ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-        )
+    GlassyCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier
@@ -169,7 +155,8 @@ private fun LoginFormCard(
                 text = stringResource(R.string.login_title),
                 modifier = Modifier.testTag("signin_title"),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -212,10 +199,8 @@ private fun LoginFormCard(
                     .testTag("signin_submit_button")
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(22.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
+                    CompactLoadingIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
                     Text(text = stringResource(R.string.sign_in_cta_label))
@@ -241,17 +226,6 @@ private fun LoginFormCard(
                 }
             }
 
-            TextButton(
-                onClick = onHospitalSignInClick,
-                enabled = !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Hospital Admin? Login here",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
     }
 }
@@ -264,8 +238,7 @@ private fun SignInScreenPreview() {
             uiState = SignInUiState(),
             snackbarHostState = remember { SnackbarHostState() },
             onEvent = {},
-            onSignUpClick = {},
-            onHospitalSignInClick = {}
+            onSignUpClick = {}
         )
     }
 }
