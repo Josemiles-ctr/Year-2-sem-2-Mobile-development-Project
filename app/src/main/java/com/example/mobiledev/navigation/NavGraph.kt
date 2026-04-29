@@ -24,6 +24,12 @@ import com.example.mobiledev.feature.hospital.presentation.HospitalSignInRoute
 import com.example.mobiledev.feature.hospital.presentation.HospitalSignInViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalSignInViewModelFactory
 import com.example.mobiledev.feature.main.presentation.MainScreen
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalsRoute
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsRoute
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsViewModel
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsViewModelFactory
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalsViewModel
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalsViewModelFactory
 import com.example.mobiledev.feature.signin.presentation.SignInRoute
 import com.example.mobiledev.feature.signin.presentation.SignInViewModel
 import com.example.mobiledev.feature.signin.presentation.SignInViewModelFactory
@@ -45,6 +51,9 @@ sealed class Screen(val route: String) {
     object Main : Screen("main")
     object StaffManagement : Screen("staff_management")
     object HospitalSignIn : Screen("hospital_signin")
+    object PatientHospitalDetails : Screen("patient_hospital/{hospitalId}") {
+        fun createRoute(hospitalId: String) = "patient_hospital/$hospitalId"
+    }
     object HospitalDashboard : Screen("hospital_dashboard/{hospitalId}") {
         fun createRoute(hospitalId: String) = "hospital_dashboard/$hospitalId"
     }
@@ -117,6 +126,12 @@ fun NavGraph(
         composable(Screen.Main.route) {
             val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
             val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
+            val patientHospitalsViewModelFactory = remember(resQRepository) {
+                PatientHospitalsViewModelFactory(resQRepository)
+            }
+            val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
+                factory = patientHospitalsViewModelFactory
+            )
             val principal by authSessionManager.principal.collectAsState()
             var signedInUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.mobiledev.data.model.User?>(null) }
 
@@ -131,23 +146,52 @@ fun NavGraph(
                 }
             }
 
-            MainScreen(
-                currentPrincipal = principal,
-                currentUser = signedInUser,
-                onManageStaffClick = {
-                    navController.navigate(Screen.StaffManagement.route)
-                },
-                onLogoutClick = {
-                    authSessionManager.clear()
-                    navController.navigate(Screen.SignIn.route) {
-                        popUpTo(navController.graph.id) { inclusive = true }
-                        launchSingleTop = true
+            if (principal.role == com.example.mobiledev.data.security.AppRole.PATIENT) {
+                MainScreen(
+                    currentPrincipal = principal,
+                    currentUser = signedInUser,
+                    onManageStaffClick = {
+                        navController.navigate(Screen.StaffManagement.route)
+                    },
+                    onLogoutClick = {
+                        authSessionManager.clear()
+                        navController.navigate(Screen.SignIn.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    homeTabContent = { modifier ->
+                        PatientHospitalsRoute(
+                            viewModel = patientHospitalsViewModel,
+                            onHospitalClick = { hospitalId ->
+                                navController.navigate(Screen.PatientHospitalDetails.createRoute(hospitalId))
+                            },
+                            modifier = modifier
+                        )
+                    },
+                    requestTabContent = {
+                        EmergencyDashboardScreen(viewModel = emergencyViewModel)
                     }
-                },
-                requestTabContent = {
-                    EmergencyDashboardScreen(viewModel = emergencyViewModel)
-                }
-            )
+                )
+            } else {
+                MainScreen(
+                    currentPrincipal = principal,
+                    currentUser = signedInUser,
+                    onManageStaffClick = {
+                        navController.navigate(Screen.StaffManagement.route)
+                    },
+                    onLogoutClick = {
+                        authSessionManager.clear()
+                        navController.navigate(Screen.SignIn.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    requestTabContent = {
+                        EmergencyDashboardScreen(viewModel = emergencyViewModel)
+                    }
+                )
+            }
         }
 
         composable(Screen.StaffManagement.route) {
@@ -179,6 +223,26 @@ fun NavGraph(
                     factory = HospitalDashboardViewModelFactory(resQRepository, hospitalId)
                 )
                 HospitalDashboardScreen(viewModel = viewModel)
+            }
+        }
+
+        composable(Screen.PatientHospitalDetails.route) { backStackEntry ->
+            val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
+            if (hospitalId.isBlank()) {
+                Text("Invalid hospital selection. Please go back and try again.")
+            } else {
+                val detailsViewModelFactory = remember(resQRepository, hospitalId, authSessionManager) {
+                    PatientHospitalDetailsViewModelFactory(
+                        repository = resQRepository,
+                        hospitalId = hospitalId,
+                        authSessionManager = authSessionManager
+                    )
+                }
+                val viewModel: PatientHospitalDetailsViewModel = viewModel(factory = detailsViewModelFactory)
+                PatientHospitalDetailsRoute(
+                    viewModel = viewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }

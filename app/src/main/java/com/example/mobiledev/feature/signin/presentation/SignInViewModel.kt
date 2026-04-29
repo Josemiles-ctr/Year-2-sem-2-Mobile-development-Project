@@ -4,10 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.core.base.BaseViewModel
+import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
 import com.example.mobiledev.data.security.AuthSessionManager
-import com.example.mobiledev.data.repository.UserRepository
 import com.example.mobiledev.domain.validation.Validator
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 class SignInViewModel(
     private val userRepository: UserRepository,
     private val authSessionManager: AuthSessionManager
-) : ViewModel() {
+) : BaseViewModel() {
 
     sealed interface NavigationEvent {
         data object NavigateToDashboard : NavigationEvent
@@ -106,8 +107,8 @@ class SignInViewModel(
                     )
                 }
             } catch (exception: Exception) {
+                handleError(exception)
                 val userMessage = toUserMessage(exception)
-                Log.e(TAG, "Sign-in failed while accessing Firebase.", exception)
                 _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = userMessage)
             }
         }
@@ -123,7 +124,6 @@ class SignInViewModel(
     }
 
     private companion object {
-        const val TAG = "SignInViewModel"
         const val ERROR_MISSING_EMAIL_OR_PHONE = "Email or phone number is required."
         const val ERROR_INVALID_EMAIL_OR_PHONE = "Enter a valid email or phone number."
         const val ERROR_MISSING_PASSWORD = "Password is required."

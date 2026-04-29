@@ -67,58 +67,58 @@ abstract class ResQDatabase : RoomDatabase() {
                 instance
             }
         }
-    }
 
-    private class DatabaseCallback(
-        private val context: Context
-    ) : RoomDatabase.Callback() {
-        
-        override fun onCreate(db: SupportSQLiteDatabase) {
-            // Use a post-initialization trigger to seed via DAOs once the DB is ready
-            CoroutineScope(Dispatchers.IO).launch {
-                getDatabase(context).let { database ->
-                    try {
-                        seedData(database)
-                        Log.d("ResQDatabase", "Initial seeding successful")
-                    } catch (e: Exception) {
-                        Log.e("ResQDatabase", "Initial seeding failed: ${e.message}")
+        private class DatabaseCallback(
+            private val context: Context
+        ) : RoomDatabase.Callback() {
+
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                // Use a post-initialization trigger to seed via DAOs once the DB is ready
+                CoroutineScope(Dispatchers.IO).launch {
+                    getDatabase(context).let { database ->
+                        try {
+                            seedData(database)
+                            Log.d("ResQDatabase", "Initial seeding successful")
+                        } catch (e: Exception) {
+                            Log.e("ResQDatabase", "Initial seeding failed: ${e.message}")
+                        }
                     }
                 }
             }
-        }
 
-        suspend fun seedData(db: ResQDatabase) {
-            val userDao = db.userDao()
-            val hospitalDao = db.hospitalDao()
-            val ambulanceDao = db.ambulanceDao()
-            val requestDao = db.emergencyRequestDao()
+            private suspend fun seedData(db: ResQDatabase) {
+                val userDao = db.userDao()
+                val hospitalDao = db.hospitalDao()
+                val ambulanceDao = db.ambulanceDao()
+                val requestDao = db.emergencyRequestDao()
 
-            val hashedPW = BCrypt.hashpw("password123", BCrypt.gensalt())
-            val now = System.currentTimeMillis()
+                val hashedPW = BCrypt.hashpw("password123", BCrypt.gensalt())
+                val now = System.currentTimeMillis()
 
-            val mockSeed = MockSeedData.create(now = now, passwordHash = hashedPW)
+                val mockSeed = MockSeedData.create(now = now, passwordHash = hashedPW)
 
-            mockSeed.hospitals.forEach { hospital ->
-                if (hospitalDao.getHospitalById(hospital.id) == null) {
-                    hospitalDao.insertHospital(hospital)
+                mockSeed.hospitals.forEach { hospital ->
+                    if (hospitalDao.getHospitalById(hospital.id) == null) {
+                        hospitalDao.insertHospital(hospital)
+                    }
                 }
-            }
 
-            mockSeed.users.forEach { user ->
-                if (userDao.getUserById(user.id) == null) {
-                    userDao.insertUser(user)
+                mockSeed.users.forEach { user ->
+                    if (userDao.getUserById(user.id) == null) {
+                        userDao.insertUser(user)
+                    }
                 }
-            }
 
-            mockSeed.ambulances.forEach { ambulance ->
-                if (ambulanceDao.getAmbulanceById(ambulance.id) == null) {
-                    ambulanceDao.insertAmbulance(ambulance)
+                mockSeed.ambulances.forEach { ambulance ->
+                    if (ambulanceDao.getAmbulanceById(ambulance.id) == null) {
+                        ambulanceDao.insertAmbulance(ambulance)
+                    }
                 }
-            }
 
-            mockSeed.requests.forEach { request ->
-                if (requestDao.getRequestById(request.id) == null) {
-                    requestDao.insertRequest(request)
+                mockSeed.requests.forEach { request ->
+                    if (requestDao.getRequestById(request.id) == null) {
+                        requestDao.insertRequest(request)
+                    }
                 }
             }
         }

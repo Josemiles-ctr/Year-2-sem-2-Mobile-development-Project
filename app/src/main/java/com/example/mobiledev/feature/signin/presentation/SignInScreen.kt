@@ -35,6 +35,16 @@ import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.BrandHeader
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.theme.MobileDevTheme
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.remember
+import com.example.mobiledev.core.error.AppError
+import com.example.mobiledev.core.error.toUserMessage
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -45,6 +55,9 @@ fun SignInRoute(
     onHospitalSignInClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val appError by viewModel.appError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -54,8 +67,33 @@ fun SignInRoute(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.successMessage.collectLatest { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(appError) {
+        appError?.let { error ->
+            val message = error.toUserMessage(context)
+
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
+                    context.getString(R.string.action_retry)
+                } else null
+            )
+
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.onEvent(SignInEvent.Submit)
+            }
+            viewModel.clearError()
+        }
+    }
+
     SignInScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onSignUpClick = onSignUpClick,
         onHospitalSignInClick = onHospitalSignInClick
@@ -65,12 +103,18 @@ fun SignInRoute(
 @Composable
 fun SignInScreen(
     uiState: SignInUiState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (SignInEvent) -> Unit,
     onSignUpClick: () -> Unit,
     onHospitalSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    AuthScreenContainer(modifier = modifier) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent, // Ensure background shows through
+        modifier = modifier
+    ) { padding ->
+        AuthScreenContainer(modifier = Modifier.padding(padding)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,6 +262,7 @@ private fun SignInScreenPreview() {
     MobileDevTheme {
         SignInScreen(
             uiState = SignInUiState(),
+            snackbarHostState = remember { SnackbarHostState() },
             onEvent = {},
             onSignUpClick = {},
             onHospitalSignInClick = {}

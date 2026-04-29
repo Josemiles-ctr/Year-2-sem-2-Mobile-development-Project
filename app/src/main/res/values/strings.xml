@@ -17,7 +17,30 @@
     <string name="sign_up_label">Sign Up</string>
     <string name="sign_in_cta_label">Sign In</string>
     <string name="tab_activity">Activity</string>
+    <string name="tab_hospitals">Hospitals</string>
     <string name="tab_requests">Request</string>
     <string name="tab_account">Account</string>
     <string name="placeholder_screen_text">%1$s screen placeholder</string>
+
+    <!-- Error Messages -->
+    <string name="error_network">Network error. Please try again.</string>
+    <string name="error_timeout">Request timed out.</string>
+    <string name="error_no_internet">No internet connection.</string>
+    <string name="error_unknown">An unknown error occurred.</string>
+
+    <!-- Success Messages -->
+    <string name="success_staff_invited">Staff invited successfully</string>
+    <string name="success_staff_removed">Staff member removed</string>
+    <string name="success_invitation_cancelled">Invitation cancelled</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_remove_staff_title">Remove Staff</string>
+    <string name="dialog_remove_staff_message">Are you sure you want to remove %1$s from the staff list?</string>
+    <string name="dialog_cancel_invitation_title">Cancel Invitation</string>
+    <string name="dialog_cancel_invitation_message">Are you sure you want to cancel the invitation for %1$s?</string>
+
+    <!-- Actions -->
+    <string name="action_retry">Retry</string>
 </resources>

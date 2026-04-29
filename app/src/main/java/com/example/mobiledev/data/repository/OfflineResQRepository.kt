@@ -7,6 +7,7 @@ import com.example.mobiledev.data.local.dao.UserDao
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import com.example.mobiledev.data.local.entity.HospitalStatus
 import com.example.mobiledev.data.local.entity.UserEntity
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
@@ -14,7 +15,10 @@ import com.example.mobiledev.data.security.AuthSessionManager
 import com.example.mobiledev.data.security.Permission
 import com.example.mobiledev.data.security.RbacPolicy
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import org.mindrot.jbcrypt.BCrypt
+import java.util.UUID
 
 class OfflineResQRepository(
     private val userDao: UserDao,
@@ -35,6 +39,25 @@ class OfflineResQRepository(
         val principal = requirePermission(permission)
         RbacPolicy.requireHospitalScope(principal, hospitalId)
         return principal
+    }
+
+    private suspend fun ensureRequestUserExists(request: EmergencyRequestEntity) {
+        if (userDao.getUserById(request.userId) != null) return
+
+        val now = System.currentTimeMillis()
+        val fallbackUser = UserEntity(
+            id = request.userId,
+            hospitalId = null,
+            name = "Patient ${request.userId.takeLast(6)}",
+            email = "patient_${UUID.randomUUID()}@resq.local",
+            phone = "000-0000",
+            location = request.location,
+            userType = "PATIENT",
+            uuid = null,
+            createdAt = now,
+            updatedAt = now
+        )
+        userDao.insertUser(fallbackUser)
     }
 
     // User
@@ -80,12 +103,29 @@ class OfflineResQRepository(
         return hospitalDao.getAllHospitals()
     }
 
+    override fun getApprovedHospitalsStream(): Flow<List<HospitalEntity>> {
+        requirePermission(Permission.VIEW_APPROVED_HOSPITALS)
+        return hospitalDao.getApprovedHospitals()
+    }
+
     override suspend fun getHospitalById(id: String): HospitalEntity? {
+        val hospital = hospitalDao.getHospitalById(id) ?: return null
         val principal = principal()
-        if (principal.role != AppRole.SYSTEM_ADMIN) {
-            RbacPolicy.requireHospitalScope(principal, id)
+
+        return when (principal.role) {
+            AppRole.SYSTEM_ADMIN -> hospital
+            AppRole.PATIENT -> {
+                requirePermission(Permission.VIEW_APPROVED_HOSPITALS)
+                if (hospital.status != HospitalStatus.APPROVED) {
+                    throw SecurityException("Access denied: only approved hospitals are visible to patients")
+                }
+                hospital
+            }
+            else -> {
+                RbacPolicy.requireHospitalScope(principal, id)
+                hospital
+            }
         }
-        return hospitalDao.getHospitalById(id)
     }
 
     override suspend fun getHospitalByAdminId(adminId: String): HospitalEntity? {
@@ -127,8 +167,21 @@ class OfflineResQRepository(
     }
 
     override fun getAmbulancesByHospitalStream(hospitalId: String): Flow<List<AmbulanceEntity>> {
-        requireHospitalScope(Permission.VIEW_HOSPITAL_DATA, hospitalId)
-        return ambulanceDao.getAmbulancesByHospital(hospitalId)
+        return flow {
+            val principal = principal()
+            when (principal.role) {
+                AppRole.PATIENT -> {
+                    requirePermission(Permission.VIEW_APPROVED_HOSPITALS)
+                    val hospital = hospitalDao.getHospitalById(hospitalId)
+                        ?: throw SecurityException("Hospital not found")
+                    if (hospital.status != HospitalStatus.APPROVED) {
+                        throw SecurityException("Access denied: only approved hospitals are visible to patients")
+                    }
+                }
+                else -> requireHospitalScope(Permission.VIEW_HOSPITAL_DATA, hospitalId)
+            }
+            emitAll(ambulanceDao.getAmbulancesByHospital(hospitalId))
+        }
     }
 
     override fun getAvailableAmbulancesStream(hospitalId: String): Flow<List<AmbulanceEntity>> {
@@ -228,6 +281,9 @@ class OfflineResQRepository(
             }
             else -> throw SecurityException("Access denied: cannot create emergency requests")
         }
+        // Some authenticated patients may not yet be mirrored in local USER table.
+        // Create a minimal local profile so FK constraints remain valid on request insert.
+        ensureRequestUserExists(request)
         emergencyRequestDao.insertRequest(request)
     }
 
