@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
@@ -47,6 +48,7 @@ fun HospitalSignInRoute(
     val uiState by viewModel.uiState.collectAsState()
     val appError by viewModel.appError.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val localContext = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -60,12 +62,12 @@ fun HospitalSignInRoute(
 
     LaunchedEffect(appError) {
         appError?.let { error ->
-            val message = error.toUserMessage(context)
+            val message = error.toUserMessage(localContext)
 
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
-                    context.getString(R.string.action_retry)
+                    localContext.getString(R.string.action_retry)
                 } else null
             )
 

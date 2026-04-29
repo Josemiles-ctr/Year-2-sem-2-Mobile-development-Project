@@ -144,12 +144,6 @@ fun StaffManagementContent(
                     onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
                 )
             }
-
-            state.error?.let {
-                Snackbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-                ) { Text(it) }
-            }
         }
     }
 }

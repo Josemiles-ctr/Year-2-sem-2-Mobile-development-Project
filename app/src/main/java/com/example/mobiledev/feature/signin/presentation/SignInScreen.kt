@@ -80,7 +80,8 @@ fun SignInRoute(
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
-                    context.getString(R.string.action_retry)
+                    val retryActionLabel = "Retry"
+                    retryActionLabel
                 } else null
             )
 
@@ -115,22 +116,23 @@ fun SignInScreen(
         modifier = modifier
     ) { padding ->
         AuthScreenContainer(modifier = Modifier.padding(padding)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            BrandHeader()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                BrandHeader()
 
-            LoginFormCard(
-                uiState = uiState,
-                onEvent = onEvent,
-                onSignUpClick = onSignUpClick,
-                onHospitalSignInClick = onHospitalSignInClick
-            )
+                LoginFormCard(
+                    uiState = uiState,
+                    onEvent = onEvent,
+                    onSignUpClick = onSignUpClick,
+                    onHospitalSignInClick = onHospitalSignInClick
+                )
+            }
         }
     }
 }
@@ -258,7 +260,7 @@ private fun LoginFormCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun SignInScreenPreview() {
+fun SignInScreenPreview() {
     MobileDevTheme {
         SignInScreen(
             uiState = SignInUiState(),
