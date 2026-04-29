@@ -22,8 +22,6 @@ import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +48,8 @@ import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.location.DeviceLocationProvider
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import com.example.mobiledev.ui.components.FullScreenLoading
+import com.example.mobiledev.ui.components.GlassyCard
 import java.util.Locale
 
 @Composable
@@ -102,6 +102,7 @@ fun PatientHospitalDetailsRoute(
     PatientHospitalDetailsScreen(
         viewModel = viewModel,
         onBackClick = onBackClick,
+        onAmbulanceClick = onAmbulanceClick,
         currentLocation = currentLocation,
         modifier = modifier
     )
@@ -111,6 +112,7 @@ fun PatientHospitalDetailsRoute(
 fun PatientHospitalDetailsScreen(
     viewModel: PatientHospitalDetailsViewModel,
     onBackClick: () -> Unit,
+    onAmbulanceClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     currentLocation: Coordinates? = null
 ) {
@@ -142,6 +144,7 @@ fun PatientHospitalDetailsScreen(
             },
             onDismissSubmitMessage = viewModel::clearSubmitMessage,
             onBackClick = onBackClick,
+            onAmbulanceClick = onAmbulanceClick,
             modifier = modifier
         )
     }
