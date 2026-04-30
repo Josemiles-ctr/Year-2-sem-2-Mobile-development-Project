@@ -191,7 +191,16 @@ class OfflineResQRepository(
 
     override suspend fun getAmbulanceById(id: String): AmbulanceEntity? {
         val ambulance = ambulanceDao.getAmbulanceById(id) ?: return null
-        requireHospitalScope(Permission.VIEW_HOSPITAL_DATA, ambulance.hospitalId)
+        val principal = principal()
+        if (principal.role == AppRole.PATIENT) {
+            requirePermission(Permission.VIEW_APPROVED_HOSPITALS)
+            val hospital = hospitalDao.getHospitalById(ambulance.hospitalId) ?: throw SecurityException("Hospital not found")
+            if (hospital.status != HospitalStatus.APPROVED) {
+                throw SecurityException("Access denied: only approved hospitals' ambulances are visible to patients")
+            }
+        } else {
+            requireHospitalScope(Permission.VIEW_HOSPITAL_DATA, ambulance.hospitalId)
+        }
         return ambulance
     }
 

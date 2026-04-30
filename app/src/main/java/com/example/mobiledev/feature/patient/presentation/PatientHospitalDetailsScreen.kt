@@ -22,9 +22,6 @@ import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,12 +48,15 @@ import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.location.DeviceLocationProvider
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import com.example.mobiledev.ui.components.FullScreenLoading
+import com.example.mobiledev.ui.components.GlassyCard
 import java.util.Locale
 
 @Composable
 fun PatientHospitalDetailsRoute(
     viewModel: PatientHospitalDetailsViewModel,
     onBackClick: () -> Unit,
+    onAmbulanceClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -102,6 +102,7 @@ fun PatientHospitalDetailsRoute(
     PatientHospitalDetailsScreen(
         viewModel = viewModel,
         onBackClick = onBackClick,
+        onAmbulanceClick = onAmbulanceClick,
         currentLocation = currentLocation,
         modifier = modifier
     )
@@ -111,6 +112,7 @@ fun PatientHospitalDetailsRoute(
 fun PatientHospitalDetailsScreen(
     viewModel: PatientHospitalDetailsViewModel,
     onBackClick: () -> Unit,
+    onAmbulanceClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     currentLocation: Coordinates? = null
 ) {
@@ -142,6 +144,7 @@ fun PatientHospitalDetailsScreen(
             },
             onDismissSubmitMessage = viewModel::clearSubmitMessage,
             onBackClick = onBackClick,
+            onAmbulanceClick = onAmbulanceClick,
             modifier = modifier
         )
     }
@@ -149,12 +152,7 @@ fun PatientHospitalDetailsScreen(
 
 @Composable
 private fun LoadingState(modifier: Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
+    FullScreenLoading(modifier = modifier)
 }
 
 @Composable
@@ -167,7 +165,7 @@ private fun ErrorState(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        GlassyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp)
@@ -202,6 +200,7 @@ private fun DetailsContent(
     onSubmitEmergencyRequest: (String) -> Unit,
     onDismissSubmitMessage: () -> Unit,
     onBackClick: () -> Unit,
+    onAmbulanceClick: (String) -> Unit,
     modifier: Modifier
 ) {
     var showRequestDialog by rememberSaveable { mutableStateOf(false) }
@@ -215,23 +214,34 @@ private fun DetailsContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Row(
+            GlassyCard(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                shape = MaterialTheme.shapes.extraLarge,
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
             ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = "Hospital details",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-                Spacer(modifier = Modifier.size(4.dp))
-                Text(
-                    text = "Hospital details",
-                    style = MaterialTheme.typography.titleLarge
-                )
             }
         }
 
         item {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            GlassyCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -267,7 +277,16 @@ private fun DetailsContent(
                             .fillMaxWidth()
                             .testTag("requestEmergencyButton")
                     ) {
-                        Text(if (isSubmittingRequest) "Submitting..." else "Request emergency")
+                        Text(if (isSubmittingRequest) "Submitting..." else "Add emergency details")
+                    }
+
+                    if (!isHospitalOffline && !isSubmittingRequest) {
+                        Text(
+                            text = "Please select one of the available ambulances below",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }
@@ -340,7 +359,7 @@ private fun DetailsContent(
 
         if (ambulances.isEmpty()) {
             item {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                GlassyCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "No ambulances registered for this hospital yet.",
                         modifier = Modifier.padding(16.dp),
@@ -350,9 +369,47 @@ private fun DetailsContent(
             }
         } else {
             items(ambulances, key = { it.id }) { ambulance ->
-                AmbulanceCard(ambulance = ambulance)
+                AmbulanceCard(
+                    ambulance = ambulance,
+                    onClick = { onAmbulanceClick(ambulance.id) }
+                )
             }
         }
+    }
+
+    if (showRequestDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRequestDialog = false
+            },
+            title = { Text("Submit emergency request") },
+            text = {
+                OutlinedTextField(
+                    value = emergencyDescription,
+                    onValueChange = { emergencyDescription = it },
+                    label = { Text("Emergency details") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onSubmitEmergencyRequest(emergencyDescription)
+                        showRequestDialog = false
+                    }
+                ) {
+                    Text("Submit")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRequestDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (showRequestDialog) {
@@ -392,12 +449,13 @@ private fun DetailsContent(
 }
 
 @Composable
-private fun AmbulanceCard(ambulance: AmbulanceEntity) {
-    Card(
+private fun AmbulanceCard(
+    ambulance: AmbulanceEntity,
+    onClick: () -> Unit
+) {
+    GlassyCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-        )
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

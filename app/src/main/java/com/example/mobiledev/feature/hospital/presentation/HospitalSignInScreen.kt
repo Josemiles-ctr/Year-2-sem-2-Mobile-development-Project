@@ -1,7 +1,5 @@
 package com.example.mobiledev.feature.hospital.presentation
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,16 +9,20 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,17 +40,20 @@ import com.example.mobiledev.core.error.toUserMessage
 import com.example.mobiledev.ui.components.AuthInputField
 import com.example.mobiledev.ui.components.AuthScreenContainer
 import com.example.mobiledev.ui.components.BrandHeader
+import com.example.mobiledev.ui.components.CompactLoadingIndicator
+import com.example.mobiledev.ui.components.GlassyCard
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HospitalSignInRoute(
     viewModel: HospitalSignInViewModel,
-    onSignInSuccess: (String) -> Unit
+    onSignInSuccess: (String) -> Unit,
+    onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val appError by viewModel.appError.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val localContext = LocalContext.current
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collectLatest { event ->
@@ -62,12 +67,12 @@ fun HospitalSignInRoute(
 
     LaunchedEffect(appError) {
         appError?.let { error ->
-            val message = error.toUserMessage(localContext)
+            val message = error.toUserMessage(context)
 
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = if (error is AppError.NetworkError || error is AppError.NoInternetError) {
-                    localContext.getString(R.string.action_retry)
+                    context.getString(R.string.action_retry)
                 } else null
             )
 
@@ -83,21 +88,41 @@ fun HospitalSignInRoute(
         snackbarHostState = snackbarHostState,
         onEmailChange = viewModel::onEmailChanged,
         onPasswordChange = viewModel::onPasswordChanged,
-        onSignInClick = viewModel::onSignInClick
+        onSignInClick = viewModel::onSignInClick,
+        onBackClick = onBackClick
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HospitalSignInScreen(
     uiState: HospitalSignInUiState,
     snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onSignInClick: () -> Unit
+    onSignInClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
+            )
+        }
     ) { padding ->
         AuthScreenContainer(modifier = Modifier.padding(padding)) {
             Column(
@@ -110,21 +135,9 @@ fun HospitalSignInScreen(
             ) {
                 BrandHeader()
 
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            BorderStroke(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
-                            ),
-                            MaterialTheme.shapes.extraLarge
-                        ),
-                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-                    )
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge
                 ) {
                     Column(
                         modifier = Modifier
@@ -136,7 +149,8 @@ fun HospitalSignInScreen(
                         Text(
                             text = "Hospital Admin Login",
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
@@ -175,10 +189,8 @@ fun HospitalSignInScreen(
                                 .height(48.dp)
                         ) {
                             if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.height(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
+                                CompactLoadingIndicator(
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
                                 Text(text = "Login")

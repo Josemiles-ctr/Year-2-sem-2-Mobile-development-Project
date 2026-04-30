@@ -1,0 +1,16 @@
+in page should have a back buttondm{
+  "name": "resq-firebase-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Seed Realtime Database with ResQ development data",
+  "main": "src/seed.js",
+  "scripts": {
+    "seed": "node src/seed.js",
+    "seed:dry": "node src/seed.js --dry-run"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "firebase-admin": "^13.5.0"
+  }
+}
+

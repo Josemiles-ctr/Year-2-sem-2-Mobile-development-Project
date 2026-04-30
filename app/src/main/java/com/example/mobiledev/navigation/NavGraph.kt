@@ -13,16 +13,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.mobiledev.data.repository.FirebaseUserRepository
 import com.example.mobiledev.ResQApplication
 import com.example.mobiledev.data.repository.ApiStaffRepository
 import com.example.mobiledev.data.services.StaffApiService
+import com.example.mobiledev.feature.admin.usermanagement.UserManagementScreen
+import com.example.mobiledev.feature.admin.usermanagement.UserManagementViewModel
+import com.example.mobiledev.feature.admin.usermanagement.UserManagementViewModelFactory
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModelFactory
-import com.example.mobiledev.feature.hospital.presentation.HospitalSignInRoute
-import com.example.mobiledev.feature.hospital.presentation.HospitalSignInViewModel
-import com.example.mobiledev.feature.hospital.presentation.HospitalSignInViewModelFactory
+
 import com.example.mobiledev.feature.main.presentation.MainScreen
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalsRoute
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsRoute
@@ -42,6 +42,8 @@ import com.example.mobiledev.feature.staff.StaffViewModelFactory
 import com.example.mobiledev.feature.emergency.EmergencyDashboardScreen
 import com.example.mobiledev.feature.emergency.EmergencyViewModel
 import com.example.mobiledev.feature.emergency.EmergencyViewModelFactory
+import com.example.mobiledev.feature.tracking.presentation.TrackingScreen
+import com.example.mobiledev.feature.tracking.presentation.TrackingViewModel
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -50,12 +52,14 @@ sealed class Screen(val route: String) {
     object SignUp : Screen("signup")
     object Main : Screen("main")
     object StaffManagement : Screen("staff_management")
-    object HospitalSignIn : Screen("hospital_signin")
     object PatientHospitalDetails : Screen("patient_hospital/{hospitalId}") {
         fun createRoute(hospitalId: String) = "patient_hospital/$hospitalId"
     }
     object HospitalDashboard : Screen("hospital_dashboard/{hospitalId}") {
         fun createRoute(hospitalId: String) = "hospital_dashboard/$hospitalId"
+    }
+    object Tracking : Screen("tracking/{ambulanceId}") {
+        fun createRoute(ambulanceId: String) = "tracking/$ambulanceId"
     }
 }
 
@@ -66,9 +70,9 @@ fun NavGraph(
     val context = LocalContext.current
     val container = (context.applicationContext as ResQApplication).container
     val resQRepository = container.resQRepository
+    val userRepository = container.userRepository
     val authSessionManager = container.authSessionManager
     val emergencyRepository = container.emergencyRepository
-    val userRepository = remember(context) { FirebaseUserRepository(context) }
     val retrofit = remember {
         Retrofit.Builder()
             .baseUrl("https://example.com/")
@@ -98,9 +102,6 @@ fun NavGraph(
                         popUpTo(Screen.SignIn.route) { inclusive = true }
                         launchSingleTop = true
                     }
-                },
-                onHospitalSignInClick = {
-                    navController.navigate(Screen.HospitalSignIn.route)
                 }
             )
         }
@@ -146,6 +147,11 @@ fun NavGraph(
                 }
             }
 
+            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+                // Show nothing or a loader while navigating back to Sign In
+                return@composable
+            }
+
             if (principal.role == com.example.mobiledev.data.security.AppRole.PATIENT) {
                 MainScreen(
                     currentPrincipal = principal,
@@ -156,7 +162,7 @@ fun NavGraph(
                     onLogoutClick = {
                         authSessionManager.clear()
                         navController.navigate(Screen.SignIn.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
+                            popUpTo(Screen.Main.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
@@ -170,10 +176,22 @@ fun NavGraph(
                         )
                     },
                     requestTabContent = {
-                        EmergencyDashboardScreen(viewModel = emergencyViewModel)
+                        EmergencyDashboardScreen(
+                            viewModel = emergencyViewModel,
+                            onAmbulanceClick = { ambulanceId ->
+                                navController.navigate(Screen.Tracking.createRoute(ambulanceId))
+                            }
+                        )
                     }
                 )
             } else {
+                val userManagementViewModelFactory = remember(userRepository) {
+                    UserManagementViewModelFactory(userRepository)
+                }
+                val userManagementViewModel: UserManagementViewModel = viewModel(
+                    factory = userManagementViewModelFactory
+                )
+
                 MainScreen(
                     currentPrincipal = principal,
                     currentUser = signedInUser,
@@ -183,12 +201,20 @@ fun NavGraph(
                     onLogoutClick = {
                         authSessionManager.clear()
                         navController.navigate(Screen.SignIn.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
+                            popUpTo(Screen.Main.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
                     requestTabContent = {
-                        EmergencyDashboardScreen(viewModel = emergencyViewModel)
+                        EmergencyDashboardScreen(
+                            viewModel = emergencyViewModel,
+                            onAmbulanceClick = { ambulanceId ->
+                                navController.navigate(Screen.Tracking.createRoute(ambulanceId))
+                            }
+                        )
+                    },
+                    userManagementTabContent = {
+                        UserManagementScreen(viewModel = userManagementViewModel)
                     }
                 )
             }
@@ -200,20 +226,6 @@ fun NavGraph(
             StaffManagementScreen(viewModel = viewModel)
         }
 
-        composable(Screen.HospitalSignIn.route) {
-            val viewModel: HospitalSignInViewModel = viewModel(
-                factory = HospitalSignInViewModelFactory(userRepository, authSessionManager)
-            )
-            HospitalSignInRoute(
-                viewModel = viewModel,
-                onSignInSuccess = { hospitalId ->
-                    navController.navigate(Screen.HospitalDashboard.createRoute(hospitalId)) {
-                        popUpTo(Screen.HospitalSignIn.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable(Screen.HospitalDashboard.route) { backStackEntry ->
             val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
             if (hospitalId.isBlank()) {
@@ -222,7 +234,19 @@ fun NavGraph(
                 val viewModel: HospitalDashboardViewModel = viewModel(
                     factory = HospitalDashboardViewModelFactory(resQRepository, hospitalId)
                 )
-                HospitalDashboardScreen(viewModel = viewModel)
+                HospitalDashboardScreen(
+                    viewModel = viewModel,
+                    onLogoutClick = {
+                        authSessionManager.clear()
+                        navController.navigate(Screen.SignIn.route) {
+                            popUpTo(Screen.HospitalDashboard.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onAmbulanceClick = { ambulanceId ->
+                        navController.navigate(Screen.Tracking.createRoute(ambulanceId))
+                    }
+                )
             }
         }
 
@@ -241,9 +265,24 @@ fun NavGraph(
                 val viewModel: PatientHospitalDetailsViewModel = viewModel(factory = detailsViewModelFactory)
                 PatientHospitalDetailsRoute(
                     viewModel = viewModel,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onAmbulanceClick = { ambulanceId ->
+                        navController.navigate(Screen.Tracking.createRoute(ambulanceId))
+                    }
                 )
             }
+        }
+
+        composable(Screen.Tracking.route) { backStackEntry ->
+            val ambulanceId = backStackEntry.arguments?.getString("ambulanceId") ?: ""
+            val trackingViewModel: TrackingViewModel = viewModel(
+                factory = TrackingViewModel.TrackingViewModelFactory(resQRepository, ambulanceId)
+            )
+            TrackingScreen(
+                viewModel = trackingViewModel,
+                onBackClick = { navController.popBackStack() },
+                onTrackingFinished = { navController.popBackStack() }
+            )
         }
     }
 }

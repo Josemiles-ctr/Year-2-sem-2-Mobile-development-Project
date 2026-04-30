@@ -3,6 +3,8 @@ package com.example.mobiledev.feature.signin.presentation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
 import com.example.mobiledev.ui.theme.MobileDevTheme
 import org.junit.Rule
 import org.junit.Test
@@ -18,9 +20,9 @@ class SignInScreenTest {
             MobileDevTheme {
                 SignInScreen(
                     uiState = SignInUiState(),
+                    snackbarHostState = SnackbarHostState(),
                     onEvent = {},
-                    onSignUpClick = {},
-                    onHospitalSignInClick = {}
+                    onSignUpClick = {}
                 )
             }
         }

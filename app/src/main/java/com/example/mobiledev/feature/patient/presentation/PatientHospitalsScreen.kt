@@ -23,12 +23,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.ExperimentalMaterialApi
@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,8 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import com.example.mobiledev.ui.components.GlassyCard
+import com.example.mobiledev.ui.components.FullScreenLoading
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 
@@ -127,27 +130,38 @@ fun PatientHospitalsScreen(
                         .fillMaxSize()
                         .padding(top = 4.dp)
                 ) {
-                    if (currentLocation != null) {
-                        Text(
-                            text = "Sorting by distance from your location",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    OutlinedTextField(
-                        value = searchText,
-                        onValueChange = { searchText = it },
+                    GlassyCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 4.dp)
-                            .testTag("hospitalSearchField"),
-                        placeholder = { Text("Search hospitals by name, phone, or address") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        singleLine = true
-                    )
+                            .padding(bottom = 12.dp),
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            if (currentLocation != null) {
+                                Text(
+                                    text = "Sorting by distance from your location",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            OutlinedTextField(
+                                value = searchText,
+                                onValueChange = { searchText = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("hospitalSearchField"),
+                                placeholder = { Text("Search hospitals by name, phone, or address") },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent
+                                )
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -182,12 +196,7 @@ fun PatientHospitalsScreen(
 
 @Composable
 private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
+    FullScreenLoading()
 }
 
 @Composable
@@ -199,13 +208,11 @@ private fun ErrorState(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        GlassyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            )
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -237,13 +244,10 @@ private fun EmptyState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        GlassyCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-            )
+                .padding(horizontal = 20.dp)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -277,16 +281,12 @@ private fun HospitalCard(
     distanceKm: Double? = null,
     onClick: () -> Unit
 ) {
-    Card(
+    GlassyCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 96.dp)
-            .testTag("hospitalCard_${hospital.id}"),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            .testTag("hospitalCard_${hospital.id}")
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
