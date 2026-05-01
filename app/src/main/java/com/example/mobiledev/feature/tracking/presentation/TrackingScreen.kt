@@ -1,38 +1,41 @@
 package com.example.mobiledev.feature.tracking.presentation
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mobiledev.ui.components.GlassyCard
+import com.example.mobiledev.R
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.LocalHospital
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,13 +84,22 @@ fun TrackingScreen(
         }
     }
 
+    fun handleCall() {
+        uiState.nearestHospital?.phone?.let { phone ->
+            val intent = Intent(Intent.ACTION_DIAL).apply {
+                data = Uri.parse("tel:$phone")
+            }
+            context.startActivity(intent)
+        }
+    }
+
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
             try {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
                         val userLatLng = LatLng(it.latitude, it.longitude)
-                        viewModel.updateUserLocation(userLatLng)
+                        viewModel.updateUserLocation(userLatLng, context)
                         cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
                     }
                 }
@@ -99,39 +111,57 @@ fun TrackingScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
         topBar = {
-            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                GlassyCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
-                ) {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "Ambulance Tracking",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
+            TopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            color = Color(0xFFC61111),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.padding(2.dp)
                             )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowBackIosNew,
-                                    contentDescription = "Back",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "ResQ",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFC61111)
+                            )
                         )
-                    )
-                }
-            }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                actions = {
+                    Surface(
+                        modifier = Modifier.padding(end = 12.dp).size(36.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFEEEEEE)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
+                            contentDescription = "Profile",
+                            modifier = Modifier.padding(4.dp),
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
         }
     ) { paddingValues ->
         Box(
@@ -142,6 +172,7 @@ fun TrackingScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false),
                 properties = MapProperties(
                     isMyLocationEnabled = hasLocationPermission
                 )
@@ -150,24 +181,11 @@ fun TrackingScreen(
                 if (uiState.routePoints.isNotEmpty()) {
                     Polyline(
                         points = uiState.routePoints,
-                        color = MaterialTheme.colorScheme.primary,
-                        width = 12f,
-                        jointType = JointType.ROUND,
-                        startCap = RoundCap(),
-                        endCap = RoundCap()
+                        color = Color(0xFFC61111),
+                        width = 8f,
+                        pattern = listOf(Dash(20f), Gap(20f)),
+                        jointType = JointType.ROUND
                     )
-                }
-
-                // Hospitals
-                uiState.hospitals.forEach { hospital ->
-                    if (hospital.latitude != null && hospital.longitude != null) {
-                        Marker(
-                            state = MarkerState(position = LatLng(hospital.latitude, hospital.longitude)),
-                            title = hospital.name,
-                            snippet = hospital.location,
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                        )
-                    }
                 }
 
                 // Ambulances
@@ -175,174 +193,246 @@ fun TrackingScreen(
                     Marker(
                         state = MarkerState(position = LatLng(ambulance.latitude, ambulance.longitude)),
                         title = "Ambulance ${ambulance.registrationNo}",
-                        snippet = ambulance.status,
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
                 }
             }
 
-            // Bottom Info Card
-            GlassyCard(
+            // Pickup Point Card
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(20.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFEBEE)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = Color(0xFFC61111)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "PICKUP POINT",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = uiState.userAddress ?: "Identifying location...",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.Black
+                        )
+                    }
+                }
+            }
+
+
+            // Bottom UI
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                    .fillMaxWidth()
             ) {
                 if (uiState.requestSent) {
-                    AmbulanceArrivingOverlay(
-                        ambulanceRegNo = uiState.nearestAmbulance?.registrationNo ?: "N/A",
-                        onCancelClick = { viewModel.onCancelRequest() },
-                        onPairClick = { viewModel.onPairRequest() }
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp, vertical = 32.dp)
-                            .navigationBarsPadding()
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = uiState.nearestHospital?.name ?: "Searching...",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.ExtraBold
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Surface(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.24f))
-                            ) {
-                                Text(
-                                    text = "En Route",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(20.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.DirectionsBus,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = " ${uiState.nearestAmbulance?.registrationNo ?: "N/A"}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 4.dp)
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Timer,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = if (uiState.routePoints.isNotEmpty()) " 12 mins" else " Calculating...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = if (uiState.routePoints.isNotEmpty()) "Estimated Arrival: 10:45 AM" else "Estimated Arrival: Calculating...",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        AmbulanceArrivingOverlay(
+                            ambulanceRegNo = uiState.nearestAmbulance?.registrationNo ?: "AMB-9921",
+                            onCancelClick = { viewModel.onCancelRequest() },
+                            onPairClick = { viewModel.onPairRequest() }
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Progress Bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(10.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(5.dp)
-                                )
-                        ) {
-                            Box(
+                    }
+                } else {
+                    Card(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column {
+                            // Availability Header
+                            Row(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.65f)
-                                    .fillMaxHeight()
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.primaryContainer,
-                                                MaterialTheme.colorScheme.primary
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(5.dp)
-                                    )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = onCallClick,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outline
-                                ),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                )
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFF8F9FA))
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Call, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(text = "Call")
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF00695C))
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "LIVE AVAILABILITY",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = Color(0xFF00695C)
+                                    )
+                                }
+                                Text(
+                                    text = "ID: ${uiState.nearestAmbulance?.registrationNo?.take(8) ?: "AMB-9921"}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray
+                                )
                             }
 
-                            Button(
-                                onClick = { viewModel.onConfirmRequest() },
-                                modifier = Modifier
-                                    .weight(1.3f)
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(text = "Confirm Request")
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Hospital Image Placeholder
+                                    Surface(
+                                        modifier = Modifier.size(64.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFFEEEEEE)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocalHospital,
+                                            contentDescription = null,
+                                            modifier = Modifier.padding(12.dp),
+                                            tint = Color.Gray
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = uiState.nearestHospital?.name ?: "Hospital Name",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = Color.Black
+                                        )
+                                        Text(
+                                            text = "Tier-1 Trauma Facility • 0.8 miles away",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = "5 mins",
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFC61111)
+                                            )
+                                        )
+                                        Text(
+                                            text = "ESTIMATED\nETA",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.Gray,
+                                            textAlign = TextAlign.End,
+                                            lineHeight = 10.sp
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { handleCall() },
+                                        modifier = Modifier.size(56.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(0.dp),
+                                        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+                                    ) {
+                                        Icon(Icons.Default.Call, contentDescription = "Call", tint = Color.Gray)
+                                    }
+
+                                    Button(
+                                        onClick = { viewModel.onConfirmRequest() },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(56.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFC61111),
+                                            contentColor = Color.White
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "Confirm Request",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFC61111))
+                }
+            }
+
+            if (uiState.showConfirmationDialog) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.onDismissDialog() },
+                    title = {
+                        Text(
+                            "Confirm Emergency Request",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    text = {
+                        Text(
+                            "Are you sure you want to request an ambulance to your current location? This will alert emergency services immediately.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.onConfirmDialog() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC61111)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Confirm Request")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.onDismissDialog() }) {
+                            Text("Cancel", color = Color.Gray)
+                        }
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    containerColor = Color.White
+                )
             }
         }
     }
@@ -373,29 +463,29 @@ private fun AmbulanceArrivingOverlay(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFC61111).copy(alpha = 0.1f)
             ) {
                 Icon(
                     imageVector = Icons.Default.LocalShipping,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = Color(0xFFC61111),
                     modifier = Modifier
-                        .padding(8.dp)
+                        .padding(12.dp)
                         .size(24.dp)
                 )
             }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Hold tight, will be there soon",
+                    text = "Ambulance on the way",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color.Black
                 )
                 Text(
-                    text = "Ambulance $ambulanceRegNo is responding",
+                    text = "Reg No: $ambulanceRegNo • En route",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
             }
         }
@@ -405,13 +495,13 @@ private fun AmbulanceArrivingOverlay(
         LinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                .height(8.dp)
+                .clip(CircleShape),
+            color = Color(0xFFC61111),
+            trackColor = Color(0xFFC61111).copy(alpha = 0.1f)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -422,10 +512,14 @@ private fun AmbulanceArrivingOverlay(
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray),
+                border = BorderStroke(1.dp, Color(0xFFEEEEEE))
             ) {
-                Text("Cancel")
+                Text(
+                    "Cancel",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
             }
 
             Button(
@@ -434,18 +528,27 @@ private fun AmbulanceArrivingOverlay(
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFC61111),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFFC61111).copy(alpha = 0.5f),
+                    disabledContentColor = Color.White.copy(alpha = 0.5f)
+                )
             ) {
-                Text("Pair")
+                Text(
+                    "Pair Device",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "pair on arrival",
+            text = "Pair with ambulance IoT device on arrival",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            color = Color.Gray
         )
     }
 }

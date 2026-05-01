@@ -14,22 +14,49 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
 @Composable
 fun BrandHeader(
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .size(88.dp)
-            .clip(CircleShape)
-            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.28f))
-            .border(0.5.dp, androidx.compose.ui.graphics.Color.White.copy(alpha = 0.24f), CircleShape)
+    Row(
+        modifier = modifier.padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.splash_screen),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.matchParentSize()
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(Color(0xFFC61111), shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "ResQ",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFC61111),
+                letterSpacing = 0.5.sp
+            )
         )
     }
 }

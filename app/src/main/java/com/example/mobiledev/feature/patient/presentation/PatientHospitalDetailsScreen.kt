@@ -4,6 +4,9 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,23 +15,41 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,11 +59,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.location.DeviceLocationProvider
@@ -108,6 +133,7 @@ fun PatientHospitalDetailsRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatientHospitalDetailsScreen(
     viewModel: PatientHospitalDetailsViewModel,
@@ -119,34 +145,76 @@ fun PatientHospitalDetailsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val hospital = uiState.hospital
 
-    when {
-        uiState.isLoading -> LoadingState(modifier)
-        uiState.errorMessage != null -> ErrorState(
-            message = uiState.errorMessage.orEmpty(),
-            onBackClick = onBackClick,
-            modifier = modifier
-        )
-        hospital != null -> DetailsContent(
-            hospital = hospital,
-            ambulances = uiState.ambulances,
-            availableAmbulanceCount = uiState.availableAmbulanceCount,
-            isHospitalOffline = uiState.isHospitalOffline,
-            isSubmittingRequest = uiState.isSubmittingRequest,
-            submitErrorMessage = uiState.submitErrorMessage,
-            submitSuccessMessage = uiState.submitSuccessMessage,
-            currentLocation = currentLocation,
-            onSubmitEmergencyRequest = { desc ->
-                viewModel.submitEmergencyRequest(
-                    desc,
-                    currentLocation?.latitude,
-                    currentLocation?.longitude
-                )
-            },
-            onDismissSubmitMessage = viewModel::clearSubmitMessage,
-            onBackClick = onBackClick,
-            onAmbulanceClick = onAmbulanceClick,
-            modifier = modifier
-        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = hospital?.name ?: "Hospital Details",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFFC61111)
+                        )
+                    }
+                },
+                actions = {
+                    Surface(
+                        modifier = Modifier.padding(end = 12.dp).size(36.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFEEEEEE)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "JD",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Gray
+                                )
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        containerColor = Color(0xFFF8F9FA)
+    ) { innerPadding ->
+        when {
+            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+            uiState.errorMessage != null -> ErrorState(
+                message = uiState.errorMessage.orEmpty(),
+                onBackClick = onBackClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+            hospital != null -> DetailsContent(
+                hospital = hospital,
+                ambulances = uiState.ambulances,
+                availableAmbulanceCount = uiState.availableAmbulanceCount,
+                isHospitalOffline = uiState.isHospitalOffline,
+                isSubmittingRequest = uiState.isSubmittingRequest,
+                submitErrorMessage = uiState.submitErrorMessage,
+                submitSuccessMessage = uiState.submitSuccessMessage,
+                currentLocation = currentLocation,
+                onSubmitEmergencyRequest = { desc, ambId ->
+                    viewModel.submitEmergencyRequest(
+                        desc,
+                        currentLocation?.latitude,
+                        currentLocation?.longitude,
+                        ambId
+                    )
+                },
+                onDismissSubmitMessage = viewModel::clearSubmitMessage,
+                onBackClick = onBackClick,
+                onAmbulanceClick = onAmbulanceClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
     }
 }
 
@@ -197,296 +265,310 @@ private fun DetailsContent(
     submitErrorMessage: String?,
     submitSuccessMessage: String?,
     currentLocation: Coordinates?,
-    onSubmitEmergencyRequest: (String) -> Unit,
+    onSubmitEmergencyRequest: (String, String?) -> Unit,
     onDismissSubmitMessage: () -> Unit,
     onBackClick: () -> Unit,
     onAmbulanceClick: (String) -> Unit,
     modifier: Modifier
 ) {
-    var showRequestDialog by rememberSaveable { mutableStateOf(false) }
-    var emergencyDescription by rememberSaveable { mutableStateOf("") }
+    var selectedAmbulanceId by remember { mutableStateOf<String?>(null) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("patientHospitalDetailsRoot"),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            GlassyCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
-            ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // ... (Hospital Info Card and Ambulances Header)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = hospital.name,
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = hospital.location,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                            Surface(
+                                color = Color(0xFFB2EBF2),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = Color(0xFF00838F)
+                                    )
+                                    Text(
+                                        text = "LEVEL 1\nTRAUMA",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF00838F),
+                                            lineHeight = 12.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider(color = Color(0xFFF5F5F5))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "CURRENT LOAD",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = "Optimal",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF00695C)
+                                    )
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "WAIT TIME",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = "~12 Mins",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Available Ambulances Header
+            item {
                 Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = "Hospital details",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Available Ambulances",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "$availableAmbulanceCount Units Online",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
                     )
                 }
             }
-        }
 
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.LocalHospital, contentDescription = null)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(hospital.name, style = MaterialTheme.typography.titleMedium)
-                            Text("Approved hospital", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    DetailRow(label = "Phone", value = hospital.phone)
-                    DetailRow(label = "Address", value = hospital.location)
-                    val distanceKm = hospitalDistanceKm(hospital, currentLocation)
-                    DetailRow(
-                        label = "Distance",
-                        value = distanceKm?.let {
-                            String.format(Locale.getDefault(), "%.1f km", it)
-                        } ?: "Distance unavailable"
-                    )
-                    DetailRow(label = "Available ambulances", value = availableAmbulanceCount.toString())
-
-                    Button(
-                        onClick = {
-                            emergencyDescription = ""
-                            showRequestDialog = true
-                        },
-                        enabled = !isHospitalOffline && !isSubmittingRequest,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("requestEmergencyButton")
-                    ) {
-                        Text(if (isSubmittingRequest) "Submitting..." else "Add emergency details")
-                    }
-
-                    if (!isHospitalOffline && !isSubmittingRequest) {
-                        Text(
-                            text = "Please select one of the available ambulances below",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        if (submitSuccessMessage != null) {
-            item {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = submitSuccessMessage,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        TextButton(onClick = onDismissSubmitMessage) {
-                            Text("Dismiss")
-                        }
-                    }
-                }
-            }
-        }
-
-        if (submitErrorMessage != null) {
-            item {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = submitErrorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        TextButton(onClick = onDismissSubmitMessage) {
-                            Text("Dismiss")
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isHospitalOffline) {
-            item {
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("offlineHospitalMessage")
-                ) {
+            if (ambulances.isEmpty()) {
+                item {
                     Text(
-                        text = "This hospital is currently offline. No active ambulances are available.",
+                        text = "No ambulances available at this moment.",
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                items(ambulances) { ambulance ->
+                    AmbulanceCard(
+                        ambulance = ambulance,
+                        isSelected = selectedAmbulanceId == ambulance.id,
+                        onClick = { selectedAmbulanceId = ambulance.id }
                     )
                 }
             }
+
+            item {
+                Spacer(modifier = Modifier.height(100.dp))
+            }
         }
 
-        item {
+        // Bottom Action Section
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Color.White.copy(alpha = 0.95f))
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    if (selectedAmbulanceId != null) {
+                        onSubmitEmergencyRequest("Emergency Request", selectedAmbulanceId)
+                        onAmbulanceClick(selectedAmbulanceId!!)
+                    }
+                },
+                enabled = selectedAmbulanceId != null && !isSubmittingRequest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFC61111),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                )
+            ) {
+                val selectedReg = ambulances.find { it.id == selectedAmbulanceId }?.registrationNo?.take(7) ?: ""
+                Text(
+                    text = if (selectedAmbulanceId == null) "Select an Ambulance" 
+                           else "Confirm Selection ($selectedReg)",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Ambulances",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 4.dp)
+                text = "Emergency dispatch will be notified\nimmediately upon confirmation.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
             )
         }
-
-        if (ambulances.isEmpty()) {
-            item {
-                GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "No ambulances registered for this hospital yet.",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        } else {
-            items(ambulances, key = { it.id }) { ambulance ->
-                AmbulanceCard(
-                    ambulance = ambulance,
-                    onClick = { onAmbulanceClick(ambulance.id) }
-                )
-            }
-        }
     }
 
-    if (showRequestDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showRequestDialog = false
-            },
-            title = { Text("Submit emergency request") },
-            text = {
-                OutlinedTextField(
-                    value = emergencyDescription,
-                    onValueChange = { emergencyDescription = it },
-                    label = { Text("Emergency details") },
-                    minLines = 3,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onSubmitEmergencyRequest(emergencyDescription)
-                        showRequestDialog = false
-                    }
-                ) {
-                    Text("Submit")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showRequestDialog = false }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    if (showRequestDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showRequestDialog = false
-            },
-            title = { Text("Submit emergency request") },
-            text = {
-                OutlinedTextField(
-                    value = emergencyDescription,
-                    onValueChange = { emergencyDescription = it },
-                    label = { Text("Emergency details") },
-                    minLines = 3,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onSubmitEmergencyRequest(emergencyDescription)
-                        showRequestDialog = false
-                    }
-                ) {
-                    Text("Submit")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showRequestDialog = false }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
 
 @Composable
 private fun AmbulanceCard(
     ambulance: AmbulanceEntity,
+    isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth(),
+    val type = remember(ambulance.id) { 
+        listOf("Advanced Life Support", "Basic Life Support", "Paramedic Rapid Response").random() 
+    }
+    val time = remember(ambulance.id) { (4..20).random() }
+    val distance = remember(ambulance.id) { String.format(Locale.US, "%.1f KM", (0..5).random() + (0..9).random() / 10.0) }
+    val isBusy = ambulance.status.uppercase().contains("BUSY") || ambulance.status.uppercase().contains("EMERGENCY")
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color(0xFFC61111) else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         onClick = onClick
     ) {
-        Column(
+        Row(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Icon
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = if (isBusy) Color(0xFFF5F5F5) else Color(0xFFC61111)
             ) {
-                Icon(Icons.Default.LocalShipping, contentDescription = null)
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = ambulance.registrationNo,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = ambulance.licenseNo,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = when(type) {
+                            "Basic Life Support" -> Icons.Default.MedicalServices
+                            "Paramedic Rapid Response" -> Icons.Default.LocalShipping
+                            else -> Icons.Default.Emergency
+                        },
+                        contentDescription = null,
+                        tint = if (isBusy) Color.Gray else Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                Text(
-                    text = ambulance.status.replace('_', ' '),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ambulanceStatusColor(ambulance.status),
-                    modifier = Modifier.testTag("ambulanceStatus_${ambulance.id}")
-                )
             }
-            DetailRow(label = "Location", value = "${ambulance.latitude}, ${ambulance.longitude}")
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Details
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = ambulance.registrationNo.take(7),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                Text(
+                    text = type,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (isBusy) Color(0xFFC61111) else Color(0xFF00695C))
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isBusy) "BUSY (ON MISSION)" else "AVAILABLE NOW",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (isBusy) Color(0xFFC61111) else Color(0xFF00695C)
+                    )
+                }
+            }
+
+            // Time/Distance
+            Column(horizontalAlignment = Alignment.End) {
+                if (isBusy) {
+                    Text(text = "--", style = MaterialTheme.typography.titleLarge, color = Color.LightGray)
+                } else {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "$time",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color.Black
+                        )
+                        Text(
+                            text = " mins",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (time < 6) Color(0xFFC61111) else Color.Gray,
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                    Text(
+                        text = if (time < 6) "FASTEST" else distance,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (time < 6) Color.Gray else Color.Gray
+                    )
+                }
+            }
         }
     }
 }

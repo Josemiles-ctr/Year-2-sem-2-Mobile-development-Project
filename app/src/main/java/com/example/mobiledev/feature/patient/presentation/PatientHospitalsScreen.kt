@@ -17,20 +17,35 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Route
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -57,6 +73,15 @@ import com.example.mobiledev.ui.components.GlassyCard
 import com.example.mobiledev.ui.components.FullScreenLoading
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.compose.ui.graphics.Brush
 
 private const val PAGE_SIZE = 6
 
@@ -115,6 +140,7 @@ fun PatientHospitalsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(Color(0xFFFBFBFB))
             .pullRefresh(pullRefreshState)
             .testTag("patientHospitalsRoot")
     ) {
@@ -128,42 +154,81 @@ fun PatientHospitalsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 4.dp)
+                        .padding(horizontal = 16.dp)
                 ) {
-                    GlassyCard(
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Search Bar
+                    TextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            if (currentLocation != null) {
-                                Text(
-                                    text = "Sorting by distance from your location",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                            .height(56.dp)
+                            .testTag("hospitalSearchField"),
+                        placeholder = { 
+                            Text(
+                                "Search hospitals by name or trauma level",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            ) 
+                        },
+                        leadingIcon = { 
+                            Icon(
+                                Icons.Default.Search, 
+                                contentDescription = null,
+                                tint = Color.Gray
+                            ) 
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFF5F5F5),
+                            unfocusedContainerColor = Color(0xFFF5F5F5),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
+                    )
 
-                            OutlinedTextField(
-                                value = searchText,
-                                onValueChange = { searchText = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("hospitalSearchField"),
-                                placeholder = { Text("Search hospitals by name, phone, or address") },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                                singleLine = true,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedContainerColor = Color.Transparent
-                                )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Map Widget
+                    MapWidget(
+                        currentLocation = currentLocation,
+                        hospitals = uiState.hospitals,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Section Title
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Nearby Hospitals",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF333333)
+                            )
+                        )
+                        Surface(
+                            color = Color(0xFFF5F5F5),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "${filteredHospitals.size} Found",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     when {
                         filteredHospitals.isEmpty() -> EmptyState()
@@ -171,7 +236,7 @@ fun PatientHospitalsScreen(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(visibleHospitals, key = { it.id }) { hospital ->
                                 HospitalCard(
@@ -195,8 +260,94 @@ fun PatientHospitalsScreen(
 }
 
 @Composable
+private fun MapWidget(
+    currentLocation: Coordinates?,
+    hospitals: List<HospitalEntity>,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(160.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (currentLocation != null) {
+                val cameraPositionState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(
+                        LatLng(currentLocation.latitude, currentLocation.longitude),
+                        11f
+                    )
+                }
+                
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        myLocationButtonEnabled = false,
+                        compassEnabled = false,
+                        mapToolbarEnabled = false,
+                        scrollGesturesEnabled = false,
+                        zoomGesturesEnabled = false,
+                        rotationGesturesEnabled = false,
+                        tiltGesturesEnabled = false
+                    ),
+                    properties = MapProperties(isMyLocationEnabled = true)
+                ) {
+                    hospitals.forEach { hospital ->
+                        if (hospital.latitude != null && hospital.longitude != null) {
+                            Marker(
+                                state = MarkerState(position = LatLng(hospital.latitude, hospital.longitude)),
+                                title = hospital.name
+                            )
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color(0xFF00695C),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+
+            // Map View Text Overlay
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Map view",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun LoadingState() {
-    FullScreenLoading()
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color(0xFFFBFBFB)),
+        contentAlignment = Alignment.Center
+    ) {
+        FullScreenLoading()
+    }
 }
 
 @Composable
@@ -208,27 +359,42 @@ private fun ErrorState(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        GlassyCard(
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFC61111),
+                    modifier = Modifier.size(48.dp)
+                )
                 Text(
                     text = "Unable to load hospitals",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
                 )
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
                 )
-                ElevatedButton(onClick = onRetry) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onRetry,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00695C))
+                ) {
                     Icon(Icons.Default.Refresh, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Retry")
@@ -244,31 +410,35 @@ private fun EmptyState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        GlassyCard(
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     imageVector = Icons.Default.LocalHospital,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
+                    tint = Color(0xFF00695C),
+                    modifier = Modifier.size(48.dp)
                 )
                 Text(
                     text = "No hospitals match your search",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
                 )
                 Text(
                     text = "Try a different hospital name, phone number, or address.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -281,74 +451,99 @@ private fun HospitalCard(
     distanceKm: Double? = null,
     onClick: () -> Unit
 ) {
-    GlassyCard(
+    val waitTime = remember(hospital.id) { "${(2..15).random()} min" }
+    val traumaLevel = remember(hospital.id) { listOf("Level I", "Level II", "Level III").random() }
+    val isLowAmbs = hospital.activeAmbulances <= 1
+
+    ElevatedCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 96.dp)
-            .testTag("hospitalCard_${hospital.id}")
+            .testTag("hospitalCard_${hospital.id}"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.White, Color(0xFFF5F5F5))
+                    )
+                )
+                .padding(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFE0F2F1)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.LocalHospital,
+                            contentDescription = null,
+                            tint = Color(0xFF00695C),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = hospital.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = if (distanceKm != null) String.format("%.1f mi", distanceKm * 0.621371) else "0.8 mi",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                        )
+                        Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(Color.LightGray))
+                        Text(
+                            text = traumaLevel,
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                        )
+                        Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(Color.LightGray))
+                        Text(
+                            text = waitTime,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = Color(0xFF00695C),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = hospital.phone,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "${hospital.activeAmbulances}",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (isLowAmbs) Color(0xFFC62828) else Color(0xFF00695C)
+                        )
+                    )
+                    Text(
+                        text = "AMBS",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            color = Color.Gray
+                        )
                     )
                 }
-                Text(
-                    text = "Approved",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = hospital.location,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Text(
-                text = "Active ambulances: ${hospital.activeAmbulances}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            if (distanceKm != null) {
-                Text(
-                    text = String.format("%.1f km away", distanceKm),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }

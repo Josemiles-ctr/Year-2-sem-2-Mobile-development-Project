@@ -1,6 +1,8 @@
 package com.example.mobiledev.feature.tracking.presentation
 
+import android.location.Geocoder
 import android.location.Location
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -33,8 +35,9 @@ data class TrackingUiState(
     val nearestAmbulance: AmbulanceEntity? = null,
     val selectedAmbulance: AmbulanceEntity? = null,
     val routePoints: List<LatLng> = emptyList(),
-    val showConfirmationDialog: Boolean = false,
+    val userAddress: String? = null,
     val requestSent: Boolean = false,
+    val showConfirmationDialog: Boolean = false,
     val isFinished: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
@@ -129,28 +132,56 @@ class TrackingViewModel(
         uiState.value.userLocation?.let { findNearestEntities(it) }
     }
 
-    fun updateUserLocation(location: LatLng) {
+    fun updateUserLocation(location: LatLng, context: android.content.Context) {
         _uiState.update { it.copy(userLocation = location) }
+        fetchAddress(location, context)
         if (_uiState.value.hospitals.isNotEmpty()) {
             findNearestEntities(location)
         }
     }
 
-    fun onConfirmClick() {
+    private fun fetchAddress(location: LatLng, context: android.content.Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(context)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
+                        if (addresses.isNotEmpty()) {
+                            val address = addresses[0]
+                            val addressLine = address.getAddressLine(0) ?: "Unknown Location"
+                            _uiState.update { it.copy(userAddress = addressLine) }
+                        }
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val address = addresses[0]
+                        val addressLine = address.getAddressLine(0) ?: "Unknown Location"
+                        _uiState.update { it.copy(userAddress = addressLine) }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(userAddress = "Location identified") }
+            }
+        }
+    }
+
+    fun onConfirmRequest() {
         _uiState.update { it.copy(showConfirmationDialog = true) }
+    }
+
+    fun onConfirmDialog() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(showConfirmationDialog = false, isLoading = true) }
+            // Simulating API call/Request creation
+            kotlinx.coroutines.delay(1000)
+            _uiState.update { it.copy(requestSent = true, isLoading = false) }
+        }
     }
 
     fun onDismissDialog() {
         _uiState.update { it.copy(showConfirmationDialog = false) }
-    }
-
-    fun onConfirmRequest() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, showConfirmationDialog = false) }
-            // Simulating API call/Request creation
-            kotlinx.coroutines.delay(1000)
-            _uiState.update { it.copy(isLoading = false, requestSent = true) }
-        }
     }
 
     fun onCancelRequest() {

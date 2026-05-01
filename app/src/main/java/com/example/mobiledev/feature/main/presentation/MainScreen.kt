@@ -1,7 +1,7 @@
 package com.example.mobiledev.feature.main.presentation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -35,19 +36,25 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,6 +71,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.R
@@ -130,54 +138,56 @@ fun MainScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
+        containerColor = Color.White,
         topBar = {
-            GlassyMainTopBar()
+            MainTopBar()
         },
         bottomBar = {
-            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                GlassyCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+            Surface(
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                color = Color.White
+            ) {
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.height(72.dp)
                 ) {
-                    NavigationBar(
-                        containerColor = Color.Transparent,
-                        tonalElevation = 0.dp
-                    ) {
-                        tabs.forEachIndexed { index, tab ->
-                            NavigationBarItem(
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
-                                icon = {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = tab.icon,
-                                            contentDescription = tab.title
-                                        )
-                                        Text(
-                                            text = tab.title,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                },
-                                label = null,
-                                alwaysShowLabel = false
+                    tabs.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            icon = {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.title,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = tab.title,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color(0xFF00695C),
+                                selectedTextColor = Color(0xFF00695C),
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray,
+                                indicatorColor = Color(0xFFE0F2F1)
                             )
-                        }
+                        )
                     }
                 }
             }
         }
     ) { innerPadding ->
-        AppBackgroundContainer(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .background(Color(0xFFF5F5F5))
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -245,64 +255,68 @@ fun MainScreen(
 }
 
 @Composable
-private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
+@OptIn(ExperimentalMaterial3Api::class)
+private fun MainTopBar(modifier: Modifier = Modifier) {
     var menuExpanded by remember { mutableStateOf(false) }
-    
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-    ) {
-        GlassyCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.splash_screen),
-                    contentDescription = "ResQ Brand",
-                    modifier = Modifier
-                        .height(30.dp)
-                        .wrapContentWidth(),
-                    contentScale = ContentScale.Fit
-                )
 
-                Box {
-                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Open menu",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Settings") },
-                            onClick = { menuExpanded = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Help & Support") },
-                            onClick = { menuExpanded = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("About") },
-                            onClick = { menuExpanded = false }
-                        )
-                    }
+    TopAppBar(
+        modifier = modifier,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = Color(0xFFC61111),
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(2.dp)
+                    )
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "ResQ",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFC61111)
+                    )
+                )
             }
-        }
-    }
+        },
+        actions = {
+            IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Profile",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Settings") },
+                    onClick = { menuExpanded = false }
+                )
+                DropdownMenuItem(
+                    text = { Text("Help & Support") },
+                    onClick = { menuExpanded = false }
+                )
+                DropdownMenuItem(
+                    text = { Text("About") },
+                    onClick = { menuExpanded = false }
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White,
+            titleContentColor = Color.Black
+        )
+    )
 }
 
 @Composable
@@ -316,11 +330,16 @@ private fun AccountDetailsPanel(
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(top = 6.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -329,53 +348,63 @@ private fun AccountDetailsPanel(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE0F2F1)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color(0xFF00695C),
                             modifier = Modifier
                                 .padding(10.dp)
-                                .size(24.dp)
+                                .size(32.dp)
                         )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = currentUser?.name ?: "Active User",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color.Black
                         )
                         Text(
                             text = "${principal.role.name.replace('_', ' ')} account",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
                         )
                     }
 
-                    Text(
-                        text = currentUser?.accountStatus ?: "Unknown",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Surface(
+                        color = Color(0xFFF5F5F5),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = currentUser?.accountStatus ?: "Active",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
+                        )
+                    }
                 }
             }
         }
 
         item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Session Details",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Contact Information",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
                     )
 
                     AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
@@ -387,48 +416,53 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
                         text = "Security & Preferences",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            tint = Color(0xFF00695C),
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "Two-step verification: Disabled",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color.Black
                         )
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            tint = Color(0xFF00695C),
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "Alert notifications: Enabled",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color.Black
                         )
                     }
                 }
@@ -436,80 +470,24 @@ private fun AccountDetailsPanel(
         }
 
         item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Quick Actions",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (canManageStaff) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onManageStaffClick() },
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.People, contentDescription = null)
-                                Text("Manage Staff")
-                            }
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.ManageAccounts, contentDescription = null)
-                            Text("Profile update tools coming soon")
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Button(
-                        onClick = onLogoutClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.88f),
-                            contentColor = MaterialTheme.colorScheme.onError
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Logout")
-                    }
-                }
+            Button(
+                onClick = onLogoutClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFC61111),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Logout", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
     }
@@ -599,32 +577,34 @@ private fun ActivityMiniStat(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    GlassyCard(
+    ElevatedCard(
         modifier = modifier,
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 8.dp),
+                .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
+                tint = Color(0xFF00695C),
+                modifier = Modifier.size(20.dp)
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.Black
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.Gray,
                 textAlign = TextAlign.Center
             )
         }
@@ -633,29 +613,30 @@ private fun ActivityMiniStat(
 
 @Composable
 private fun ActivitySummaryCard(activity: ActivitySummary) {
-    val readableAccent = glassReadableAccent(activity.accent)
-
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth()
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = readableAccent.copy(alpha = 0.18f)
+                shape = RoundedCornerShape(12.dp),
+                color = activity.accent.copy(alpha = 0.1f)
             ) {
                 Icon(
                     imageVector = activity.icon,
                     contentDescription = null,
-                    tint = readableAccent,
+                    tint = activity.accent,
                     modifier = Modifier
                         .padding(10.dp)
-                        .size(22.dp)
+                        .size(24.dp)
                 )
             }
 
@@ -665,13 +646,13 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
             ) {
                 Text(
                     text = activity.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
                 )
                 Text(
                     text = activity.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
             }
 
@@ -681,13 +662,13 @@ private fun ActivitySummaryCard(activity: ActivitySummary) {
             ) {
                 Text(
                     text = activity.value,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = readableAccent
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = activity.accent
                 )
                 Text(
                     text = activity.period,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
             }
         }
@@ -719,8 +700,8 @@ private fun ActivityMetricType.toIcon(): ImageVector {
 private fun ActivityMetricType.toAccentColor(): Color {
     return when (this) {
         ActivityMetricType.AUTH -> Color(0xFF2E7D32)
-        ActivityMetricType.REQUEST -> Color(0xFFD32F2F)
-        ActivityMetricType.ASSIGNMENT -> Color(0xFF0D47A1)
+        ActivityMetricType.REQUEST -> Color(0xFFC61111)
+        ActivityMetricType.ASSIGNMENT -> Color(0xFF00695C)
         ActivityMetricType.EN_ROUTE -> Color(0xFF1565C0)
         ActivityMetricType.ARRIVAL -> Color(0xFF00838F)
         ActivityMetricType.COMPLETION -> Color(0xFF2E7D32)
@@ -738,35 +719,39 @@ private fun PlaceholderScreen(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
-        Button(onClick = onTrackingClick) {
-            Text("Go to Tracking")
-        }
-        GlassyCard(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+        ElevatedCard(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
-            )
-        }
-
-        GlassyCard(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-            shape = MaterialTheme.shapes.large,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
-        ) {
-            Text(
-                text = stringResource(R.string.placeholder_screen_text, title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)
-            )
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                Text(
+                    text = stringResource(R.string.placeholder_screen_text, title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onTrackingClick,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00695C))
+                ) {
+                    Text("Go to Tracking")
+                }
+            }
         }
     }
 }
