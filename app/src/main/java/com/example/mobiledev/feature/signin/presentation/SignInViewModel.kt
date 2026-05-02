@@ -84,13 +84,6 @@ class SignInViewModel(
                 )
                 if (user != null) {
                     val role = runCatching { AppRole.valueOf(user.role) }.getOrDefault(AppRole.PATIENT)
-                    if (role == AppRole.HOSPITAL_ADMIN) {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "Use Hospital Admin login for this account."
-                        )
-                        return@launch
-                    }
                     authSessionManager.setPrincipal(
                         AuthPrincipal(
                             userId = user.id,

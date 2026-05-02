@@ -28,12 +28,8 @@ fun GlassyCard(
         enabled = onClick != null,
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                border ?: BorderStroke(
-                    width = 0.5.dp,
-                    color = Color.White.copy(alpha = 0.28f)
-                ),
-                shape = shape
+            .then(
+                if (border != null) Modifier.border(border, shape) else Modifier
             ),
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
