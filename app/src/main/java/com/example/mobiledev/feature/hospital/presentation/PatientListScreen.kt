@@ -24,7 +24,8 @@ import com.example.mobiledev.ui.components.GlassyCard
 @Composable
 fun PatientListScreen(
     requests: List<EmergencyRequest>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPatientClick: (EmergencyRequest) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Text(

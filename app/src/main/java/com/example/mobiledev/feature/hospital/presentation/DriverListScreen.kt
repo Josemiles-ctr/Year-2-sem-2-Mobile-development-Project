@@ -24,7 +24,8 @@ import com.example.mobiledev.ui.components.GlassyCard
 @Composable
 fun DriverListScreen(
     ambulances: List<Ambulance>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDriverClick: (String) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Text(
@@ -39,18 +40,22 @@ fun DriverListScreen(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             items(ambulances) { ambulance ->
-                DriverItem(ambulance)
+                DriverItem(ambulance, onClick = { onDriverClick(ambulance.id) })
             }
         }
     }
 }
 
 @Composable
-private fun DriverItem(ambulance: Ambulance) {
+private fun DriverItem(
+    ambulance: Ambulance,
+    onClick: () -> Unit
+) {
     GlassyCard(
         modifier = Modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-        border = null
+        border = null,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier

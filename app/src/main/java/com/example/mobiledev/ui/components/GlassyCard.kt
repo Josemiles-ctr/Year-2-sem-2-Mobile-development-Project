@@ -19,6 +19,7 @@ fun GlassyCard(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.large,
     containerColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.32f),
+    border: BorderStroke? = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.28f)),
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -27,10 +28,8 @@ fun GlassyCard(
         enabled = onClick != null,
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.28f),
-                shape = shape
+            .then(
+                if (border != null) Modifier.border(border, shape) else Modifier
             ),
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,

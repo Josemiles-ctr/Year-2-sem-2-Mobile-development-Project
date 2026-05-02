@@ -1,12 +1,12 @@
 package com.example.mobiledev.navigation
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -16,18 +16,28 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mobiledev.ResQApplication
 import com.example.mobiledev.data.repository.ApiStaffRepository
 import com.example.mobiledev.data.services.StaffApiService
-import com.example.mobiledev.feature.admin.usermanagement.UserManagementScreen
 import com.example.mobiledev.feature.admin.usermanagement.UserManagementViewModel
 import com.example.mobiledev.feature.admin.usermanagement.UserManagementViewModelFactory
+import com.example.mobiledev.feature.emergency.CrisisSubmissionScreen
+import com.example.mobiledev.feature.emergency.CrisisSubmissionViewModel
+import com.example.mobiledev.feature.emergency.CrisisSubmissionViewModelFactory
+import com.example.mobiledev.feature.emergency.EmergencyViewModel
+import com.example.mobiledev.feature.emergency.EmergencyViewModelFactory
+import com.example.mobiledev.feature.hospital.presentation.DriverListScreen
+import com.example.mobiledev.feature.hospital.presentation.PatientListScreen
+import com.example.mobiledev.feature.hospital.presentation.ReportsScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModelFactory
-
+import com.example.mobiledev.feature.hospital.presentation.PatientListScreen
 import com.example.mobiledev.feature.main.presentation.MainScreen
-import com.example.mobiledev.feature.patient.presentation.PatientHospitalsRoute
+import com.example.mobiledev.feature.notifications.presentation.NotificationsScreen
+import com.example.mobiledev.feature.notifications.presentation.NotificationsViewModel
+import com.example.mobiledev.feature.notifications.presentation.NotificationsViewModelFactory
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsRoute
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsViewModel
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalDetailsViewModelFactory
+import com.example.mobiledev.feature.patient.presentation.PatientHospitalsRoute
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalsViewModel
 import com.example.mobiledev.feature.patient.presentation.PatientHospitalsViewModelFactory
 import com.example.mobiledev.feature.signin.presentation.SignInRoute
@@ -39,11 +49,9 @@ import com.example.mobiledev.feature.signup.presentation.SignUpViewModelFactory
 import com.example.mobiledev.feature.staff.StaffManagementScreen
 import com.example.mobiledev.feature.staff.StaffViewModel
 import com.example.mobiledev.feature.staff.StaffViewModelFactory
-import com.example.mobiledev.feature.emergency.EmergencyDashboardScreen
-import com.example.mobiledev.feature.emergency.EmergencyViewModel
-import com.example.mobiledev.feature.emergency.EmergencyViewModelFactory
 import com.example.mobiledev.feature.tracking.presentation.TrackingScreen
 import com.example.mobiledev.feature.tracking.presentation.TrackingViewModel
+import com.example.mobiledev.feature.triage.presentation.TriageDashboardScreen
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -61,6 +69,7 @@ sealed class Screen(val route: String) {
     object Tracking : Screen("tracking/{ambulanceId}") {
         fun createRoute(ambulanceId: String) = "tracking/$ambulanceId"
     }
+    object Notifications : Screen("notifications")
 }
 
 @Composable
@@ -81,6 +90,21 @@ fun NavGraph(
     }
     val staffRepository = remember(retrofit) {
         ApiStaffRepository(retrofit.create(StaffApiService::class.java))
+    }
+
+    // Handle logout or session expiration globally without triggering global recomposition
+    LaunchedEffect(Unit) {
+        authSessionManager.principal.collect { principal ->
+            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+                val currentRoute = navController.currentDestination?.route
+                if (currentRoute != Screen.SignIn.route && currentRoute != Screen.SignUp.route) {
+                    navController.navigate(Screen.SignIn.route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
     }
 
     NavHost(
@@ -125,16 +149,14 @@ fun NavGraph(
         }
 
         composable(Screen.Main.route) {
-            val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
-            val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
-            val patientHospitalsViewModelFactory = remember(resQRepository) {
-                PatientHospitalsViewModelFactory(resQRepository)
-            }
-            val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
-                factory = patientHospitalsViewModelFactory
-            )
             val principal by authSessionManager.principal.collectAsState()
+            
             var signedInUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.mobiledev.data.model.User?>(null) }
+
+            val notificationsViewModel: NotificationsViewModel = viewModel(
+                factory = NotificationsViewModelFactory(resQRepository, authSessionManager)
+            )
+            val notificationsUiState by notificationsViewModel.uiState.collectAsState()
 
             LaunchedEffect(principal.userId) {
                 val activeUserId = principal.userId
@@ -148,25 +170,39 @@ fun NavGraph(
             }
 
             if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
-                // Show nothing or a loader while navigating back to Sign In
+                // Show nothing while navigating back to Sign In
                 return@composable
             }
 
             if (principal.role == com.example.mobiledev.data.security.AppRole.PATIENT) {
+                val crisisSubmissionViewModel: CrisisSubmissionViewModel = viewModel(
+                    factory = CrisisSubmissionViewModelFactory(resQRepository, authSessionManager)
+                )
+                val patientHospitalsViewModelFactory = remember(resQRepository) {
+                    PatientHospitalsViewModelFactory(resQRepository)
+                }
+                val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
+                    factory = patientHospitalsViewModelFactory
+                )
+
                 MainScreen(
                     currentPrincipal = principal,
                     currentUser = signedInUser,
-                    onManageStaffClick = {
-                        navController.navigate(Screen.StaffManagement.route)
+                    unreadNotificationsCount = notificationsUiState.unreadCount,
+                    onNotificationsClick = {
+                        navController.navigate(Screen.Notifications.route)
                     },
                     onLogoutClick = {
                         authSessionManager.clear()
-                        navController.navigate(Screen.SignIn.route) {
-                            popUpTo(Screen.Main.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
                     },
-                    homeTabContent = { modifier ->
+                    emergencyTabContent = {
+                        CrisisSubmissionScreen(
+                            viewModel = crisisSubmissionViewModel,
+                            onCancel = { },
+                            onHelp = { }
+                        )
+                    },
+                    hospitalsTabContent = { modifier ->
                         PatientHospitalsRoute(
                             viewModel = patientHospitalsViewModel,
                             onHospitalClick = { hospitalId ->
@@ -175,46 +211,65 @@ fun NavGraph(
                             modifier = modifier
                         )
                     },
-                    requestTabContent = {
-                        EmergencyDashboardScreen(
-                            viewModel = emergencyViewModel,
-                            onAmbulanceClick = { ambulanceId ->
-                                navController.navigate(Screen.Tracking.createRoute(ambulanceId))
-                            }
+                    notificationsTabContent = {
+                        NotificationsScreen(
+                            viewModel = notificationsViewModel,
+                            onBackClick = { }
                         )
                     }
                 )
             } else {
+                val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
+                val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
+
                 val userManagementViewModelFactory = remember(userRepository) {
                     UserManagementViewModelFactory(userRepository)
                 }
                 val userManagementViewModel: UserManagementViewModel = viewModel(
                     factory = userManagementViewModelFactory
                 )
+                val emergencyUiState by emergencyViewModel.uiState.collectAsState()
 
                 MainScreen(
                     currentPrincipal = principal,
                     currentUser = signedInUser,
+                    unreadNotificationsCount = notificationsUiState.unreadCount,
+                    onNotificationsClick = {
+                        navController.navigate(Screen.Notifications.route)
+                    },
                     onManageStaffClick = {
                         navController.navigate(Screen.StaffManagement.route)
                     },
                     onLogoutClick = {
                         authSessionManager.clear()
-                        navController.navigate(Screen.SignIn.route) {
-                            popUpTo(Screen.Main.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
                     },
-                    requestTabContent = {
-                        EmergencyDashboardScreen(
+                    triageTabContent = {
+                        TriageDashboardScreen(
                             viewModel = emergencyViewModel,
-                            onAmbulanceClick = { ambulanceId ->
+                            onViewDetails = { request ->
+                                // navController.navigate(...)
+                            }
+                        )
+                    },
+                    driversTabContent = { modifier ->
+                        DriverListScreen(
+                            ambulances = emergencyUiState.ambulances,
+                            modifier = modifier,
+                            onDriverClick = { ambulanceId ->
                                 navController.navigate(Screen.Tracking.createRoute(ambulanceId))
                             }
                         )
                     },
-                    userManagementTabContent = {
-                        UserManagementScreen(viewModel = userManagementViewModel)
+                    patientsTabContent = { modifier ->
+                        PatientListScreen(
+                            requests = emergencyUiState.requests,
+                            modifier = modifier
+                        )
+                    },
+                    reportsTabContent = { modifier ->
+                        ReportsScreen(
+                            modifier = modifier
+                        )
                     }
                 )
             }
@@ -231,17 +286,23 @@ fun NavGraph(
             if (hospitalId.isBlank()) {
                 Text("Invalid hospital session. Please sign in again.")
             } else {
+                val notificationsViewModel: NotificationsViewModel = viewModel(
+                    factory = NotificationsViewModelFactory(resQRepository, authSessionManager)
+                )
+                val notificationsUiState by notificationsViewModel.uiState.collectAsState()
+
                 val viewModel: HospitalDashboardViewModel = viewModel(
                     factory = HospitalDashboardViewModelFactory(resQRepository, hospitalId)
                 )
+                
                 HospitalDashboardScreen(
                     viewModel = viewModel,
+                    unreadNotificationsCount = notificationsUiState.unreadCount,
+                    onNotificationsClick = {
+                        navController.navigate(Screen.Notifications.route)
+                    },
                     onLogoutClick = {
                         authSessionManager.clear()
-                        navController.navigate(Screen.SignIn.route) {
-                            popUpTo(Screen.HospitalDashboard.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
                     },
                     onAmbulanceClick = { ambulanceId ->
                         navController.navigate(Screen.Tracking.createRoute(ambulanceId))
@@ -282,6 +343,16 @@ fun NavGraph(
                 viewModel = trackingViewModel,
                 onBackClick = { navController.popBackStack() },
                 onConfirmClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Notifications.route) {
+            val notificationsViewModel: NotificationsViewModel = viewModel(
+                factory = NotificationsViewModelFactory(resQRepository, authSessionManager)
+            )
+            NotificationsScreen(
+                viewModel = notificationsViewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

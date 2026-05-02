@@ -2,6 +2,7 @@ package com.example.mobiledev.data.mock
 
 import com.example.mobiledev.data.model.Ambulance
 import com.example.mobiledev.data.model.AmbulanceStatus
+import com.example.mobiledev.data.model.EmergencyPriority
 import com.example.mobiledev.data.model.EmergencyRequest
 import com.example.mobiledev.data.model.EmergencyStatus
 
@@ -75,6 +76,12 @@ object MockEmergencyDashboardData {
             "Possible fracture after fall from stairs.",
             "Persistent abdominal pain and vomiting."
         )
+        val priorities = listOf(
+            EmergencyPriority.CRITICAL,
+            EmergencyPriority.HIGH,
+            EmergencyPriority.MEDIUM,
+            EmergencyPriority.LOW
+        )
         val statuses = listOf(
             EmergencyStatus.PENDING,
             EmergencyStatus.ASSIGNED,
@@ -105,8 +112,9 @@ object MockEmergencyDashboardData {
                             phoneNumber = "07${(10000000 + index).toString().takeLast(8)}",
                             description = descriptions[index % descriptions.size],
                             status = status,
+                            priority = priorities[index % priorities.size],
                             timestamp = timestamp - (index + 1) * 4L * 60 * 1000L,
-                            assignedAmbulanceId = assignedAmbulanceId
+                            assignedAmbulanceId = assignedAmbulanceId,
                         )
                     )
 

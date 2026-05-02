@@ -4,6 +4,7 @@ import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.HospitalStatus
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
@@ -32,6 +33,7 @@ class FirebaseResQRepository(
     private val hospitalsRef: DatabaseReference = db.getReference(HOSPITALS_NODE)
     private val ambulancesRef: DatabaseReference = db.getReference(AMBULANCES_NODE)
     private val requestsRef: DatabaseReference = db.getReference(REQUESTS_NODE)
+    private val notificationsRef: DatabaseReference = db.getReference(NOTIFICATIONS_NODE)
 
     private fun principal(): AuthPrincipal = authSessionManager.currentPrincipal
 
@@ -156,6 +158,13 @@ class FirebaseResQRepository(
     override fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>> {
         requirePermission(Permission.VIEW_SYSTEM_DATA)
         return ambulancesRef.observeList { it.toAmbulanceEntityOrNull() }
+    }
+
+    override fun getAllAvailableAmbulancesStream(): Flow<List<AmbulanceEntity>> {
+        requirePermission(Permission.VIEW_AMBULANCES)
+        return ambulancesRef.observeList { it.toAmbulanceEntityOrNull() }.map { list ->
+            list.filter { it.status == "AVAILABLE" }
+        }
     }
 
     override fun getAmbulancesByHospitalStream(hospitalId: String): Flow<List<AmbulanceEntity>> {
@@ -317,6 +326,31 @@ class FirebaseResQRepository(
         requestsRef.child(id).child("isDeleted").setValue(true).await()
     }
 
+    // Notifications
+    override fun getNotificationsForUserStream(userId: String): Flow<List<NotificationEntity>> {
+        val principal = principal()
+        RbacPolicy.requireUserScope(principal, userId)
+        return notificationsRef.observeList { it.toNotificationEntityOrNull() }.map { list ->
+            list.filter { it.userId == userId }.sortedByDescending { it.timestamp }
+        }
+    }
+
+    override fun getUnreadNotificationCountStream(userId: String): Flow<Int> {
+        val principal = principal()
+        RbacPolicy.requireUserScope(principal, userId)
+        return getNotificationsForUserStream(userId).map { list ->
+            list.count { !it.isRead }
+        }
+    }
+
+    override suspend fun insertNotification(notification: NotificationEntity) {
+        notificationsRef.child(notification.id).setValue(notification.toPayload()).await()
+    }
+
+    override suspend fun markNotificationAsRead(id: String) {
+        notificationsRef.child(id).child("isRead").setValue(true).await()
+    }
+
     private fun DataSnapshot.toUserEntityOrNull(): UserEntity? {
         val id = child("id").getValue(String::class.java) ?: key.orEmpty()
         if (id.isBlank()) return null
@@ -466,6 +500,30 @@ class FirebaseResQRepository(
         "isDeleted" to isDeleted
     )
 
+    private fun DataSnapshot.toNotificationEntityOrNull(): NotificationEntity? {
+        val id = child("id").getValue(String::class.java) ?: key.orEmpty()
+        if (id.isBlank()) return null
+        return NotificationEntity(
+            id = id,
+            userId = child("userId").getValue(String::class.java).orEmpty(),
+            title = child("title").getValue(String::class.java).orEmpty(),
+            message = child("message").getValue(String::class.java).orEmpty(),
+            timestamp = child("timestamp").getValue(Long::class.java) ?: 0L,
+            isRead = child("isRead").getValue(Boolean::class.java) ?: false,
+            type = child("type").getValue(String::class.java).orEmpty()
+        )
+    }
+
+    private fun NotificationEntity.toPayload(): Map<String, Any?> = mapOf(
+        "id" to id,
+        "userId" to userId,
+        "title" to title,
+        "message" to message,
+        "timestamp" to timestamp,
+        "isRead" to isRead,
+        "type" to type
+    )
+
     private fun <T> DatabaseReference.observeList(parser: (DataSnapshot) -> T?): Flow<List<T>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -486,6 +544,7 @@ class FirebaseResQRepository(
         const val HOSPITALS_NODE = "hospitals"
         const val AMBULANCES_NODE = "ambulances"
         const val REQUESTS_NODE = "emergencyRequests"
+        const val NOTIFICATIONS_NODE = "notifications"
         const val AVAILABLE_STATUS = "AVAILABLE"
     }
 }

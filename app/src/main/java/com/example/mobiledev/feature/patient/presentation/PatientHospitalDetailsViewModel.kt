@@ -195,6 +195,18 @@ class PatientHospitalDetailsViewModel(
 
             runCatching { repository.insertRequest(request) }
                 .onSuccess {
+                    // Send notification to hospital admin
+                    viewModelScope.launch {
+                        val notification = com.example.mobiledev.data.local.entity.NotificationEntity(
+                            id = "NOTIF_${UUID.randomUUID()}",
+                            userId = hospital.adminId,
+                            title = "New Emergency Request",
+                            message = "A new emergency request has been submitted: $trimmedDescription",
+                            timestamp = System.currentTimeMillis(),
+                            type = "EMERGENCY_REQUEST"
+                        )
+                        repository.insertNotification(notification)
+                    }
                     _uiState.update {
                         it.copy(
                             isSubmittingRequest = false,

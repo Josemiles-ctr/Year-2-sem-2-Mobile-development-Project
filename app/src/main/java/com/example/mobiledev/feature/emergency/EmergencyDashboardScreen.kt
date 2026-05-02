@@ -543,6 +543,7 @@ fun EmergencyDashboardPreview() {
                 phoneNumber = "0712345678",
                 description = "Chest pain and difficulty breathing",
                 status = EmergencyStatus.PENDING,
+                priority = EmergencyPriority.HIGH,
                 timestamp = System.currentTimeMillis() - 1000 * 60 * 5
             )
         ),
@@ -554,6 +555,7 @@ fun EmergencyDashboardPreview() {
                 phoneNumber = "0712345678",
                 description = "Chest pain and difficulty breathing",
                 status = EmergencyStatus.PENDING,
+                priority = EmergencyPriority.HIGH,
                 timestamp = System.currentTimeMillis() - 1000 * 60 * 5
             )
         ),

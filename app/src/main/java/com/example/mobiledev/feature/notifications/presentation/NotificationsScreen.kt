@@ -11,11 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,47 +24,73 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mobiledev.data.local.entity.NotificationEntity
+import com.example.mobiledev.ui.components.AppBackgroundContainer
 import com.example.mobiledev.ui.components.GlassyCard
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     viewModel: NotificationsViewModel,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        item {
-            Text(
-                text = "Notifications",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
-
-        if (uiState.notifications.isEmpty()) {
-            item {
-                GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "No notifications yet.",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
+    Scaffold(
+        containerColor = Color.Transparent,
+        topBar = {
+            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                ) {
+                    CenterAlignedTopAppBar(
+                        title = { Text("Notifications", style = MaterialTheme.typography.titleLarge) },
+                        navigationIcon = {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        },
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = Color.Transparent
+                        )
                     )
                 }
             }
-        } else {
-            items(uiState.notifications) { notification ->
-                NotificationItem(
-                    notification = notification,
-                    onClick = { viewModel.markAsRead(notification.id) }
-                )
+        }
+    ) { padding ->
+        AppBackgroundContainer(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (uiState.notifications.isEmpty()) {
+                    item {
+                        GlassyCard(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "No notifications yet.",
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                } else {
+                    items(uiState.notifications) { notification ->
+                        NotificationItem(
+                            notification = notification,
+                            onClick = { viewModel.markAsRead(notification.id) }
+                        )
+                    }
+                }
             }
         }
     }

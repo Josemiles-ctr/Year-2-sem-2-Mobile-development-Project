@@ -16,6 +16,7 @@ enum class Permission {
     VIEW_SYSTEM_DATA,
     VIEW_HOSPITAL_DATA,
     VIEW_APPROVED_HOSPITALS,
+    VIEW_AMBULANCES,
     VIEW_OWN_REQUESTS,
     CREATE_REQUEST,
     MANAGE_REQUESTS,
@@ -51,11 +52,19 @@ object RbacPolicy {
         AppRole.PATIENT to setOf(
             Permission.CREATE_REQUEST,
             Permission.VIEW_OWN_REQUESTS,
-            Permission.VIEW_APPROVED_HOSPITALS
+            Permission.VIEW_APPROVED_HOSPITALS,
+            Permission.VIEW_AMBULANCES
         ),
-        AppRole.DRIVER to setOf(Permission.VIEW_HOSPITAL_DATA),
+        AppRole.DRIVER to setOf(
+            Permission.VIEW_HOSPITAL_DATA,
+            Permission.VIEW_APPROVED_HOSPITALS,
+            Permission.VIEW_AMBULANCES,
+            Permission.MANAGE_REQUESTS
+        ),
         AppRole.HOSPITAL_ADMIN to setOf(
             Permission.VIEW_HOSPITAL_DATA,
+            Permission.VIEW_APPROVED_HOSPITALS,
+            Permission.VIEW_AMBULANCES,
             Permission.CREATE_REQUEST,
             Permission.MANAGE_REQUESTS,
             Permission.MANAGE_AMBULANCES

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -285,14 +285,18 @@ private fun DetailsContent(
 
         if (submitSuccessMessage != null) {
             item {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = submitSuccessMessage,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(onClick = onDismissSubmitMessage) {
@@ -305,14 +309,18 @@ private fun DetailsContent(
 
         if (submitErrorMessage != null) {
             item {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = submitErrorMessage,
-                            color = MaterialTheme.colorScheme.error,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(onClick = onDismissSubmitMessage) {
@@ -325,16 +333,18 @@ private fun DetailsContent(
 
         if (isHospitalOffline) {
             item {
-                ElevatedCard(
+                GlassyCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("offlineHospitalMessage")
+                        .testTag("offlineHospitalMessage"),
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
                 ) {
                     Text(
                         text = "This hospital is currently offline. No active ambulances are available.",
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -485,8 +495,8 @@ private fun AmbulanceCard(
 @Composable
 private fun ambulanceStatusColor(status: String): Color {
     return when (status.uppercase()) {
-        "AVAILABLE" -> Color(0xFF2E7D32)
-        "ON_EMERGENCY", "BUSY", "ON_MISSION" -> Color(0xFFC62828)
+        "AVAILABLE" -> Color(0xFF4CAF50)
+        "ON_EMERGENCY", "BUSY", "ON_MISSION" -> Color(0xFFF44336)
         "OFFLINE" -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
     }

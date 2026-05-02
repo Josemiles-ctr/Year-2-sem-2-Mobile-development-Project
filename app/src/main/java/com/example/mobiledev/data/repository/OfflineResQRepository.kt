@@ -3,11 +3,13 @@ package com.example.mobiledev.data.repository
 import com.example.mobiledev.data.local.dao.AmbulanceDao
 import com.example.mobiledev.data.local.dao.EmergencyRequestDao
 import com.example.mobiledev.data.local.dao.HospitalDao
+import com.example.mobiledev.data.local.dao.NotificationDao
 import com.example.mobiledev.data.local.dao.UserDao
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.HospitalStatus
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
@@ -17,6 +19,7 @@ import com.example.mobiledev.data.security.RbacPolicy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import org.mindrot.jbcrypt.BCrypt
 import java.util.UUID
 
@@ -25,6 +28,7 @@ class OfflineResQRepository(
     private val hospitalDao: HospitalDao,
     private val ambulanceDao: AmbulanceDao,
     private val emergencyRequestDao: EmergencyRequestDao,
+    private val notificationDao: NotificationDao,
     private val authSessionManager: AuthSessionManager
 ) : ResQRepository {
     private fun principal(): AuthPrincipal = authSessionManager.currentPrincipal
@@ -164,6 +168,13 @@ class OfflineResQRepository(
     override fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>> {
         requirePermission(Permission.VIEW_SYSTEM_DATA)
         return ambulanceDao.getAllAmbulances()
+    }
+
+    override fun getAllAvailableAmbulancesStream(): Flow<List<AmbulanceEntity>> {
+        requirePermission(Permission.VIEW_AMBULANCES)
+        return ambulanceDao.getAllAmbulances().map { list ->
+            list.filter { it.status == "AVAILABLE" }
+        }
     }
 
     override fun getAmbulancesByHospitalStream(hospitalId: String): Flow<List<AmbulanceEntity>> {
@@ -311,5 +322,27 @@ class OfflineResQRepository(
             ?: throw IllegalArgumentException("Request not found: $id")
         requireHospitalScope(Permission.MANAGE_REQUESTS, request.hospitalId)
         emergencyRequestDao.softDeleteRequest(id)
+    }
+
+    // Notifications
+    override fun getNotificationsForUserStream(userId: String): Flow<List<NotificationEntity>> {
+        val principal = principal()
+        RbacPolicy.requireUserScope(principal, userId)
+        return notificationDao.getNotificationsForUser(userId)
+    }
+
+    override fun getUnreadNotificationCountStream(userId: String): Flow<Int> {
+        val principal = principal()
+        RbacPolicy.requireUserScope(principal, userId)
+        return notificationDao.getUnreadCount(userId)
+    }
+
+    override suspend fun insertNotification(notification: NotificationEntity) {
+        // Allow system to insert notifications for any user (e.g. background sync)
+        notificationDao.insertNotification(notification)
+    }
+
+    override suspend fun markNotificationAsRead(id: String) {
+        notificationDao.markAsRead(id)
     }
 }

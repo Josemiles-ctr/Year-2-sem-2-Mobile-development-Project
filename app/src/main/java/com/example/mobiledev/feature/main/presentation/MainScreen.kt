@@ -3,63 +3,19 @@ package com.example.mobiledev.feature.main.presentation
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.AssignmentTurnedIn
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.ManageAccounts
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -97,36 +53,41 @@ private data class ActivitySummary(
 fun MainScreen(
     currentPrincipal: AuthPrincipal,
     currentUser: User?,
+    unreadNotificationsCount: Int = 0,
+    onNotificationsClick: () -> Unit = {},
     onManageStaffClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    homeTabContent: @Composable (Modifier) -> Unit = { modifier ->
-        ActivitySummarySection(modifier = modifier)
-    },
+    emergencyTabContent: @Composable () -> Unit = {},
+    triageTabContent: @Composable () -> Unit = {},
+    driversTabContent: @Composable (Modifier) -> Unit = {},
+    patientsTabContent: @Composable (Modifier) -> Unit = {},
+    reportsTabContent: @Composable (Modifier) -> Unit = {},
+    hospitalsTabContent: @Composable (Modifier) -> Unit = {},
+    notificationsTabContent: @Composable () -> Unit = {},
+    profileTabContent: @Composable (Modifier) -> Unit = {},
     requestTabContent: @Composable () -> Unit = {},
     userManagementTabContent: @Composable () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
-    val firstTabTitle = if (currentPrincipal.role == AppRole.PATIENT) {
-        stringResource(R.string.tab_hospitals)
-    } else {
-        stringResource(R.string.tab_activity)
-    }
-    val requestTabTitle = stringResource(R.string.tab_requests)
-    val accountTabTitle = stringResource(R.string.tab_account)
     val tabs = buildList {
-        add(MainTab(firstTabTitle, Icons.Filled.Notifications))
-        add(MainTab(requestTabTitle, Icons.Filled.AssignmentTurnedIn))
-        if (currentPrincipal.role == AppRole.SYSTEM_ADMIN) {
-            add(MainTab("Users", Icons.Filled.People))
+        if (currentPrincipal.role == AppRole.PATIENT) {
+            add(MainTab("Emergency", Icons.Default.NotificationsActive))
+            add(MainTab("Hospitals", Icons.Default.LocalHospital))
+            add(MainTab("Notifications", Icons.Default.Notifications))
+            add(MainTab("Profile", Icons.Default.Person))
+        } else {
+            add(MainTab("Triage", Icons.Default.Assignment))
+            add(MainTab("Drivers", Icons.Default.LocalShipping))
+            add(MainTab("Patients", Icons.Default.People))
+            add(MainTab("Reports", Icons.Default.BarChart))
+            add(MainTab("Profile", Icons.Default.Person))
         }
-        add(MainTab(accountTabTitle, Icons.Filled.AccountCircle))
     }
+    
     val hasUserManagementTab = currentPrincipal.role == AppRole.SYSTEM_ADMIN
-    val accountTabIndex = if (hasUserManagementTab) 3 else 2
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
 
-    // Keep back behavior natural for tab UIs: return to default tab before exiting app.
     BackHandler(enabled = selectedTabIndex != 0) {
         selectedTabIndex = 0
     }
@@ -135,14 +96,20 @@ fun MainScreen(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
-            GlassyMainTopBar()
+            if (currentPrincipal.role != AppRole.PATIENT || selectedTabIndex != 0) {
+                GlassyMainTopBar(
+                    unreadCount = unreadNotificationsCount,
+                    onNotificationsClick = onNotificationsClick
+                )
+            }
         },
         bottomBar = {
             Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 GlassyCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f),
+                    border = null // Remove dirty border
                 ) {
                     NavigationBar(
                         containerColor = Color.Transparent,
@@ -186,60 +153,80 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    when (selectedTabIndex) {
-                        0 -> {
-                            homeTabContent(
+                when (selectedTabIndex) {
+                    0 -> {
+                        if (currentPrincipal.role == AppRole.PATIENT) {
+                            emergencyTabContent()
+                        } else {
+                            triageTabContent()
+                        }
+                    }
+                    1 -> {
+                        if (currentPrincipal.role == AppRole.PATIENT) {
+                            hospitalsTabContent(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp)
+                            )
+                        } else {
+                            driversTabContent(
                                 Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 16.dp)
                             )
                         }
-                        1 -> {
-                            requestTabContent()
+                    }
+                    2 -> {
+                        if (currentPrincipal.role == AppRole.PATIENT) {
+                            notificationsTabContent()
+                        } else {
+                            patientsTabContent(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp)
+                            )
                         }
-                        2 -> {
-                            if (hasUserManagementTab) {
-                                userManagementTabContent()
-                            } else {
-                                AccountDetailsPanel(
-                                    principal = currentPrincipal,
-                                    currentUser = currentUser,
-                                    canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
-                                        currentPrincipal.role == AppRole.SYSTEM_ADMIN,
-                                    onManageStaffClick = onManageStaffClick,
-                                    onLogoutClick = onLogoutClick,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 20.dp)
-                                )
-                            }
-                        }
-                        accountTabIndex -> {
-                            AccountDetailsPanel(
+                    }
+                    3 -> {
+                        if (currentPrincipal.role == AppRole.PATIENT) {
+                             AccountDetailsPanel(
                                 principal = currentPrincipal,
                                 currentUser = currentUser,
-                                canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
-                                    currentPrincipal.role == AppRole.SYSTEM_ADMIN,
-                                onManageStaffClick = onManageStaffClick,
+                                canManageStaff = false,
+                                onManageStaffClick = {},
                                 onLogoutClick = onLogoutClick,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 20.dp)
                             )
+                        } else {
+                             reportsTabContent(
+                                 Modifier
+                                     .fillMaxSize()
+                                     .padding(horizontal = 16.dp)
+                             )
                         }
-                        else -> {
-                            PlaceholderScreen(
-                                title = selectedTab.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp)
-                            )
-                        }
+                    }
+                    4 -> {
+                        AccountDetailsPanel(
+                            principal = currentPrincipal,
+                            currentUser = currentUser,
+                            canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
+                                    currentPrincipal.role == AppRole.SYSTEM_ADMIN,
+                            onManageStaffClick = onManageStaffClick,
+                            onLogoutClick = onLogoutClick,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp)
+                        )
+                    }
+                    else -> {
+                        PlaceholderScreen(
+                            title = selectedTab.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                        )
                     }
                 }
             }
@@ -248,9 +235,11 @@ fun MainScreen(
 }
 
 @Composable
-private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
-    var menuExpanded by mutableStateOf(false)
-    
+private fun GlassyMainTopBar(
+    unreadCount: Int = 0,
+    onNotificationsClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -259,7 +248,8 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
         GlassyCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f),
+            border = null // Remove dirty border
         ) {
             Row(
                 modifier = Modifier
@@ -277,29 +267,20 @@ private fun GlassyMainTopBar(modifier: Modifier = Modifier) {
                     contentScale = ContentScale.Fit
                 )
 
-                Box {
-                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Open menu",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
+                IconButton(onClick = onNotificationsClick) {
+                    BadgedBox(
+                        badge = {
+                            if (unreadCount > 0) {
+                                Badge {
+                                    Text(text = unreadCount.toString())
+                                }
+                            }
+                        }
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Settings") },
-                            onClick = { menuExpanded = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Help & Support") },
-                            onClick = { menuExpanded = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("About") },
-                            onClick = { menuExpanded = false }
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
