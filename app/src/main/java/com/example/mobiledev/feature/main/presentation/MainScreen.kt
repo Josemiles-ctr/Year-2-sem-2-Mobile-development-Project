@@ -183,7 +183,7 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        Box(
+        AppBackgroundContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)

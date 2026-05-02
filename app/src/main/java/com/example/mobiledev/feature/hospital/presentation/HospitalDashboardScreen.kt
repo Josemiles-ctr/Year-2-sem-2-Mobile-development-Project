@@ -195,6 +195,23 @@ fun HospitalDashboardScreen(
                                 )
                                 Text("Hospital Administrator", color = Color.Gray)
                             }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Button(
+                                onClick = onLogoutClick,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.88f)
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Logout")
+                            }
                         }
                         
                         HorizontalDivider(color = Color(0xFFEEEEEE))
@@ -308,6 +325,20 @@ fun AddAmbulanceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { onConfirm(regNo, driverId) },
+                        enabled = regNo.isNotBlank() && driverId.isNotBlank()
+                    ) {
+                        Text("Add")
+                    }
+                }
             }
         },
         confirmButton = {
@@ -411,6 +442,13 @@ fun AssignmentDialog(
                             HorizontalDivider(color = Color(0xFFEEEEEE))
                         }
                     }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
                 }
             }
         },
@@ -519,7 +557,7 @@ fun EmergencyRequestItem(
                         Icons.Default.Place,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
@@ -532,6 +570,12 @@ fun EmergencyRequestItem(
             }
 
             Column(horizontalAlignment = Alignment.End) {
+                val baseColor = when(request.status.uppercase()) {
+                    "PENDING" -> Color(0xFFD32F2F)
+                    "ASSIGNED" -> Color(0xFFE65100)
+                    else -> Color(0xFF2E7D32)
+                }
+                val chipColor = glassReadableAccent(baseColor)
                 Surface(
                     color = statusColor.copy(alpha = 0.1f),
                     contentColor = statusColor,

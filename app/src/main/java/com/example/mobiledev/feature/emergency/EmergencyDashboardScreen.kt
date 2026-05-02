@@ -541,6 +541,13 @@ fun AssignAmbulanceDialog(
                         HorizontalDivider(color = Color(0xFFEEEEEE))
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                }
             }
         },
         confirmButton = {},
