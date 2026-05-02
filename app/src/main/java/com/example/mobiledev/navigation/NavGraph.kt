@@ -1,12 +1,13 @@
 package com.example.mobiledev.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -29,7 +30,6 @@ import com.example.mobiledev.feature.hospital.presentation.ReportsScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardScreen
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModel
 import com.example.mobiledev.feature.hospital.presentation.HospitalDashboardViewModelFactory
-import com.example.mobiledev.feature.hospital.presentation.PatientListScreen
 import com.example.mobiledev.feature.main.presentation.MainScreen
 import com.example.mobiledev.feature.notifications.presentation.NotificationsScreen
 import com.example.mobiledev.feature.notifications.presentation.NotificationsViewModel
@@ -51,6 +51,8 @@ import com.example.mobiledev.feature.staff.StaffViewModel
 import com.example.mobiledev.feature.staff.StaffViewModelFactory
 import com.example.mobiledev.feature.tracking.presentation.TrackingScreen
 import com.example.mobiledev.feature.tracking.presentation.TrackingViewModel
+import com.example.mobiledev.data.model.User
+import AppRole
 import com.example.mobiledev.feature.triage.presentation.TriageDashboardScreen
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -95,7 +97,7 @@ fun NavGraph(
     // Handle logout or session expiration globally without triggering global recomposition
     LaunchedEffect(Unit) {
         authSessionManager.principal.collect { principal ->
-            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+            if (principal.role == AppRole.GUEST) {
                 val currentRoute = navController.currentDestination?.route
                 if (currentRoute != Screen.SignIn.route && currentRoute != Screen.SignUp.route) {
                     navController.navigate(Screen.SignIn.route) {
@@ -151,7 +153,7 @@ fun NavGraph(
         composable(Screen.Main.route) {
             val principal by authSessionManager.principal.collectAsState()
             
-            var signedInUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.mobiledev.data.model.User?>(null) }
+            var signedInUser by remember { mutableStateOf<User?>(null) }
 
             val notificationsViewModel: NotificationsViewModel = viewModel(
                 factory = NotificationsViewModelFactory(resQRepository, authSessionManager)
@@ -169,12 +171,12 @@ fun NavGraph(
                 }
             }
 
-            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+            if (principal.role == AppRole.GUEST) {
                 // Show nothing while navigating back to Sign In
                 return@composable
             }
 
-            if (principal.role == com.example.mobiledev.data.security.AppRole.PATIENT) {
+            if (principal.role == AppRole.PATIENT) {
                 val crisisSubmissionViewModel: CrisisSubmissionViewModel = viewModel(
                     factory = CrisisSubmissionViewModelFactory(resQRepository, authSessionManager)
                 )
@@ -313,7 +315,7 @@ fun NavGraph(
 
         composable(Screen.PatientHospitalDetails.route) { backStackEntry ->
             val principal by authSessionManager.principal.collectAsState()
-            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+            if (principal.role == AppRole.GUEST) {
                 return@composable
             }
 
