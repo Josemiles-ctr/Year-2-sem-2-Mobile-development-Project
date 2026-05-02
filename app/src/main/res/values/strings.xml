@@ -11,6 +11,15 @@
     <string name="already_have_account_label">Already have an account?</string>
 
     <string name="login_title">Login</string>
+    <string name="welcome_back">Welcome back</string>
+    <string name="access_emergency_dashboard">Access your emergency dashboard</string>
+    <string name="mobile_number_or_email">Mobile Number or Email</string>
+    <string name="forgot_password">Forgot?</string>
+    <string name="active_emergency_network">Active Emergency Network</string>
+    <string name="trusted_hospitals">Trusted by 250+ Hospitals</string>
+    <string name="function_first_reliability">FUNCTION-FIRST RELIABILITY</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
     <string name="email_or_phone_label">Email / Phone number</string>
     <string name="password_hint_label">Password:</string>
     <string name="no_account_label">Do not have an account?</string>

@@ -94,6 +94,9 @@ class PatientHospitalDetailsViewModel(
                     }
                 }
                 .collectLatest { ambulances ->
+                    // Also refresh the hospital data to get updated activeAmbulances count
+                    val updatedHospital = repository.getHospitalById(hospitalId)
+                    _uiState.update { it.copy(hospital = updatedHospital ?: it.hospital) }
                     updateAmbulanceState(ambulances)
                 }
         }
@@ -117,11 +120,11 @@ class PatientHospitalDetailsViewModel(
         }
     }
 
-    @Suppress("unused")
     fun submitEmergencyRequest(
         description: String,
         patientLatitude: Double? = null,
-        patientLongitude: Double? = null
+        patientLongitude: Double? = null,
+        ambulanceId: String? = null
     ) {
         val patientId = authSessionManager.currentPrincipal.userId
         val hospital = _uiState.value.hospital
@@ -175,7 +178,7 @@ class PatientHospitalDetailsViewModel(
                 id = "REQ_${UUID.randomUUID()}",
                 userId = patientId,
                 hospitalId = hospitalId,
-                ambulanceId = null,
+                ambulanceId = ambulanceId,
                 status = "PENDING",
                 description = trimmedDescription,
                 location = if (hasPatientLocation) {
@@ -193,7 +196,14 @@ class PatientHospitalDetailsViewModel(
                 isDeleted = false
             )
 
-            runCatching { repository.insertRequest(request) }
+            runCatching { 
+                repository.insertRequest(request)
+                if (ambulanceId != null) {
+                    repository.getAmbulanceById(ambulanceId)?.let { ambulance ->
+                        repository.updateAmbulance(ambulance.copy(status = "ON_EMERGENCY"))
+                    }
+                }
+            }
                 .onSuccess {
                     // Send notification to hospital admin
                     viewModelScope.launch {

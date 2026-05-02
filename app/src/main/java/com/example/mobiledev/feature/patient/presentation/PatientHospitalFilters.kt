@@ -35,6 +35,18 @@ fun hospitalDistanceKm(
     currentLocation: Coordinates?
 ): Double? = currentLocation?.let { hospital.distanceTo(it) }
 
+fun ambulanceDistanceKm(
+    ambulance: com.example.mobiledev.data.local.entity.AmbulanceEntity,
+    currentLocation: Coordinates?
+): Double? = currentLocation?.let {
+    haversineKm(
+        it.latitude,
+        it.longitude,
+        ambulance.latitude,
+        ambulance.longitude
+    )
+}
+
 private fun HospitalEntity.distanceTo(location: Coordinates): Double? {
     val hospitalLatitude = latitude ?: return null
     val hospitalLongitude = longitude ?: return null
@@ -46,7 +58,7 @@ private fun HospitalEntity.distanceTo(location: Coordinates): Double? {
     )
 }
 
-private fun haversineKm(
+fun haversineKm(
     startLat: Double,
     startLon: Double,
     endLat: Double,

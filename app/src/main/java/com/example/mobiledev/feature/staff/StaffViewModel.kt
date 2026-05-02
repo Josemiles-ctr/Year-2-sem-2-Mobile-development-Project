@@ -100,7 +100,7 @@ class StaffViewModel(private val repository: StaffRepository) : BaseViewModel() 
     private fun resendInvitation(id: String) {
         viewModelScope.launch {
             repository.resendInvitation(id).onSuccess {
-                // Show success message maybe
+                showSuccess("Invitation resent successfully")
             }.onFailure { e ->
                 handleError(e)
             }

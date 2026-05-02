@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,8 +25,10 @@ fun PatientHospitalsRoute(
 ) {
     val context = LocalContext.current
     val locationProvider = remember(context) { DeviceLocationProvider(context) }
-    var currentLocation by remember { mutableStateOf<Coordinates?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+    
     var permissionRequested by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -35,9 +38,10 @@ fun PatientHospitalsRoute(
         }
     }
 
-    LaunchedEffect(permissionRequested) {
+    LaunchedEffect(permissionRequested, refreshTrigger) {
         if (permissionRequested) {
-            currentLocation = locationProvider.getCurrentCoordinates()
+            val coords = locationProvider.getCurrentCoordinates()
+            viewModel.updateLocation(coords)
         }
     }
 
@@ -65,8 +69,8 @@ fun PatientHospitalsRoute(
     PatientHospitalsScreen(
         viewModel = viewModel,
         onHospitalClick = onHospitalClick,
-        currentLocation = currentLocation,
+        onRefreshLocation = { refreshTrigger++ },
+        currentLocation = uiState.currentLocation,
         modifier = modifier
     )
 }
-

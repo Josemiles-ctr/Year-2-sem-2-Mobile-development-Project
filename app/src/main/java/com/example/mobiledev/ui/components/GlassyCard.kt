@@ -19,7 +19,7 @@ fun GlassyCard(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.large,
     containerColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.32f),
-    border: BorderStroke? = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.28f)),
+    border: BorderStroke? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {

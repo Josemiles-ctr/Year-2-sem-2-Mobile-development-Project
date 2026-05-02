@@ -54,10 +54,11 @@ class PatientHospitalDetailsScreenTest {
 
         composeRule.onNodeWithTag("patientHospitalDetailsRoot").assertIsDisplayed()
         composeRule.onNodeWithText("City Central Hospital").assertIsDisplayed()
-        composeRule.onNodeWithText("Ambulances").assertIsDisplayed()
-        composeRule.onNodeWithText("AVAILABLE").assertIsDisplayed()
-        composeRule.onNodeWithText("ON EMERGENCY").assertIsDisplayed()
-        composeRule.onNodeWithTag("requestEmergencyButton").assertIsEnabled()
+        composeRule.onNodeWithText("Available Ambulances").assertIsDisplayed()
+        composeRule.onNodeWithText("AVAILABLE NOW").assertIsDisplayed()
+        composeRule.onNodeWithText("BUSY (ON MISSION)").assertIsDisplayed()
+        composeRule.onNodeWithTag("ambulanceCard_AMB_1").performClick()
+        composeRule.onNodeWithTag("confirmSelectionButton").assertIsEnabled()
     }
 
     @Test
@@ -82,12 +83,12 @@ class PatientHospitalDetailsScreenTest {
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("offlineHospitalMessage").assertIsDisplayed()
-        composeRule.onNodeWithTag("requestEmergencyButton").assertIsNotEnabled()
+        composeRule.onNodeWithText("No ambulances available at this moment.").assertIsDisplayed()
+        composeRule.onNodeWithTag("confirmSelectionButton").assertIsNotEnabled()
     }
 
     @Test
-    fun patientHospitalDetails_submitsEmergencyRequestFromDialog() {
+    fun patientHospitalDetails_submitsEmergencyRequestFromSelection() {
         val repository = FakeResQRepository(
             hospital = sampleHospital(),
             ambulances = listOf(sampleAmbulance(id = "AMB_1", status = "AVAILABLE"))
@@ -105,12 +106,10 @@ class PatientHospitalDetailsScreenTest {
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("requestEmergencyButton").performClick()
-        composeRule.onNodeWithText("Emergency details").performTextInput("Severe chest pain")
-        composeRule.onNodeWithText("Submit").performClick()
+        composeRule.onNodeWithTag("ambulanceCard_AMB_1").performClick()
+        composeRule.onNodeWithTag("confirmSelectionButton").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Emergency request submitted successfully.").assertIsDisplayed()
         assertTrue(repository.insertedRequests.isNotEmpty())
     }
 

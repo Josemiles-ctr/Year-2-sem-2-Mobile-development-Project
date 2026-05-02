@@ -3,6 +3,7 @@
 /local.properties
 /secrets.properties
 /.idea/caches
+secrets.properties
 /.idea/libraries
 .history/
 /.idea/modules.xml

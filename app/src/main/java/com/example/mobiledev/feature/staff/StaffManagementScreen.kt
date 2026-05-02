@@ -169,6 +169,17 @@ fun StaffManagementContent(
                     )
                 }
             }
+            state.invitationToCancel?.let { invitation ->
+                ConfirmationDialog(
+                    title = stringResource(R.string.dialog_cancel_invitation_title),
+                    message = stringResource(R.string.dialog_cancel_invitation_message, invitation.email),
+                    confirmButtonText = stringResource(R.string.dialog_confirm),
+                    dismissButtonText = stringResource(R.string.dialog_cancel),
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
+                )
+            }
         }
     }
 }
@@ -295,13 +306,13 @@ fun InviteStaffDialog(
                     label = { Text("Email Address") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Text(
                     "Select Role:",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Column {
                     StaffRole.entries.forEach { role ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
