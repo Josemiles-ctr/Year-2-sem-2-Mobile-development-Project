@@ -1,5 +1,6 @@
 package com.example.mobiledev.feature.patient.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
@@ -17,33 +17,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.ExperimentalMaterialApi
@@ -69,19 +65,10 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.local.entity.HospitalEntity
-import com.example.mobiledev.ui.components.GlassyCard
 import com.example.mobiledev.ui.components.FullScreenLoading
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
-import androidx.compose.ui.graphics.Brush
+import java.util.Locale
 
 private const val PAGE_SIZE = 6
 
@@ -89,9 +76,10 @@ private const val PAGE_SIZE = 6
 @Composable
 fun PatientHospitalsScreen(
     viewModel: PatientHospitalsViewModel,
+    modifier: Modifier = Modifier,
     onHospitalClick: (String) -> Unit = {},
-    currentLocation: Coordinates? = null,
-    modifier: Modifier = Modifier
+    onRefreshLocation: () -> Unit = {},
+    currentLocation: Coordinates? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -154,9 +142,28 @@ fun PatientHospitalsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Header Section
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Find Emergency Care",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF1A202C)
+                            )
+                        )
+                        Text(
+                            text = "Locate the nearest medical facility",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color.Gray
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     // Search Bar
                     TextField(
@@ -166,25 +173,34 @@ fun PatientHospitalsScreen(
                             .fillMaxWidth()
                             .height(56.dp)
                             .testTag("hospitalSearchField"),
-                        placeholder = { 
+                        placeholder = {
                             Text(
-                                "Search hospitals by name or trauma level",
+                                "Search by hospital or trauma level...",
                                 color = Color.Gray,
-                                fontSize = 14.sp
-                            ) 
+                                fontSize = 15.sp
+                            )
                         },
-                        leadingIcon = { 
+                        leadingIcon = {
                             Icon(
-                                Icons.Default.Search, 
+                                Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color.Gray
-                            ) 
+                                tint = Color(0xFF00695C)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = onRefreshLocation) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = "Refresh Location",
+                                    tint = if (currentLocation != null) Color(0xFF00695C) else Color.Gray
+                                )
+                            }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF5F5F5),
-                            unfocusedContainerColor = Color(0xFFF5F5F5),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedTextColor = Color.Black,
@@ -192,16 +208,7 @@ fun PatientHospitalsScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Map Widget
-                    MapWidget(
-                        currentLocation = currentLocation,
-                        hospitals = uiState.hospitals,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
                     // Section Title
                     Row(
@@ -209,26 +216,38 @@ fun PatientHospitalsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Nearby Hospitals",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF333333)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Navigation,
+                                contentDescription = null,
+                                tint = Color(0xFF00695C),
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Recommended for You",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2D3748)
+                                )
+                            )
+                        }
                         Surface(
-                            color = Color(0xFFF5F5F5),
+                            color = Color(0xFFEDF2F7),
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "${filteredHospitals.size} Found",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color(0xFF4A5568),
+                                    fontWeight = FontWeight.Medium
+                                )
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     when {
                         filteredHospitals.isEmpty() -> EmptyState()
@@ -256,87 +275,6 @@ fun PatientHospitalsScreen(
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter)
         )
-    }
-}
-
-@Composable
-private fun MapWidget(
-    currentLocation: Coordinates?,
-    hospitals: List<HospitalEntity>,
-    modifier: Modifier = Modifier
-) {
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(160.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (currentLocation != null) {
-                val cameraPositionState = rememberCameraPositionState {
-                    position = CameraPosition.fromLatLngZoom(
-                        LatLng(currentLocation.latitude, currentLocation.longitude),
-                        11f
-                    )
-                }
-                
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    uiSettings = MapUiSettings(
-                        zoomControlsEnabled = false,
-                        myLocationButtonEnabled = false,
-                        compassEnabled = false,
-                        mapToolbarEnabled = false,
-                        scrollGesturesEnabled = false,
-                        zoomGesturesEnabled = false,
-                        rotationGesturesEnabled = false,
-                        tiltGesturesEnabled = false
-                    ),
-                    properties = MapProperties(isMyLocationEnabled = true)
-                ) {
-                    hospitals.forEach { hospital ->
-                        if (hospital.latitude != null && hospital.longitude != null) {
-                            Marker(
-                                state = MarkerState(position = LatLng(hospital.latitude, hospital.longitude)),
-                                title = hospital.name
-                            )
-                        }
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color(0xFF00695C),
-                        strokeWidth = 2.dp
-                    )
-                }
-            }
-
-            // Map View Text Overlay
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Map view",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-        }
     }
 }
 
@@ -451,97 +389,184 @@ private fun HospitalCard(
     distanceKm: Double? = null,
     onClick: () -> Unit
 ) {
-    val waitTime = remember(hospital.id) { "${(2..15).random()} min" }
+    val distanceDisplay = distanceKm?.let { String.format(Locale.US, "%.1f km", it) } ?: "Nearby"
     val traumaLevel = remember(hospital.id) { listOf("Level I", "Level II", "Level III").random() }
-    val isLowAmbs = hospital.activeAmbulances <= 1
+    val isBusy = hospital.activeAmbulances < 2
+
+    val statusText = if (isBusy) "BUSY" else "AVAILABLE"
+    val statusColor = if (isBusy) Color(0xFFC62828) else Color(0xFF2E7D32)
+    val statusBgColor = if (isBusy) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
 
     ElevatedCard(
-        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .testTag("hospitalCard_${hospital.id}"),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color.White, Color(0xFFF5F5F5))
-                    )
-                )
-                .padding(12.dp)
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Top Row: Status, Distance, AMBS
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Surface(
-                    modifier = Modifier.size(40.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFE0F2F1)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.LocalHospital,
-                            contentDescription = null,
-                            tint = Color(0xFF00695C),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = hospital.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = statusBgColor,
+                        shape = CircleShape
                     ) {
                         Text(
-                            text = if (distanceKm != null) String.format("%.1f mi", distanceKm * 0.621371) else "0.8 mi",
-                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
-                        )
-                        Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(Color.LightGray))
-                        Text(
-                            text = traumaLevel,
-                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
-                        )
-                        Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(Color.LightGray))
-                        Text(
-                            text = waitTime,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color(0xFF00695C),
-                                fontWeight = FontWeight.Medium
+                            text = statusText,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = statusColor
                             )
                         )
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "${hospital.activeAmbulances}",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (isBusy) Color(0xFFC62828) else Color(0xFF00695C)
+                            )
+                        )
+                        Text(
+                            text = "AMBS",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Hospital Name
+            Text(
+                text = hospital.name,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C),
+                    letterSpacing = (-0.5).sp
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Distance and Trauma Level Labels
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text(
+                            "Distance",
+                            style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray, fontSize = 10.sp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = distanceDisplay,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF00695C)
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB300),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Trauma Level",
+                            style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray, fontSize = 10.sp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = traumaLevel,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2D3748)
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Button
+            Button(
+                onClick = onClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00695C),
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = "${hospital.activeAmbulances}",
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        text = "View Ambulances",
+                        style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (isLowAmbs) Color(0xFFC62828) else Color(0xFF00695C)
+                            letterSpacing = 0.5.sp
                         )
                     )
-                    Text(
-                        text = "AMBS",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
-                            color = Color.Gray
-                        )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.Route,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

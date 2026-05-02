@@ -3,6 +3,7 @@ package com.example.mobiledev.feature.patient.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.repository.ResQRepository
 import kotlinx.coroutines.Job
@@ -21,7 +22,8 @@ data class PatientHospitalsUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
-    val selectedHospital: HospitalEntity? = null
+    val selectedHospital: HospitalEntity? = null,
+    val currentLocation: Coordinates? = null
 ) {
     val isEmpty: Boolean
         get() = !isLoading && hospitals.isEmpty() && errorMessage == null
@@ -47,6 +49,10 @@ class PatientHospitalsViewModel(
 
     fun onHospitalSelected(hospital: HospitalEntity) {
         _uiState.update { it.copy(selectedHospital = hospital) }
+    }
+
+    fun updateLocation(coordinates: Coordinates?) {
+        _uiState.update { it.copy(currentLocation = coordinates) }
     }
 
     fun dismissHospitalDetails() {

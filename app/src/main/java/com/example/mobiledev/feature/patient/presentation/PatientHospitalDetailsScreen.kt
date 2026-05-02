@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material3.AlertDialog
@@ -80,13 +81,16 @@ import java.util.Locale
 @Composable
 fun PatientHospitalDetailsRoute(
     viewModel: PatientHospitalDetailsViewModel,
+    patientHospitalsViewModel: PatientHospitalsViewModel,
     onBackClick: () -> Unit,
     onAmbulanceClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val locationProvider = remember(context) { DeviceLocationProvider(context) }
-    var currentLocation by remember { mutableStateOf<Coordinates?>(null) }
+    val patientUiState by patientHospitalsViewModel.uiState.collectAsState()
+    val currentLocation = patientUiState.currentLocation
+
     var permissionRequested by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -99,7 +103,8 @@ fun PatientHospitalDetailsRoute(
 
     androidx.compose.runtime.LaunchedEffect(permissionRequested) {
         if (permissionRequested) {
-            currentLocation = locationProvider.getCurrentCoordinates()
+            val coords = locationProvider.getCurrentCoordinates()
+            patientHospitalsViewModel.updateLocation(coords)
         }
     }
 
@@ -146,6 +151,7 @@ fun PatientHospitalDetailsScreen(
     val hospital = uiState.hospital
 
     Scaffold(
+        modifier = modifier.testTag("patientHospitalDetailsRoot"),
         topBar = {
             TopAppBar(
                 title = {
@@ -165,19 +171,18 @@ fun PatientHospitalDetailsScreen(
                 },
                 actions = {
                     Surface(
-                        modifier = Modifier.padding(end = 12.dp).size(36.dp),
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .size(36.dp),
                         shape = CircleShape,
-                        color = Color(0xFFEEEEEE)
+                        color = Color(0xFFF1F5F9)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "JD",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Gray
-                                )
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            modifier = Modifier.padding(6.dp),
+                            tint = Color(0xFF64748B)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -220,7 +225,14 @@ fun PatientHospitalDetailsScreen(
 
 @Composable
 private fun LoadingState(modifier: Modifier) {
-    FullScreenLoading(modifier = modifier)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFFBFBFB)),
+        contentAlignment = Alignment.Center
+    ) {
+        FullScreenLoading()
+    }
 }
 
 @Composable
@@ -297,8 +309,9 @@ private fun DetailsContent(
                                 Text(
                                     text = hospital.name,
                                     style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.Black
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.Black,
+                                        letterSpacing = (-1).sp
                                     )
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -340,28 +353,34 @@ private fun DetailsContent(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Row(modifier = Modifier.fillMaxWidth()) {
+                            val distanceKm = remember(hospital.id, currentLocation) {
+                                hospitalDistanceKm(hospital, currentLocation)
+                            }
+                            val distanceDisplay = distanceKm?.let { String.format(Locale.US, "%.1f km", it) } ?: "Nearby"
+                            val isBusy = hospital.activeAmbulances < 2
+
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "CURRENT LOAD",
+                                    text = "CURRENT STATUS",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.Gray
                                 )
                                 Text(
-                                    text = "Optimal",
+                                    text = if (isBusy) "Busy" else "Available",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF00695C)
+                                        color = if (isBusy) Color(0xFFC62828) else Color(0xFF00695C)
                                     )
                                 )
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "WAIT TIME",
+                                    text = "APPROX DISTANCE",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.Gray
                                 )
                                 Text(
-                                    text = "~12 Mins",
+                                    text = distanceDisplay,
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = Color.Black
@@ -407,6 +426,7 @@ private fun DetailsContent(
                     AmbulanceCard(
                         ambulance = ambulance,
                         isSelected = selectedAmbulanceId == ambulance.id,
+                        currentLocation = currentLocation,
                         onClick = { selectedAmbulanceId = ambulance.id }
                     )
                 }
@@ -436,7 +456,8 @@ private fun DetailsContent(
                 enabled = selectedAmbulanceId != null && !isSubmittingRequest,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(56.dp)
+                    .testTag("confirmSelectionButton"),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFC61111),
@@ -467,18 +488,24 @@ private fun DetailsContent(
 private fun AmbulanceCard(
     ambulance: AmbulanceEntity,
     isSelected: Boolean,
+    currentLocation: Coordinates? = null,
     onClick: () -> Unit
 ) {
-    val type = remember(ambulance.id) { 
-        listOf("Advanced Life Support", "Basic Life Support", "Paramedic Rapid Response").random() 
+    val type = remember(ambulance.id) {
+        listOf("Advanced Life Support", "Basic Life Support", "Paramedic Rapid Response").random()
     }
-    val time = remember(ambulance.id) { (4..20).random() }
-    val distance = remember(ambulance.id) { String.format(Locale.US, "%.1f KM", (0..5).random() + (0..9).random() / 10.0) }
+    
+    val distanceKm = remember(ambulance.id, currentLocation) {
+        ambulanceDistanceKm(ambulance, currentLocation)
+    }
+
+    val distanceDisplay = distanceKm?.let { String.format(Locale.US, "%.1f km", it) } ?: "Nearby"
     val isBusy = ambulance.status.uppercase().contains("BUSY") || ambulance.status.uppercase().contains("EMERGENCY")
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("ambulanceCard_${ambulance.id}")
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
                 color = if (isSelected) Color(0xFFC61111) else Color.Transparent,
@@ -549,23 +576,15 @@ private fun AmbulanceCard(
                 if (isBusy) {
                     Text(text = "--", style = MaterialTheme.typography.titleLarge, color = Color.LightGray)
                 } else {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "$time",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color.Black
-                        )
-                        Text(
-                            text = " mins",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (time < 6) Color(0xFFC61111) else Color.Gray,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                    }
                     Text(
-                        text = if (time < 6) "FASTEST" else distance,
+                        text = distanceDisplay,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "DISTANCE",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (time < 6) Color.Gray else Color.Gray
+                        color = Color.Gray
                     )
                 }
             }

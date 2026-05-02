@@ -83,14 +83,30 @@ fun NavGraph(
         ApiStaffRepository(retrofit.create(StaffApiService::class.java))
     }
 
+    val signInFactory = remember(userRepository, authSessionManager) {
+        SignInViewModelFactory(userRepository, authSessionManager)
+    }
+    val signUpFactory = remember(userRepository, authSessionManager) {
+        SignUpViewModelFactory(userRepository, authSessionManager)
+    }
+    val patientHospitalsViewModelFactory = remember(resQRepository) {
+        PatientHospitalsViewModelFactory(resQRepository)
+    }
+    val emergencyViewModelFactory = remember(emergencyRepository) {
+        EmergencyViewModelFactory(emergencyRepository)
+    }
+    val userManagementViewModelFactory = remember(userRepository) {
+        UserManagementViewModelFactory(userRepository)
+    }
+    val staffViewModelFactory = remember(staffRepository) {
+        StaffViewModelFactory(staffRepository)
+    }
+
     NavHost(
         navController = navController,
         startDestination = Screen.SignIn.route
     ) {
         composable(Screen.SignIn.route) {
-            val signInFactory = remember(userRepository, authSessionManager) {
-                SignInViewModelFactory(userRepository, authSessionManager)
-            }
             val viewModel: SignInViewModel = viewModel(factory = signInFactory)
             SignInRoute(
                 viewModel = viewModel,
@@ -106,9 +122,6 @@ fun NavGraph(
             )
         }
         composable(Screen.SignUp.route) {
-            val signUpFactory = remember(userRepository, authSessionManager) {
-                SignUpViewModelFactory(userRepository, authSessionManager)
-            }
             val viewModel: SignUpViewModel = viewModel(factory = signUpFactory)
             SignUpRoute(
                 viewModel = viewModel,
@@ -125,14 +138,6 @@ fun NavGraph(
         }
 
         composable(Screen.Main.route) {
-            val emergencyViewModelFactory = remember { EmergencyViewModelFactory(emergencyRepository) }
-            val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
-            val patientHospitalsViewModelFactory = remember(resQRepository) {
-                PatientHospitalsViewModelFactory(resQRepository)
-            }
-            val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
-                factory = patientHospitalsViewModelFactory
-            )
             val principal by authSessionManager.principal.collectAsState()
             var signedInUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<com.example.mobiledev.data.model.User?>(null) }
 
@@ -152,7 +157,12 @@ fun NavGraph(
                 return@composable
             }
 
+            val emergencyViewModel: EmergencyViewModel = viewModel(factory = emergencyViewModelFactory)
+
             if (principal.role == com.example.mobiledev.data.security.AppRole.PATIENT) {
+                val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
+                    factory = patientHospitalsViewModelFactory
+                )
                 MainScreen(
                     currentPrincipal = principal,
                     currentUser = signedInUser,
@@ -185,9 +195,6 @@ fun NavGraph(
                     }
                 )
             } else {
-                val userManagementViewModelFactory = remember(userRepository) {
-                    UserManagementViewModelFactory(userRepository)
-                }
                 val userManagementViewModel: UserManagementViewModel = viewModel(
                     factory = userManagementViewModelFactory
                 )
@@ -221,12 +228,16 @@ fun NavGraph(
         }
 
         composable(Screen.StaffManagement.route) {
-            val staffViewModelFactory = remember { StaffViewModelFactory(staffRepository) }
             val viewModel: StaffViewModel = viewModel(factory = staffViewModelFactory)
             StaffManagementScreen(viewModel = viewModel)
         }
 
         composable(Screen.HospitalDashboard.route) { backStackEntry ->
+            val principal by authSessionManager.principal.collectAsState()
+            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+                return@composable
+            }
+
             val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
             if (hospitalId.isBlank()) {
                 Text("Invalid hospital session. Please sign in again.")
@@ -251,10 +262,18 @@ fun NavGraph(
         }
 
         composable(Screen.PatientHospitalDetails.route) { backStackEntry ->
+            val principal by authSessionManager.principal.collectAsState()
+            if (principal.role == com.example.mobiledev.data.security.AppRole.GUEST) {
+                return@composable
+            }
+
             val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
             if (hospitalId.isBlank()) {
                 Text("Invalid hospital selection. Please go back and try again.")
             } else {
+                val patientHospitalsViewModel: PatientHospitalsViewModel = viewModel(
+                    factory = patientHospitalsViewModelFactory
+                )
                 val detailsViewModelFactory = remember(resQRepository, hospitalId, authSessionManager) {
                     PatientHospitalDetailsViewModelFactory(
                         repository = resQRepository,
@@ -265,6 +284,7 @@ fun NavGraph(
                 val viewModel: PatientHospitalDetailsViewModel = viewModel(factory = detailsViewModelFactory)
                 PatientHospitalDetailsRoute(
                     viewModel = viewModel,
+                    patientHospitalsViewModel = patientHospitalsViewModel,
                     onBackClick = { navController.popBackStack() },
                     onAmbulanceClick = { ambulanceId ->
                         navController.navigate(Screen.Tracking.createRoute(ambulanceId))

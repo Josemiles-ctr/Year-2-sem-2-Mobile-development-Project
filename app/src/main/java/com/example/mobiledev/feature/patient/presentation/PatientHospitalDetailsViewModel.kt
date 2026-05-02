@@ -94,6 +94,9 @@ class PatientHospitalDetailsViewModel(
                     }
                 }
                 .collectLatest { ambulances ->
+                    // Also refresh the hospital data to get updated activeAmbulances count
+                    val updatedHospital = repository.getHospitalById(hospitalId)
+                    _uiState.update { it.copy(hospital = updatedHospital ?: it.hospital) }
                     updateAmbulanceState(ambulances)
                 }
         }

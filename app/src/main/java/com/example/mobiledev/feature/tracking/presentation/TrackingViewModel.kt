@@ -15,8 +15,11 @@ import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.repository.ResQRepository
 import com.example.mobiledev.feature.tracking.data.DirectionsApi
 import com.example.mobiledev.feature.tracking.data.PolylineDecoder
+import com.example.mobiledev.feature.patient.presentation.haversineKm
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +43,9 @@ data class TrackingUiState(
     val showConfirmationDialog: Boolean = false,
     val isFinished: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val distanceKm: Double? = null,
+    val traumaLevel: String = "Level I"
 )
 
 class TrackingViewModel(
@@ -66,6 +71,10 @@ class TrackingViewModel(
         .build()
         .create(DirectionsApi::class.java)
 
+    private var hospitalsJob: Job? = null
+    private var ambulancesJob: Job? = null
+    private var simulationJob: Job? = null
+
     init {
         observeTrackingData()
     }
@@ -75,7 +84,8 @@ class TrackingViewModel(
             _uiState.update { it.copy(isLoading = true) }
             
             // Hospitals
-            launch {
+            hospitalsJob?.cancel()
+            hospitalsJob = launch {
                 try {
                     repository.getAllHospitalsStream().collect { hospitals ->
                         _uiState.update { it.copy(hospitals = hospitals) }
@@ -92,10 +102,15 @@ class TrackingViewModel(
             }
 
             // Ambulances
-            launch {
+            ambulancesJob?.cancel()
+            ambulancesJob = launch {
                 try {
                     repository.getAllAmbulancesStream().collect { ambulances ->
-                        handleAmbulancesUpdate(ambulances)
+                        if (!_uiState.value.requestSent) {
+                            handleAmbulancesUpdate(ambulances)
+                        } else {
+                            _uiState.update { it.copy(ambulances = ambulances) }
+                        }
                     }
                 } catch (e: SecurityException) {
                     if (initialAmbulanceId != null) {
@@ -103,7 +118,11 @@ class TrackingViewModel(
                             val ambulance = repository.getAmbulanceById(initialAmbulanceId)
                             if (ambulance != null) {
                                 repository.getAmbulancesByHospitalStream(ambulance.hospitalId).collect { ambulances ->
-                                    handleAmbulancesUpdate(ambulances)
+                                    if (!_uiState.value.requestSent) {
+                                        handleAmbulancesUpdate(ambulances)
+                                    } else {
+                                        _uiState.update { it.copy(ambulances = ambulances) }
+                                    }
                                 }
                             }
                         } catch (e: Exception) {
@@ -175,10 +194,13 @@ class TrackingViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(showConfirmationDialog = false, isLoading = true) }
             // Simulating API call/Request creation
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _uiState.update { it.copy(requestSent = true, isLoading = false) }
+            startAmbulanceSimulation()
         }
     }
+
+
 
     fun onDismissDialog() {
         _uiState.update { it.copy(showConfirmationDialog = false) }
@@ -186,60 +208,124 @@ class TrackingViewModel(
 
     fun onCancelRequest() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            simulationJob?.cancel()
+            _uiState.update { it.copy(isLoading = true, requestSent = false) }
             // Simulating cancellation
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _uiState.update { it.copy(isLoading = false, isFinished = true) }
         }
     }
 
     fun onPairRequest() {
         viewModelScope.launch {
+            simulationJob?.cancel()
             _uiState.update { it.copy(isLoading = true) }
             // Simulating completion/pairing
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _uiState.update { it.copy(isLoading = false, isFinished = true) }
         }
     }
 
     private fun findNearestEntities(userLatLng: LatLng) {
         val currentState = _uiState.value
-        if (currentState.hospitals.isEmpty()) return
 
-        val nearestHospital = currentState.hospitals.minByOrNull { hospital ->
-            val results = FloatArray(1)
-            Location.distanceBetween(
-                userLatLng.latitude, userLatLng.longitude,
-                hospital.latitude ?: 0.0, hospital.longitude ?: 0.0,
-                results
-            )
-            results[0]
-        }
+        val nearestHospital = if (currentState.hospitals.isNotEmpty()) {
+            currentState.hospitals.minByOrNull { hospital ->
+                haversineKm(
+                    userLatLng.latitude, userLatLng.longitude,
+                    hospital.latitude ?: 0.0, hospital.longitude ?: 0.0
+                )
+            }
+        } else null
 
         val nearestAmbulance = if (initialAmbulanceId != null) {
             currentState.selectedAmbulance
         } else if (currentState.ambulances.isNotEmpty()) {
             currentState.ambulances.minByOrNull { ambulance ->
-                val results = FloatArray(1)
-                Location.distanceBetween(
+                haversineKm(
                     userLatLng.latitude, userLatLng.longitude,
-                    ambulance.latitude, ambulance.longitude,
-                    results
+                    ambulance.latitude, ambulance.longitude
                 )
-                results[0]
             }
+        } else null
+
+        val distanceKm = if (nearestAmbulance != null) {
+            haversineKm(
+                userLatLng.latitude, userLatLng.longitude,
+                nearestAmbulance.latitude, nearestAmbulance.longitude
+            )
         } else null
 
         _uiState.update { it.copy(
             nearestHospital = nearestHospital,
-            nearestAmbulance = nearestAmbulance
+            nearestAmbulance = nearestAmbulance,
+            distanceKm = distanceKm
         ) }
 
-        if (nearestAmbulance != null) {
+        if (nearestAmbulance != null && !currentState.requestSent) {
             fetchRoute(
                 origin = LatLng(nearestAmbulance.latitude, nearestAmbulance.longitude),
                 destination = userLatLng
             )
+        }
+    }
+
+    private fun interpolatePoints(points: List<LatLng>, stepDistanceKm: Double = 0.01): List<LatLng> {
+        if (points.size < 2) return points
+        val result = mutableListOf<LatLng>()
+        for (i in 0 until points.size - 1) {
+            val start = points[i]
+            val end = points[i + 1]
+            
+            val segmentDistance = haversineKm(
+                start.latitude, start.longitude,
+                end.latitude, end.longitude
+            )
+            
+            // Generate coordinates every 'stepDistanceKm' (e.g., 10 meters)
+            val numSteps = (segmentDistance / stepDistanceKm).toInt().coerceAtLeast(1)
+            
+            for (j in 0 until numSteps) {
+                val fraction = j.toDouble() / numSteps
+                val lat = start.latitude + (end.latitude - start.latitude) * fraction
+                val lon = start.longitude + (end.longitude - start.longitude) * fraction
+                result.add(LatLng(lat, lon))
+            }
+        }
+        result.add(points.last())
+        return result
+    }
+
+    private fun startAmbulanceSimulation() {
+        simulationJob?.cancel()
+        simulationJob = viewModelScope.launch {
+            val rawRoute = _uiState.value.routePoints
+            val userLoc = _uiState.value.userLocation
+            if (rawRoute.isEmpty() || userLoc == null) return@launch
+
+            // Calculate "space coordinates" along the route at fixed 10m intervals
+            val route = interpolatePoints(rawRoute, stepDistanceKm = 0.01)
+
+            for (point in route) {
+                if (!_uiState.value.requestSent) break
+                
+                val currentDistance = haversineKm(
+                    point.latitude, point.longitude,
+                    userLoc.latitude, userLoc.longitude
+                )
+
+                _uiState.update { state ->
+                    val updatedAmbulance = state.nearestAmbulance?.copy(
+                        latitude = point.latitude,
+                        longitude = point.longitude
+                    )
+                    state.copy(
+                        nearestAmbulance = updatedAmbulance,
+                        distanceKm = currentDistance
+                    )
+                }
+                delay(50) // Update every 50ms for high-frequency smooth movement
+            }
         }
     }
 
@@ -264,6 +350,10 @@ class TrackingViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(routePoints = listOf(origin, destination)) }
             }
-        }
+    override fun onCleared() {
+        super.onCleared()
+        simulationJob?.cancel()
+        hospitalsJob?.cancel()
+        ambulancesJob?.cancel()
     }
 }

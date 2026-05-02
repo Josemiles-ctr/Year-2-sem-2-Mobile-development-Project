@@ -28,12 +28,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import java.util.Locale
 import com.example.mobiledev.R
+import com.example.mobiledev.feature.patient.presentation.haversineKm
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocalHospital
 
@@ -77,6 +80,7 @@ fun TrackingScreen(
     val fusedLocationClient: FusedLocationProviderClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
+    val locationProvider = remember(context) { com.example.mobiledev.data.location.DeviceLocationProvider(context) }
 
     LaunchedEffect(uiState.isFinished) {
         if (uiState.isFinished) {
@@ -95,17 +99,29 @@ fun TrackingScreen(
 
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
-            try {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        val userLatLng = LatLng(it.latitude, it.longitude)
-                        viewModel.updateUserLocation(userLatLng, context)
-                        cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
-                    }
-                }
-            } catch (e: SecurityException) {
-                // Handle exception
+            val coords = locationProvider.getCurrentCoordinates()
+            coords?.let {
+                val userLatLng = LatLng(it.latitude, it.longitude)
+                viewModel.updateUserLocation(userLatLng, context)
+                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
             }
+        }
+    }
+
+    LaunchedEffect(uiState.nearestAmbulance, uiState.requestSent) {
+        if (uiState.requestSent && uiState.nearestAmbulance != null && uiState.userLocation != null) {
+            val ambulanceLoc = LatLng(uiState.nearestAmbulance!!.latitude, uiState.nearestAmbulance!!.longitude)
+            val userLoc = uiState.userLocation!!
+            
+            val bounds = LatLngBounds.builder()
+                .include(ambulanceLoc)
+                .include(userLoc)
+                .build()
+            
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(bounds, 200),
+                1000
+            )
         }
     }
 
@@ -148,15 +164,17 @@ fun TrackingScreen(
                 },
                 actions = {
                     Surface(
-                        modifier = Modifier.padding(end = 12.dp).size(36.dp),
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .size(36.dp),
                         shape = CircleShape,
-                        color = Color(0xFFEEEEEE)
+                        color = Color(0xFFF1F5F9)
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
+                            imageVector = Icons.Default.Person,
                             contentDescription = "Profile",
-                            modifier = Modifier.padding(4.dp),
-                            tint = Color.Gray
+                            modifier = Modifier.padding(6.dp),
+                            tint = Color(0xFF64748B)
                         )
                     }
                 },
@@ -190,10 +208,31 @@ fun TrackingScreen(
 
                 // Ambulances
                 uiState.ambulances.forEach { ambulance ->
+                    val trackedAmbulance = uiState.nearestAmbulance
+                    val isTracked = ambulance.id == trackedAmbulance?.id
+                    val position = if (isTracked && trackedAmbulance != null) {
+                        LatLng(trackedAmbulance.latitude, trackedAmbulance.longitude)
+                    } else {
+                        LatLng(ambulance.latitude, ambulance.longitude)
+                    }
                     Marker(
-                        state = MarkerState(position = LatLng(ambulance.latitude, ambulance.longitude)),
+                        state = MarkerState(position = position),
                         title = "Ambulance ${ambulance.registrationNo}",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                        icon = if (isTracked) {
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                        } else {
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        },
+                        alpha = if (isTracked) 1.0f else 0.5f
+                    )
+                }
+
+                // User Location / Pickup Point Marker
+                uiState.userLocation?.let { userLoc ->
+                    Marker(
+                        state = MarkerState(position = userLoc),
+                        title = "Your Location",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                     )
                 }
             }
@@ -257,6 +296,7 @@ fun TrackingScreen(
                     ) {
                         AmbulanceArrivingOverlay(
                             ambulanceRegNo = uiState.nearestAmbulance?.registrationNo ?: "AMB-9921",
+                            distanceKm = uiState.distanceKm,
                             onCancelClick = { viewModel.onCancelRequest() },
                             onPairClick = { viewModel.onPairRequest() }
                         )
@@ -306,42 +346,55 @@ fun TrackingScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Hospital Image Placeholder
+                                    // Ambulance Image Placeholder
                                     Surface(
                                         modifier = Modifier.size(64.dp),
                                         shape = RoundedCornerShape(12.dp),
-                                        color = Color(0xFFEEEEEE)
+                                        color = Color(0xFFFFEBEE)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.LocalHospital,
+                                            imageVector = Icons.Default.LocalShipping,
                                             contentDescription = null,
                                             modifier = Modifier.padding(12.dp),
-                                            tint = Color.Gray
+                                            tint = Color(0xFFC61111)
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = uiState.nearestHospital?.name ?: "Hospital Name",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            text = uiState.nearestAmbulance?.registrationNo ?: "Ambulance",
+                                            style = MaterialTheme.typography.titleLarge.copy(
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = (-1).sp
+                                            ),
                                             color = Color.Black
                                         )
                                         Text(
-                                            text = "Tier-1 Trauma Facility • 0.8 miles away",
+                                            text = uiState.nearestHospital?.name ?: "En route",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = Color.Gray
                                         )
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
-                                            text = "5 mins",
+                                            text = uiState.nearestAmbulance?.let { ambulance ->
+                                                uiState.userLocation?.let { userLoc ->
+                                                    val results = FloatArray(1)
+                                                    android.location.Location.distanceBetween(
+                                                        userLoc.latitude, userLoc.longitude,
+                                                        ambulance.latitude, ambulance.longitude,
+                                                        results
+                                                    )
+                                                    String.format(Locale.US, "%.1f km", results[0] / 1000.0)
+                                                } ?: "Nearby"
+                                            } ?: "Nearby",
                                             style = MaterialTheme.typography.titleMedium.copy(
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFFC61111)
                                             )
                                         )
                                         Text(
-                                            text = "ESTIMATED\nETA",
+                                            text = "APPROX\nDISTANCE",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color.Gray,
                                             textAlign = TextAlign.End,
@@ -407,22 +460,29 @@ fun TrackingScreen(
                     title = {
                         Text(
                             "Confirm Emergency Request",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
                         )
                     },
                     text = {
                         Text(
                             "Are you sure you want to request an ambulance to your current location? This will alert emergency services immediately.",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
                         )
                     },
                     confirmButton = {
                         Button(
                             onClick = { viewModel.onConfirmDialog() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC61111)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFC61111),
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Confirm Request")
+                            Text("Confirm Request", color = Color.White)
                         }
                     },
                     dismissButton = {
@@ -441,14 +501,16 @@ fun TrackingScreen(
 @Composable
 private fun AmbulanceArrivingOverlay(
     ambulanceRegNo: String,
+    distanceKm: Double?,
     onCancelClick: () -> Unit,
     onPairClick: () -> Unit
 ) {
     var pairButtonEnabled by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(5000)
-        pairButtonEnabled = true
+    LaunchedEffect(distanceKm) {
+        if (distanceKm != null && distanceKm < 0.05) { // 50 meters
+            pairButtonEnabled = true
+        }
     }
 
     Column(
@@ -478,12 +540,14 @@ private fun AmbulanceArrivingOverlay(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Ambulance on the way",
+                    text = distanceKm?.let {
+                        if (it < 0.1) "Ambulance arrived" else "Ambulance on the way"
+                    } ?: "Ambulance on the way",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.Black
                 )
                 Text(
-                    text = "Reg No: $ambulanceRegNo • En route",
+                    text = "Reg No: $ambulanceRegNo • ${distanceKm?.let { String.format(Locale.US, "%.1f km away", it) } ?: "En route"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )

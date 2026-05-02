@@ -19,10 +19,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
@@ -36,7 +37,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -124,7 +124,7 @@ fun MainScreen(
         if (currentPrincipal.role == AppRole.SYSTEM_ADMIN) {
             add(MainTab("Users", Icons.Filled.People))
         }
-        add(MainTab(accountTabTitle, Icons.Filled.AccountCircle))
+        add(MainTab(accountTabTitle, Icons.Filled.Person))
     }
     val hasUserManagementTab = currentPrincipal.role == AppRole.SYSTEM_ADMIN
     val accountTabIndex = if (hasUserManagementTab) 3 else 2
@@ -286,12 +286,19 @@ private fun MainTopBar(modifier: Modifier = Modifier) {
             }
         },
         actions = {
-            IconButton(onClick = { menuExpanded = !menuExpanded }) {
+            Surface(
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(36.dp)
+                    .clickable { menuExpanded = !menuExpanded },
+                shape = CircleShape,
+                color = Color(0xFFF1F5F9)
+            ) {
                 Icon(
-                    imageVector = Icons.Default.AccountCircle,
+                    imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.padding(6.dp),
+                    tint = Color(0xFF64748B)
                 )
             }
             DropdownMenu(
