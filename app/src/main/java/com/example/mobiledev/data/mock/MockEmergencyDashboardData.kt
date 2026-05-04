@@ -5,11 +5,71 @@ import com.example.mobiledev.data.model.AmbulanceStatus
 import com.example.mobiledev.data.model.EmergencyPriority
 import com.example.mobiledev.data.model.EmergencyRequest
 import com.example.mobiledev.data.model.EmergencyStatus
+import com.example.mobiledev.data.model.Notification
+import com.example.mobiledev.data.model.NotificationType
 
 object MockEmergencyDashboardData {
 
     private val now: Long
         get() = System.currentTimeMillis()
+
+    val notifications: List<Notification>
+        get() = listOf(
+            Notification(
+                id = "NOTIF-001",
+                userId = "user-123",
+                title = "Emergency Request Assigned",
+                message = "Ambulance UBA 411A with crew Kato Joseph & Lwanga Moses has been assigned to your request from Kampala Road.",
+                timestamp = now - 10 * 60 * 1000, // 10 mins ago
+                isRead = false,
+                type = NotificationType.AMBULANCE_ASSIGNED
+            ),
+            Notification(
+                id = "NOTIF-002",
+                userId = "user-123",
+                title = "Critical Alert: Jinja Road",
+                message = "Multiple accidents reported on Jinja Road near Nakawa. Expect heavy traffic and delays for emergency responders.",
+                timestamp = now - 45 * 60 * 1000, // 45 mins ago
+                isRead = true,
+                type = NotificationType.EMERGENCY_REQUEST
+            ),
+            Notification(
+                id = "NOTIF-003",
+                userId = "user-123",
+                title = "System Update",
+                message = "ResQ app has been updated to version 2.4. New feature: Real-time traffic integration for faster routes.",
+                timestamp = now - 2 * 3600 * 1000, // 2 hours ago
+                isRead = false,
+                type = NotificationType.SYSTEM_ALERT
+            ),
+            Notification(
+                id = "NOTIF-004",
+                userId = "user-123",
+                title = "Ambulance Status: En-route",
+                message = "Ambulance UBB 219P is now en-route to your location at Ntinda Trading Center. Estimated arrival in 8 minutes.",
+                timestamp = now - 5 * 60 * 1000, // 5 mins ago
+                isRead = false,
+                type = NotificationType.STATUS_CHANGE
+            ),
+            Notification(
+                id = "NOTIF-005",
+                userId = "user-123",
+                title = "Medical Tip of the Day",
+                message = "Namukasa Faith, please remember to update your blood type and allergies in the profile section for more effective emergency care.",
+                timestamp = now - 24 * 3600 * 1000, // 1 day ago
+                isRead = true,
+                type = NotificationType.SYSTEM_ALERT
+            ),
+            Notification(
+                id = "NOTIF-006",
+                userId = "user-123",
+                title = "Request Completed",
+                message = "Your previous emergency request at Makerere Main Gate was successfully completed. Thank you for using ResQ.",
+                timestamp = now - 48 * 3600 * 1000, // 2 days ago
+                isRead = true,
+                type = NotificationType.STATUS_CHANGE
+            )
+        )
 
     val ambulances: List<Ambulance>
         get() = listOf(

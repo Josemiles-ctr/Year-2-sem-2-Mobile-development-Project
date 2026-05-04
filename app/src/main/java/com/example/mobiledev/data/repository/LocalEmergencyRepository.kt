@@ -10,6 +10,7 @@ import com.example.mobiledev.data.model.EmergencyStatus
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthSessionManager
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -76,12 +77,15 @@ class LocalEmergencyRepository(
             else -> flowOf(emptyList())
         }
 
-        return ambulanceFlow.map { ambulances ->
+        val userFlow = resQRepository.getAllUsersStream()
+
+        return combine(ambulanceFlow, userFlow) { ambulances, users ->
             ambulances.map { entity ->
+                val driverName = users.find { it.id == entity.driverId }?.name ?: "Unknown Driver"
                 Ambulance(
                     id = entity.id,
                     plateNumber = entity.registrationNo,
-                    drivers = entity.driverId, // In a real app we'd look up multiple drivers
+                    drivers = driverName,
                     status = mapAmbulanceStatus(entity.status),
                     currentEmergencyId = null
                 )

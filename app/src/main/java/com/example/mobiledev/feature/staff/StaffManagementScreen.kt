@@ -80,7 +80,9 @@ fun StaffManagementContent(
         containerColor = Color(0xFFFBFBFB),
         topBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding(),
                 color = Color.White,
                 shadowElevation = 2.dp
             ) {

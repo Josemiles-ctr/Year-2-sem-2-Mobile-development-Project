@@ -18,6 +18,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -88,6 +90,9 @@ fun MainScreen(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
 
+    val density = LocalDensity.current
+    val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
+
     BackHandler(enabled = selectedTabIndex != 0) {
         selectedTabIndex = 0
     }
@@ -104,35 +109,54 @@ fun MainScreen(
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        icon = {
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = tab.title
+            if (!isKeyboardVisible) {
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 8.dp
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            icon = {
+                                if (tab.title == "Notifications") {
+                                    BadgedBox(
+                                        badge = {
+                                            if (unreadNotificationsCount > 0) {
+                                                Badge {
+                                                    Text(text = unreadNotificationsCount.toString())
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = tab.icon,
+                                            contentDescription = tab.title
+                                        )
+                                    }
+                                } else {
+                                    Icon(
+                                        imageVector = tab.icon,
+                                        contentDescription = tab.title
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = tab.title,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color(0xFFC61111),
+                                selectedTextColor = Color(0xFFC61111),
+                                indicatorColor = Color(0xFFF1F5F9),
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray
                             )
-                        },
-                        label = {
-                            Text(
-                                text = tab.title,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        },
-                        alwaysShowLabel = true,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFFC61111),
-                            selectedTextColor = Color(0xFFC61111),
-                            indicatorColor = Color(0xFFF1F5F9),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
                         )
-                    )
+                    }
                 }
             }
         }
@@ -141,6 +165,10 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+                )
         ) {
             when (selectedTabIndex) {
                 0 -> {
@@ -207,7 +235,9 @@ private fun MainTopBar(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
         color = Color.White,
         shadowElevation = 2.dp
     ) {

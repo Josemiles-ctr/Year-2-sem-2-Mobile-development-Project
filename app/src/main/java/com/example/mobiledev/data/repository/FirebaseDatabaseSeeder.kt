@@ -4,6 +4,7 @@ import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.HospitalStatus
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import com.example.mobiledev.data.mock.ActivityMetricType
 import com.example.mobiledev.data.mock.MockActivityData
@@ -19,69 +20,83 @@ class FirebaseDatabaseSeeder(private val db: FirebaseDatabase) {
     private val hospitalsRef = db.getReference("hospitals")
     private val ambulancesRef = db.getReference("ambulances")
     private val requestsRef = db.getReference("emergencyRequests")
+    private val notificationsRef = db.getReference("notifications")
     private val activityStatsRef = db.getReference("activity_stats")
 
     suspend fun seedIfNeeded() {
-        val usersSnapshot = usersRef.get().await()
-        if (usersSnapshot.exists()) return
-
         val now = System.currentTimeMillis()
         val defaultPasswordHash = BCrypt.hashpw("password123", BCrypt.gensalt())
-        
         val seedBundle = MockSeedData.create(now, defaultPasswordHash)
 
-        // Seed Users
-        seedBundle.users.forEach { user ->
-            usersRef.child(user.id).setValue(user.toPayload(defaultPasswordHash)).await()
+        // Seed Users if empty
+        if (!usersRef.get().await().exists()) {
+            seedBundle.users.forEach { user ->
+                usersRef.child(user.id).setValue(user.toPayload(defaultPasswordHash)).await()
+            }
+
+            // Add System Admin
+            val sysAdmin = UserEntity(
+                id = "SYS_ADMIN",
+                hospitalId = null,
+                name = "System Administrator",
+                email = "admin@resq.local",
+                phone = "555-0000",
+                location = "Main HQ",
+                userType = AppRole.SYSTEM_ADMIN.name,
+                uuid = "UUID_SYS_ADMIN",
+                createdAt = now,
+                updatedAt = now
+            )
+            usersRef.child(sysAdmin.id).setValue(sysAdmin.toPayload(defaultPasswordHash)).await()
         }
 
-        // Add System Admin
-        val sysAdmin = UserEntity(
-            id = "SYS_ADMIN",
-            hospitalId = null,
-            name = "System Administrator",
-            email = "admin@resq.local",
-            phone = "555-0000",
-            location = "Main HQ",
-            userType = AppRole.SYSTEM_ADMIN.name,
-            uuid = "UUID_SYS_ADMIN",
-            createdAt = now,
-            updatedAt = now
-        )
-        usersRef.child(sysAdmin.id).setValue(sysAdmin.toPayload(defaultPasswordHash)).await()
-
-        // Seed Hospitals
-        seedBundle.hospitals.forEach { hospital ->
-            hospitalsRef.child(hospital.id).setValue(hospital.toPayload()).await()
+        // Seed Hospitals if empty
+        if (!hospitalsRef.get().await().exists()) {
+            seedBundle.hospitals.forEach { hospital ->
+                hospitalsRef.child(hospital.id).setValue(hospital.toPayload()).await()
+            }
         }
 
-        // Seed Ambulances
-        seedBundle.ambulances.forEach { ambulance ->
-            ambulancesRef.child(ambulance.id).setValue(ambulance.toPayload()).await()
+        // Seed Ambulances if empty
+        if (!ambulancesRef.get().await().exists()) {
+            seedBundle.ambulances.forEach { ambulance ->
+                ambulancesRef.child(ambulance.id).setValue(ambulance.toPayload()).await()
+            }
         }
 
-        // Seed Requests
-        seedBundle.requests.forEach { request ->
-            requestsRef.child(request.id).setValue(request.toPayload()).await()
+        // Seed Requests if empty
+        if (!requestsRef.get().await().exists()) {
+            seedBundle.requests.forEach { request ->
+                requestsRef.child(request.id).setValue(request.toPayload()).await()
+            }
         }
 
-        // Seed Activity Stats
-        MockActivityData.miniStats.forEachIndexed { index, stat ->
-            activityStatsRef.child("mini_stats").child(index.toString()).setValue(
-                mapOf("label" to stat.label, "value" to stat.value)
-            ).await()
+        // Seed Notifications if empty
+        if (!notificationsRef.get().await().exists()) {
+            seedBundle.notifications.forEach { notification ->
+                notificationsRef.child(notification.id).setValue(notification.toPayload()).await()
+            }
         }
 
-        MockActivityData.summaries.forEachIndexed { index, summary ->
-            activityStatsRef.child("summaries").child(index.toString()).setValue(
-                mapOf(
-                    "title" to summary.title,
-                    "description" to summary.description,
-                    "value" to summary.value,
-                    "period" to summary.period,
-                    "type" to summary.type.name
-                )
-            ).await()
+        // Seed Activity Stats if empty
+        if (!activityStatsRef.get().await().exists()) {
+            MockActivityData.miniStats.forEachIndexed { index, stat ->
+                activityStatsRef.child("mini_stats").child(index.toString()).setValue(
+                    mapOf("label" to stat.label, "value" to stat.value)
+                ).await()
+            }
+
+            MockActivityData.summaries.forEachIndexed { index, summary ->
+                activityStatsRef.child("summaries").child(index.toString()).setValue(
+                    mapOf(
+                        "title" to summary.title,
+                        "description" to summary.description,
+                        "value" to summary.value,
+                        "period" to summary.period,
+                        "type" to summary.type.name
+                    )
+                ).await()
+            }
         }
     }
 
@@ -149,5 +164,15 @@ class FirebaseDatabaseSeeder(private val db: FirebaseDatabase) {
         "updatedAt" to updatedAt,
         "completedAt" to completedAt,
         "isDeleted" to isDeleted
+    )
+
+    private fun NotificationEntity.toPayload(): Map<String, Any?> = mapOf(
+        "id" to id,
+        "userId" to userId,
+        "title" to title,
+        "message" to message,
+        "timestamp" to timestamp,
+        "isRead" to isRead,
+        "type" to type
     )
 }

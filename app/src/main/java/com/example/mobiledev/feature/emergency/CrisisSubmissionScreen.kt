@@ -7,16 +7,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
@@ -51,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -142,7 +136,9 @@ fun CrisisSubmissionScreen(
         containerColor = Color(0xFFFBFBFB),
         topBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding(),
                 color = Color.White,
                 shadowElevation = 2.dp
             ) {
@@ -177,7 +173,9 @@ fun CrisisSubmissionScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -188,23 +186,32 @@ fun CrisisSubmissionScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
-                // Large Emergency Button
-                Button(
-                    onClick = { viewModel.submitRequest() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD32F2F),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(30.dp)
-                ) {
+                
+                // Incident Description
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "REQUEST EMERGENCY HELP",
-                        color = Color.White,
+                        "Incident Description (Optional)",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        color = Color(0xFF2D3748)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = { viewModel.onDescriptionChanged(it) },
+                        placeholder = { Text("Briefly describe your emergency...", color = Color.Gray) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFD32F2F),
+                            unfocusedBorderColor = Color(0xFFCBD5E0),
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            focusedTextColor = Color(0xFF1A202C),
+                            unfocusedTextColor = Color(0xFF1A202C)
+                        )
                     )
                 }
 
@@ -248,29 +255,23 @@ fun CrisisSubmissionScreen(
                     }
                 }
 
-                // Incident Description
-                Column(modifier = Modifier.fillMaxWidth()) {
+                // Large Emergency Button
+                Button(
+                    onClick = { viewModel.submitRequest() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(30.dp)
+                ) {
                     Text(
-                        "Incident Description (Optional)",
-                        style = MaterialTheme.typography.titleMedium,
+                        "REQUEST EMERGENCY HELP",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2D3748)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = uiState.description,
-                        onValueChange = { viewModel.onDescriptionChanged(it) },
-                        placeholder = { Text("Briefly describe your emergency...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFD32F2F),
-                            unfocusedBorderColor = Color(0xFFE2E8F0),
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White
-                        )
+                        fontSize = 18.sp
                     )
                 }
             }
@@ -279,7 +280,7 @@ fun CrisisSubmissionScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .height(350.dp)
             ) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
@@ -321,15 +322,18 @@ fun CrisisSubmissionScreen(
                 Card(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 16.dp),
+                        .padding(top = 16.dp)
+                        .padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF00695C)),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         uiState.address,
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        fontSize = 14.sp
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -393,8 +397,7 @@ fun IncidentTypeCard(
             .height(90.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, color),
-        color = if (isSelected) color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
+        color = if (isSelected) color.copy(alpha = 0.15f) else Color(0xFFF1F5F9)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
