@@ -5,7 +5,9 @@ import com.example.mobiledev.data.model.User
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import org.mindrot.jbcrypt.BCrypt
 
 class FirebaseUserRepository(
@@ -22,9 +24,9 @@ class FirebaseUserRepository(
 
     private val usersRef by lazy { db.getReference(USERS_NODE) }
 
-    override suspend fun getUsers(): List<User> {
+    override suspend fun getUsers(): List<User> = withContext(Dispatchers.Default) {
         val snapshot = usersRef.get().await()
-        return snapshot.children.mapNotNull { child ->
+        snapshot.children.mapNotNull { child ->
             child.toUserOrNull()
         }
     }
