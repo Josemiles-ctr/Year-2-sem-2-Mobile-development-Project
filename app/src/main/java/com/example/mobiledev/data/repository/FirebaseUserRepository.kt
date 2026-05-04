@@ -24,7 +24,7 @@ class FirebaseUserRepository(
 
     private val usersRef by lazy { db.getReference(USERS_NODE) }
 
-    override suspend fun getUsers(): List<User> = withContext(Dispatchers.Default) {
+    override suspend fun getUsers(): List<User> = withContext(Dispatchers.IO) {
         val snapshot = usersRef.get().await()
         snapshot.children.mapNotNull { child ->
             child.toUserOrNull()
