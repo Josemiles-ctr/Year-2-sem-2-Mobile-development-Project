@@ -81,7 +81,7 @@ class LocalEmergencyRepository(
                 Ambulance(
                     id = entity.id,
                     plateNumber = entity.registrationNo,
-                    driverName = entity.driverId,
+                    drivers = entity.driverId, // In a real app we'd look up multiple drivers
                     status = mapAmbulanceStatus(entity.status),
                     currentEmergencyId = null
                 )

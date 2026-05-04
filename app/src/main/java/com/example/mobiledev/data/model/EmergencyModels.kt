@@ -37,7 +37,7 @@ enum class AmbulanceStatus {
 data class Ambulance(
     val id: String,
     val plateNumber: String,
-    val driverName: String,
+    val drivers: String, // Comma separated names of assigned drivers
     val status: AmbulanceStatus,
     val currentEmergencyId: String? = null
 )

@@ -127,60 +127,46 @@ fun TrackingScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = Color(0xFFC61111),
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.padding(2.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "ResQ",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFC61111)
-                            )
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.Gray
+                            tint = Color(0xFFC61111)
                         )
                     }
-                },
-                actions = {
-                    Surface(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(36.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFF1F5F9)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            modifier = Modifier.padding(6.dp),
-                            tint = Color(0xFF64748B)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Live Tracking",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+                        Text(
+                            text = if (uiState.requestSent) "Ambulance is en route" else "Locating nearest responder",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (uiState.requestSent) Color(0xFF00695C) else Color.Gray,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -415,9 +401,9 @@ fun TrackingScreen(
                                         modifier = Modifier.size(56.dp),
                                         shape = RoundedCornerShape(12.dp),
                                         contentPadding = PaddingValues(0.dp),
-                                        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+                                        border = BorderStroke(1.dp, Color(0xFF00695C))
                                     ) {
-                                        Icon(Icons.Default.Call, contentDescription = "Call", tint = Color.Gray)
+                                        Icon(Icons.Default.Call, contentDescription = "Call", tint = Color(0xFF00695C))
                                     }
 
                                     Button(

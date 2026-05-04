@@ -2,11 +2,12 @@ package com.example.mobiledev.feature.main.presentation
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -21,17 +22,17 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.mobiledev.R
 import com.example.mobiledev.data.mock.ActivityMetricType
 import com.example.mobiledev.data.mock.MockActivityData
 import com.example.mobiledev.data.model.User
 import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.data.security.AuthPrincipal
-import com.example.mobiledev.ui.components.AppBackgroundContainer
 import com.example.mobiledev.ui.components.GlassyCard
 
 private data class MainTab(
@@ -84,7 +85,6 @@ fun MainScreen(
         }
     }
     
-    val hasUserManagementTab = currentPrincipal.role == AppRole.SYSTEM_ADMIN
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val selectedTab = tabs.getOrElse(selectedTabIndex) { tabs.first() }
 
@@ -94,140 +94,106 @@ fun MainScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
             if (currentPrincipal.role != AppRole.PATIENT || selectedTabIndex != 0) {
-                GlassyMainTopBar(
+                MainTopBar(
                     unreadCount = unreadNotificationsCount,
                     onNotificationsClick = onNotificationsClick
                 )
             }
         },
         bottomBar = {
-            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                GlassyCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f),
-                    border = null // Remove dirty border
-                ) {
-                    NavigationBar(
-                        containerColor = Color.Transparent,
-                        tonalElevation = 0.dp
-                    ) {
-                        tabs.forEachIndexed { index, tab ->
-                            NavigationBarItem(
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
-                                icon = {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = tab.icon,
-                                            contentDescription = tab.title
-                                        )
-                                        Text(
-                                            text = tab.title,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                },
-                                label = null,
-                                alwaysShowLabel = false
+            NavigationBar(
+                containerColor = Color.White,
+                tonalElevation = 8.dp
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    NavigationBarItem(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        icon = {
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = tab.title
                             )
-                        }
-                    }
+                        },
+                        label = {
+                            Text(
+                                text = tab.title,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        },
+                        alwaysShowLabel = true,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFC61111),
+                            selectedTextColor = Color(0xFFC61111),
+                            indicatorColor = Color(0xFFF1F5F9),
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray
+                        )
+                    )
                 }
             }
         }
     ) { innerPadding ->
-        AppBackgroundContainer(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                when (selectedTabIndex) {
-                    0 -> {
-                        if (currentPrincipal.role == AppRole.PATIENT) {
-                            emergencyTabContent()
-                        } else {
-                            triageTabContent()
-                        }
+            when (selectedTabIndex) {
+                0 -> {
+                    if (currentPrincipal.role == AppRole.PATIENT) {
+                        emergencyTabContent()
+                    } else {
+                        triageTabContent()
                     }
-                    1 -> {
-                        if (currentPrincipal.role == AppRole.PATIENT) {
-                            hospitalsTabContent(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 16.dp)
-                            )
-                        } else {
-                            driversTabContent(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 16.dp)
-                            )
-                        }
+                }
+                1 -> {
+                    if (currentPrincipal.role == AppRole.PATIENT) {
+                        hospitalsTabContent(Modifier.fillMaxSize())
+                    } else {
+                        driversTabContent(Modifier.fillMaxSize())
                     }
-                    2 -> {
-                        if (currentPrincipal.role == AppRole.PATIENT) {
-                            notificationsTabContent()
-                        } else {
-                            patientsTabContent(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 16.dp)
-                            )
-                        }
+                }
+                2 -> {
+                    if (currentPrincipal.role == AppRole.PATIENT) {
+                        notificationsTabContent()
+                    } else {
+                        patientsTabContent(Modifier.fillMaxSize())
                     }
-                    3 -> {
-                        if (currentPrincipal.role == AppRole.PATIENT) {
-                             AccountDetailsPanel(
-                                principal = currentPrincipal,
-                                currentUser = currentUser,
-                                canManageStaff = false,
-                                onManageStaffClick = {},
-                                onLogoutClick = onLogoutClick,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 20.dp)
-                            )
-                        } else {
-                             reportsTabContent(
-                                 Modifier
-                                     .fillMaxSize()
-                                     .padding(horizontal = 16.dp)
-                             )
-                        }
-                    }
-                    4 -> {
-                        AccountDetailsPanel(
+                }
+                3 -> {
+                    if (currentPrincipal.role == AppRole.PATIENT) {
+                         AccountDetailsPanel(
                             principal = currentPrincipal,
                             currentUser = currentUser,
-                            canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
-                                    currentPrincipal.role == AppRole.SYSTEM_ADMIN,
-                            onManageStaffClick = onManageStaffClick,
+                            canManageStaff = false,
+                            onManageStaffClick = {},
                             onLogoutClick = onLogoutClick,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp)
+                            modifier = Modifier.fillMaxSize()
                         )
+                    } else {
+                         reportsTabContent(Modifier.fillMaxSize())
                     }
-                    else -> {
-                        PlaceholderScreen(
-                            title = selectedTab.title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
-                        )
-                    }
+                }
+                4 -> {
+                    AccountDetailsPanel(
+                        principal = currentPrincipal,
+                        currentUser = currentUser,
+                        canManageStaff = currentPrincipal.role == AppRole.HOSPITAL_ADMIN ||
+                                currentPrincipal.role == AppRole.SYSTEM_ADMIN,
+                        onManageStaffClick = onManageStaffClick,
+                        onLogoutClick = onLogoutClick,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                else -> {
+                    PlaceholderScreen(
+                        title = selectedTab.title,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -235,54 +201,60 @@ fun MainScreen(
 }
 
 @Composable
-private fun GlassyMainTopBar(
+private fun MainTopBar(
     unreadCount: Int = 0,
     onNotificationsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = Color.White,
+        shadowElevation = 2.dp
     ) {
-        GlassyCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f),
-            border = null // Remove dirty border
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.splash_screen),
-                    contentDescription = "ResQ Brand",
-                    modifier = Modifier
-                        .height(30.dp)
-                        .wrapContentWidth(),
-                    contentScale = ContentScale.Fit
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color(0xFFC61111)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(4.dp).size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "ResQ",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFC61111),
+                    letterSpacing = 0.5.sp
                 )
+            }
 
-                IconButton(onClick = onNotificationsClick) {
-                    BadgedBox(
-                        badge = {
-                            if (unreadCount > 0) {
-                                Badge {
-                                    Text(text = unreadCount.toString())
-                                }
+            IconButton(onClick = onNotificationsClick) {
+                BadgedBox(
+                    badge = {
+                        if (unreadCount > 0) {
+                            Badge {
+                                Text(text = unreadCount.toString())
                             }
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
                     }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -298,200 +270,251 @@ private fun AccountDetailsPanel(
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(top = 6.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .size(24.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = currentUser?.name ?: "Active User",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "${principal.role.name.replace('_', ' ')} account",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = currentUser?.accountStatus ?: "Unknown",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+    Column(modifier = modifier.fillMaxSize()) {
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
+                Text(
+                    text = "My Account",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.Black
+                )
+                Text(
+                    text = "Manage your profile and security settings",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF666666),
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
-                    Text(
-                        text = "Session Details",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
-                    AccountDetailRow(label = "Phone", value = currentUser?.phone ?: "Not available")
-                    AccountDetailRow(label = "User ID", value = principal.userId ?: "Not signed in")
-                    AccountDetailRow(label = "Hospital ID", value = principal.hospitalId ?: "N/A")
-                }
-            }
-        }
-
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Security & Preferences",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Shield,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Two-step verification: Disabled",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Alert notifications: Enabled",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Quick Actions",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (canManageStaff) {
                         Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onManageStaffClick() },
                             shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color(0xFF1A202C),
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .size(24.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = currentUser?.name ?: "Active User",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "${principal.role.name.replace('_', ' ')} account",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF1A202C),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFF2E7D32))
+                        ) {
+                            Text(
+                                text = currentUser?.accountStatus ?: "ACTIVE",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF2E7D32)
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Session Details",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+
+                        AccountDetailRow(label = "Email", value = currentUser?.email ?: "Not available")
+                        AccountDetailRow(label = "Phone", value = currentUser?.phone ?: "Not available")
+                        AccountDetailRow(label = "User ID", value = principal.userId ?: "Not signed in")
+                        AccountDetailRow(label = "Hospital ID", value = principal.hospitalId ?: "N/A")
+                    }
+                }
+            }
+
+            item {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Security & Preferences",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = null,
+                                tint = Color(0xFF1A202C),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "Two-step verification: Disabled",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black
+                            )
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = Color(0xFF1A202C),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "Alert notifications: Enabled",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Quick Actions",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+
+                        if (canManageStaff) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onManageStaffClick() },
+                                shape = MaterialTheme.shapes.medium,
+                                color = Color.White,
+                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.People, contentDescription = null, tint = Color(0xFF1A202C))
+                                    Text("Manage Staff", fontWeight = FontWeight.Bold, color = Color(0xFF1A202C))
+                                }
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.People, contentDescription = null)
-                                Text("Manage Staff")
+                                Icon(Icons.Default.ManageAccounts, contentDescription = null, tint = Color(0xFF666666))
+                                Text("Profile update tools coming soon", color = Color(0xFF666666))
                             }
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.ManageAccounts, contentDescription = null)
-                            Text("Profile update tools coming soon")
                         }
                     }
                 }
             }
-        }
 
-        item {
-            GlassyCard(modifier = Modifier.fillMaxWidth()) {
+            item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.End
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Button(
                         onClick = onLogoutClick,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.88f),
-                            contentColor = MaterialTheme.colorScheme.onError
-                        )
+                            containerColor = Color.White,
+                            contentColor = Color(0xFFC61111)
+                        ),
+                        border = BorderStroke(1.dp, Color(0xFFC61111)),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Logout")
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Logout from Session", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -509,207 +532,14 @@ private fun AccountDetailRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color(0xFF666666)
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
         )
-    }
-}
-
-@Composable
-private fun ActivitySummarySection(
-    modifier: Modifier = Modifier
-) {
-    val summaries = MockActivityData.summaries.map { summary ->
-        ActivitySummary(
-            title = summary.title,
-            description = summary.description,
-            value = summary.value,
-            period = summary.period,
-            icon = summary.type.toIcon(),
-            accent = summary.type.toAccentColor()
-        )
-    }
-
-    val miniStats = MockActivityData.miniStats
-
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ActivityMiniStat(
-                label = miniStats[0].label,
-                value = miniStats[0].value,
-                icon = Icons.Default.Schedule,
-                modifier = Modifier.weight(1f)
-            )
-            ActivityMiniStat(
-                label = miniStats[1].label,
-                value = miniStats[1].value,
-                icon = Icons.Default.LocalShipping,
-                modifier = Modifier.weight(1f)
-            )
-            ActivityMiniStat(
-                label = miniStats[2].label,
-                value = miniStats[2].value,
-                icon = Icons.Default.Warning,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(summaries) { activity ->
-                ActivitySummaryCard(activity = activity)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActivityMiniStat(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier
-) {
-    GlassyCard(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActivitySummaryCard(activity: ActivitySummary) {
-    val readableAccent = glassReadableAccent(activity.accent)
-
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = readableAccent.copy(alpha = 0.18f)
-            ) {
-                Icon(
-                    imageVector = activity.icon,
-                    contentDescription = null,
-                    tint = readableAccent,
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .size(22.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = activity.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = activity.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = activity.value,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = readableAccent
-                )
-                Text(
-                    text = activity.period,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-private fun glassReadableAccent(color: Color): Color {
-    val luminance = color.luminance()
-    return when {
-        luminance > 0.58f -> lerp(color, Color.Black, 0.42f)
-        luminance < 0.18f -> lerp(color, Color.White, 0.18f)
-        else -> color
-    }
-}
-
-private fun ActivityMetricType.toIcon(): ImageVector {
-    return when (this) {
-        ActivityMetricType.AUTH -> Icons.AutoMirrored.Filled.Login
-        ActivityMetricType.REQUEST -> Icons.Default.Warning
-        ActivityMetricType.ASSIGNMENT -> Icons.Default.AssignmentTurnedIn
-        ActivityMetricType.EN_ROUTE -> Icons.Default.LocalShipping
-        ActivityMetricType.ARRIVAL -> Icons.Default.MedicalServices
-        ActivityMetricType.COMPLETION -> Icons.Default.CheckCircle
-        ActivityMetricType.STAFF -> Icons.Default.Badge
-        ActivityMetricType.ACCOUNT -> Icons.Default.ManageAccounts
-    }
-}
-
-private fun ActivityMetricType.toAccentColor(): Color {
-    return when (this) {
-        ActivityMetricType.AUTH -> Color(0xFF2E7D32)
-        ActivityMetricType.REQUEST -> Color(0xFFD32F2F)
-        ActivityMetricType.ASSIGNMENT -> Color(0xFF0D47A1)
-        ActivityMetricType.EN_ROUTE -> Color(0xFF1565C0)
-        ActivityMetricType.ARRIVAL -> Color(0xFF00838F)
-        ActivityMetricType.COMPLETION -> Color(0xFF2E7D32)
-        ActivityMetricType.STAFF -> Color(0xFF6A1B9A)
-        ActivityMetricType.ACCOUNT -> Color(0xFF455A64)
     }
 }
 
@@ -720,37 +550,28 @@ private fun PlaceholderScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
+        verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = onTrackingClick) {
-            Text("Go to Tracking")
-        }
-        GlassyCard(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
-            )
-        }
-
-        GlassyCard(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-            shape = MaterialTheme.shapes.large,
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
-        ) {
-            Text(
-                text = stringResource(R.string.placeholder_screen_text, title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = Color.LightGray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.Gray
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "This section is under development",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.LightGray
+        )
     }
 }

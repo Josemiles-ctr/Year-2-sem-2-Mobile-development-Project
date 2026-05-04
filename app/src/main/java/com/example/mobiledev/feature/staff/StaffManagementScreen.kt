@@ -3,12 +3,13 @@ package com.example.mobiledev.feature.staff
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,12 +21,10 @@ import com.example.mobiledev.data.model.*
 
 import androidx.compose.ui.res.stringResource
 import com.example.mobiledev.R
-import com.example.mobiledev.core.error.AppError
 import com.example.mobiledev.core.error.toUserMessage
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.example.mobiledev.ui.components.dialog.ConfirmationDialog
-import com.example.mobiledev.ui.components.AppBackgroundContainer
 import com.example.mobiledev.ui.components.GlassyCard
 import com.example.mobiledev.ui.components.AppLoadingIndicator
 import kotlinx.coroutines.flow.collectLatest
@@ -70,7 +69,6 @@ fun StaffManagementScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffManagementContent(
     state: StaffManagementState,
@@ -79,96 +77,133 @@ fun StaffManagementContent(
 ) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                GlassyCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
-                    TopAppBar(
-                        title = { Text("Staff Management") },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface
-                        )
+                    Text(
+                        text = "Staff Management",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF1A202C)
+                    )
+                    Text(
+                        text = "Manage hospital staff members and invitations",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onEvent(StaffManagementEvent.ToggleInviteDialog(true)) }) {
+            FloatingActionButton(
+                onClick = { onEvent(StaffManagementEvent.ToggleInviteDialog(true)) },
+                containerColor = Color(0xFF00695C),
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Invite Staff")
             }
         }
     ) { padding ->
-        AppBackgroundContainer(modifier = Modifier.padding(padding)) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (state.isLoading) {
-                    AppLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Text(
+                        "Active Staff",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3748)
+                        )
+                    )
+                }
+                
+                items(state.staffList) { staff ->
+                    StaffItem(
+                        staff = staff,
+                        onUpdateRole = { role -> onEvent(StaffManagementEvent.UpdateStaff(staff.id, role, null)) },
+                        onToggleStatus = {
+                            val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
+                            onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
+                        },
+                        onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
+                    )
                 }
 
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    Text("Active Staff", style = MaterialTheme.typography.headlineSmall)
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(state.staffList) { staff ->
-                            StaffItem(
-                                staff = staff,
-                                onUpdateRole = { role -> onEvent(StaffManagementEvent.UpdateStaff(staff.id, role, null)) },
-                                onToggleStatus = {
-                                    val newStatus = if (staff.status == StaffStatus.ACTIVE) StaffStatus.INACTIVE else StaffStatus.ACTIVE
-                                    onEvent(StaffManagementEvent.UpdateStaff(staff.id, null, newStatus))
-                                },
-                                onRemove = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(staff)) }
-                            )
-                        }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Pending Invitations",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3748)
+                        )
+                    )
+                }
+                
+                if (state.invitations.isEmpty()) {
+                    item {
+                        Text(
+                            "No pending invitations",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Pending Invitations", style = MaterialTheme.typography.headlineSmall)
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(state.invitations) { invitation ->
-                            InvitationItem(
-                                invitation = invitation,
-                                onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
-                                onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
-                            )
-                        }
+                } else {
+                    items(state.invitations) { invitation ->
+                        InvitationItem(
+                            invitation = invitation,
+                            onResend = { onEvent(StaffManagementEvent.ResendInvitation(invitation.id)) },
+                            onCancel = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(invitation)) }
+                        )
                     }
                 }
-
-                if (state.isInviteDialogOpen) {
-                    InviteStaffDialog(
-                        onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
-                        onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
-                    )
-                }
-
-                state.staffToRemove?.let { staff ->
-                    ConfirmationDialog(
-                        title = stringResource(R.string.dialog_remove_staff_title),
-                        message = stringResource(R.string.dialog_remove_staff_message, staff.name),
-                        confirmButtonText = stringResource(R.string.dialog_confirm),
-                        dismissButtonText = stringResource(R.string.dialog_cancel),
-                        isDestructive = true,
-                        onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
-                        onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
-                    )
-                }
-
-                state.invitationToCancel?.let { invitation ->
-                    ConfirmationDialog(
-                        title = stringResource(R.string.dialog_cancel_invitation_title),
-                        message = stringResource(R.string.dialog_cancel_invitation_message, invitation.email),
-                        confirmButtonText = stringResource(R.string.dialog_confirm),
-                        dismissButtonText = stringResource(R.string.dialog_cancel),
-                        isDestructive = true,
-                        onConfirm = { onEvent(StaffManagementEvent.CancelInvitation(invitation.id)) },
-                        onDismiss = { onEvent(StaffManagementEvent.ShowCancelInvitationConfirmation(null)) }
-                    )
+                
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
+
+            if (state.isLoading) {
+                AppLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+
+            if (state.isInviteDialogOpen) {
+                InviteStaffDialog(
+                    onDismiss = { onEvent(StaffManagementEvent.ToggleInviteDialog(false)) },
+                    onInvite = { email, role -> onEvent(StaffManagementEvent.InviteStaff(email, role)) }
+                )
+            }
+
+            state.staffToRemove?.let { staff ->
+                ConfirmationDialog(
+                    title = stringResource(R.string.dialog_remove_staff_title),
+                    message = stringResource(R.string.dialog_remove_staff_message, staff.name),
+                    confirmButtonText = stringResource(R.string.dialog_confirm),
+                    dismissButtonText = stringResource(R.string.dialog_cancel),
+                    isDestructive = true,
+                    onConfirm = { onEvent(StaffManagementEvent.RemoveStaff(staff.id)) },
+                    onDismiss = { onEvent(StaffManagementEvent.ShowRemoveStaffConfirmation(null)) }
+                )
+            }
+
             state.invitationToCancel?.let { invitation ->
                 ConfirmationDialog(
                     title = stringResource(R.string.dialog_cancel_invitation_title),
@@ -193,26 +228,52 @@ fun StaffItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    GlassyCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(staff.name, fontWeight = FontWeight.Bold)
-                Text(staff.email, style = MaterialTheme.typography.bodySmall)
                 Text(
-                    text = "Role: ${staff.role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }}",
-                    style = MaterialTheme.typography.bodySmall
+                    text = staff.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A202C)
                 )
                 Text(
-                    "Status: ${staff.status}",
-                    color = if (staff.status == StaffStatus.ACTIVE) Color.Green else Color.Red,
-                    style = MaterialTheme.typography.bodySmall
+                    text = staff.email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = staff.role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF4A5568)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = staff.status.toString(),
+                        color = if (staff.status == StaffStatus.ACTIVE) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             IconButton(onClick = { showMenu = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = Color.Gray)
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(
                         text = { Text(if (staff.status == StaffStatus.ACTIVE) "Deactivate" else "Reactivate") },
@@ -224,7 +285,7 @@ fun StaffItem(
                         "Change Role",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF00695C)
                     )
                     StaffRole.entries.forEach { role ->
                         if (role != staff.role) {
@@ -255,21 +316,37 @@ fun InvitationItem(
     onResend: () -> Unit,
     onCancel: () -> Unit
 ) {
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(invitation.email, fontWeight = FontWeight.Bold)
+                Text(
+                    text = invitation.email,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A202C)
+                )
                 Text(
                     text = "Role: ${invitation.role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
                 )
-                Text("Expires: 7 days", style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(onClick = onResend) { Text("Resend") }
-            TextButton(onClick = onCancel, colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)) { Text("Cancel") }
+            Row {
+                TextButton(onClick = onResend) { 
+                    Text("Resend", color = Color(0xFF00695C), fontWeight = FontWeight.Bold) 
+                }
+                TextButton(onClick = onCancel) { 
+                    Text("Cancel", color = Color(0xFFC61111), fontWeight = FontWeight.Bold) 
+                }
+            }
         }
     }
 }
@@ -283,11 +360,12 @@ fun InviteStaffDialog(
     var selectedRole by remember { mutableStateOf(StaffRole.REQUEST_REVIEWER) }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        GlassyCard(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -296,42 +374,72 @@ fun InviteStaffDialog(
                 Text(
                     text = "Invite Staff",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    color = Color(0xFF1A202C),
+                    fontWeight = FontWeight.ExtraBold
                 )
 
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email Address") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Text(
-                    "Select Role:",
+                    "Select Role",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
                 )
 
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     StaffRole.entries.forEach { role ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = selectedRole == role, onClick = { selectedRole = role })
-                            Text(
-                                role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                        Surface(
+                            onClick = { selectedRole = role },
+                            color = if (selectedRole == role) Color(0xFFE0F2F1) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedRole == role,
+                                    onClick = { selectedRole = role },
+                                    colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF00695C))
+                                )
+                                Text(
+                                    text = role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (selectedRole == role) Color(0xFF00695C) else Color.Black
+                                )
+                            }
                         }
                     }
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { 
+                        Text("Cancel", color = Color.Gray) 
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { onInvite(email, selectedRole) }) { Text("Invite") }
+                    Button(
+                        onClick = { onInvite(email, selectedRole) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00695C),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { 
+                        Text("Send Invitation") 
+                    }
                 }
             }
         }

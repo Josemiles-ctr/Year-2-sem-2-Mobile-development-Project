@@ -52,7 +52,7 @@ import com.example.mobiledev.feature.staff.StaffViewModelFactory
 import com.example.mobiledev.feature.tracking.presentation.TrackingScreen
 import com.example.mobiledev.feature.tracking.presentation.TrackingViewModel
 import com.example.mobiledev.data.model.User
-import AppRole
+import com.example.mobiledev.data.security.AppRole
 import com.example.mobiledev.feature.triage.presentation.TriageDashboardScreen
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -101,7 +101,7 @@ fun NavGraph(
                 val currentRoute = navController.currentDestination?.route
                 if (currentRoute != Screen.SignIn.route && currentRoute != Screen.SignUp.route) {
                     navController.navigate(Screen.SignIn.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
@@ -200,8 +200,7 @@ fun NavGraph(
                     emergencyTabContent = {
                         CrisisSubmissionScreen(
                             viewModel = crisisSubmissionViewModel,
-                            onCancel = { },
-                            onHelp = { }
+                            onCancel = { }
                         )
                     },
                     hospitalsTabContent = { modifier ->

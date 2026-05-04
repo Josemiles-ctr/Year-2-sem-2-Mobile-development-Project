@@ -1,11 +1,12 @@
 package com.example.mobiledev.feature.admin.usermanagement
 
 import android.widget.Toast
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -24,13 +25,11 @@ import androidx.compose.ui.unit.dp
 import com.example.mobiledev.core.error.toUserMessage
 import com.example.mobiledev.data.model.User
 import com.example.mobiledev.data.security.AppRole
-import com.example.mobiledev.ui.components.AppBackgroundContainer
 import com.example.mobiledev.ui.components.GlassyCard
 import com.example.mobiledev.ui.components.AppLoadingIndicator
 import com.example.mobiledev.ui.components.dialog.ConfirmationDialog
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserManagementScreen(
     viewModel: UserManagementViewModel
@@ -55,46 +54,64 @@ fun UserManagementScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                GlassyCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
-                    TopAppBar(
-                        title = { Text("User Management") },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface
-                        )
+                    Text(
+                        text = "User Management",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF1A202C)
+                    )
+                    Text(
+                        text = "Admin control over users and roles",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
     ) { padding ->
-        AppBackgroundContainer(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize().background(Color(0xFFFBFBFB))
                 .padding(padding)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+                    .fillMaxSize().background(Color(0xFFFBFBFB))
             ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                
                 // Search Bar
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.onEvent(UserManagementEvent.SearchQueryChanged(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search by name or email") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = MaterialTheme.shapes.medium
-                )
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.onEvent(UserManagementEvent.SearchQueryChanged(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Search by name or email") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF00695C)) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = Color(0xFF00695C),
+                            unfocusedBorderColor = Color(0xFFE2E8F0)
+                        )
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 if (state.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -108,7 +125,8 @@ fun UserManagementScreen(
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp)
                     ) {
                         items(filteredUsers) { user ->
                             UserItem(
@@ -158,8 +176,11 @@ fun UserItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth()
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -169,13 +190,13 @@ fun UserItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF1F5F9)
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = Color(0xFF64748B),
                     modifier = Modifier
                         .padding(10.dp)
                         .size(24.dp)
@@ -186,35 +207,42 @@ fun UserItem(
                 Text(
                     text = user.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A202C)
                 )
                 Text(
                     text = user.email,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(user.role) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    Surface(
+                        color = Color(0xFFEDF2F7),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = user.role,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF4A5568)
                         )
-                    )
+                    }
                     Text(
                         text = user.accountStatus,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (user.accountStatus == "ACTIVE") Color.Green else Color.Red
+                        fontWeight = FontWeight.Bold,
+                        color = if (user.accountStatus == "ACTIVE") Color(0xFF2E7D32) else Color(0xFFC62828)
                     )
                 }
             }
 
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                    Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = Color.Gray)
                 }
                 DropdownMenu(
                     expanded = showMenu,
@@ -263,12 +291,12 @@ fun EditUserDialog(
     var hospitalId by remember { mutableStateOf(user.hospitalId ?: "") }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        GlassyCard(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                .heightIn(max = 600.dp),
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                .padding(16.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White
         ) {
             Column(
                 modifier = Modifier
@@ -279,36 +307,55 @@ fun EditUserDialog(
                 Text(
                     text = "Edit User",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    color = Color(0xFF1A202C),
+                    fontWeight = FontWeight.ExtraBold
                 )
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 
                 Text(
                     "Role", 
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
                 )
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AppRole.entries.forEach { appRole ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = role == appRole.name,
-                                onClick = { role = appRole.name }
-                            )
-                            Text(appRole.name, color = MaterialTheme.colorScheme.onSurface)
+                        Surface(
+                            onClick = { role = appRole.name },
+                            color = if (role == appRole.name) Color(0xFFE0F2F1) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = role == appRole.name,
+                                    onClick = { role = appRole.name },
+                                    colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF00695C))
+                                )
+                                Text(
+                                    text = appRole.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (role == appRole.name) Color(0xFF00695C) else Color.Black
+                                )
+                            }
                         }
                     }
                 }
@@ -318,28 +365,37 @@ fun EditUserDialog(
                         value = hospitalId,
                         onValueChange = { hospitalId = it },
                         label = { Text("Hospital ID") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
 
                 Text(
                     "Status", 
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = status == "ACTIVE", onClick = { status = "ACTIVE" })
-                    Text("ACTIVE", color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    RadioButton(selected = status == "INACTIVE", onClick = { status = "INACTIVE" })
-                    Text("INACTIVE", color = MaterialTheme.colorScheme.onSurface)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = status == "ACTIVE", onClick = { status = "ACTIVE" })
+                        Text("ACTIVE", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = status == "INACTIVE", onClick = { status = "INACTIVE" })
+                        Text("INACTIVE", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
@@ -352,9 +408,14 @@ fun EditUserDialog(
                                     hospitalId = if (role == AppRole.HOSPITAL_ADMIN.name) hospitalId else null
                                 )
                             )
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00695C),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Save")
+                        Text("Save Changes")
                     }
                 }
             }

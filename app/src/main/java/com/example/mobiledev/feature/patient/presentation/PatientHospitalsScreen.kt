@@ -66,6 +66,7 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import com.example.mobiledev.data.location.Coordinates
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.ui.components.FullScreenLoading
+import com.example.mobiledev.ui.components.GlassyCard
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -140,129 +141,144 @@ fun PatientHospitalsScreen(
             )
             else -> {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Header Section
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "Find Emergency Care",
-                            style = MaterialTheme.typography.headlineMedium.copy(
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
+                        ) {
+                            Text(
+                                text = "Find Emergency Care",
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color(0xFF1A202C)
                             )
-                        )
-                        Text(
-                            text = "Locate the nearest medical facility",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color.Gray
+                            Text(
+                                text = "Locate the nearest medical facility",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold
                             )
-                        )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Search Bar
-                    TextField(
-                        value = searchText,
-                        onValueChange = { searchText = it },
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .testTag("hospitalSearchField"),
-                        placeholder = {
-                            Text(
-                                "Search by hospital or trauma level...",
-                                color = Color.Gray,
-                                fontSize = 15.sp
+                            .fillMaxSize()
+                    ) {
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Search Bar
+                        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                            TextField(
+                                value = searchText,
+                                onValueChange = { searchText = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .testTag("hospitalSearchField"),
+                                placeholder = {
+                                    Text(
+                                        "Search by hospital or trauma level...",
+                                        color = Color.Gray,
+                                        fontSize = 15.sp
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00695C)
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = onRefreshLocation) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Refresh Location",
+                                            tint = if (currentLocation != null) Color(0xFF00695C) else Color.Gray
+                                        )
+                                    }
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedTextColor = Color.Black,
+                                    unfocusedTextColor = Color.Black
+                                )
                             )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = Color(0xFF00695C)
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = onRefreshLocation) {
+                        }
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Section Title
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Refresh Location",
-                                    tint = if (currentLocation != null) Color(0xFF00695C) else Color.Gray
+                                    Icons.Default.Navigation,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00695C),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Recommended for You",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2D3748)
+                                    )
                                 )
                             }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(28.dp))
-
-                    // Section Title
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Navigation,
-                                contentDescription = null,
-                                tint = Color(0xFF00695C),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Recommended for You",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2D3748)
+                            Surface(
+                                color = Color(0xFFEDF2F7),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "${filteredHospitals.size} Found",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color(0xFF4A5568),
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 )
-                            )
+                            }
                         }
-                        Surface(
-                            color = Color(0xFFEDF2F7),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = "${filteredHospitals.size} Found",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFF4A5568),
-                                    fontWeight = FontWeight.Medium
-                                )
-                            )
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                    when {
-                        filteredHospitals.isEmpty() -> EmptyState()
-                        else -> LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(visibleHospitals, key = { it.id }) { hospital ->
-                                HospitalCard(
-                                    hospital = hospital,
-                                    distanceKm = hospitalDistanceKm(hospital, currentLocation),
-                                    onClick = { onHospitalClick(hospital.id) }
-                                )
+                        when {
+                            filteredHospitals.isEmpty() -> {
+                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                                    EmptyState()
+                                }
+                            }
+                            else -> LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(visibleHospitals, key = { it.id }) { hospital ->
+                                    HospitalCard(
+                                        hospital = hospital,
+                                        distanceKm = hospitalDistanceKm(hospital, currentLocation),
+                                        onClick = { onHospitalClick(hospital.id) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -302,8 +318,7 @@ private fun ErrorState(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            containerColor = Color.White
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -353,8 +368,7 @@ private fun EmptyState() {
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            containerColor = Color.White
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
