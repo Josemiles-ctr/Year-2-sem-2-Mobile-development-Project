@@ -1,7 +1,6 @@
 package com.example.mobiledev.feature.signin.presentation
 
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -169,48 +168,6 @@ fun SignInScreen(
                 onEvent = onEvent,
                 onSignUpClick = onSignUpClick
             )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Image Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1.8f)
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.splash_screen),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))
-                            )
-                        )
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.active_emergency_network),
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Text(
-                        text = stringResource(R.string.trusted_hospitals),
-                        color = Color.White.copy(alpha = 0.8f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
             
             Spacer(modifier = Modifier.height(48.dp))
             

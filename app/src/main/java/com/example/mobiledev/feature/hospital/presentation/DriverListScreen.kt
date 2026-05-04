@@ -27,20 +27,47 @@ fun DriverListScreen(
     modifier: Modifier = Modifier,
     onDriverClick: (String) -> Unit = {}
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Active Drivers & Ambulances",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
+    Column(
+        modifier = modifier.fillMaxSize().background(Color(0xFFFBFBFB))
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 2.dp
         ) {
-            items(ambulances) { ambulance ->
-                DriverItem(ambulance, onClick = { onDriverClick(ambulance.id) })
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = "Fleet Management",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Monitor and manage active ambulances",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(ambulances) { ambulance ->
+                    DriverItem(ambulance, onClick = { onDriverClick(ambulance.id) })
+                }
             }
         }
     }
@@ -51,54 +78,55 @@ private fun DriverItem(
     ambulance: Ambulance,
     onClick: () -> Unit
 ) {
-    GlassyCard(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-        border = null,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
         onClick = onClick
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(56.dp),
+                color = Color(0xFFE8F5E9),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF00695C),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = ambulance.driverName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = ambulance.drivers,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.LocalShipping,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.Gray
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Ambulance: ${ambulance.plateNumber}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
                     )
                 }
             }
@@ -111,22 +139,21 @@ private fun DriverItem(
 @Composable
 private fun StatusBadge(status: AmbulanceStatus) {
     val (color, text) = when (status) {
-        AmbulanceStatus.AVAILABLE -> Color(0xFF4CAF50) to "Available"
-        AmbulanceStatus.ON_MISSION -> Color(0xFF2196F3) to "On Mission"
-        AmbulanceStatus.MAINTENANCE -> Color(0xFFF44336) to "Maintenance"
+        AmbulanceStatus.AVAILABLE -> Color(0xFF2E7D32) to "Available"
+        AmbulanceStatus.ON_MISSION -> Color(0xFFC61111) to "On Mission"
+        AmbulanceStatus.MAINTENANCE -> Color(0xFFD32F2F) to "Maintenance"
     }
 
     Surface(
-        color = color.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Text(
             text = text,
             color = color,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
 }

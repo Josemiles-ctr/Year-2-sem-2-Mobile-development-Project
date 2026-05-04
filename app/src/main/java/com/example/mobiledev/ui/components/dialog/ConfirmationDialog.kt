@@ -64,9 +64,15 @@ fun ConfirmationDialog(
                     androidx.compose.material3.Button(
                         onClick = onConfirm,
                         colors = if (isDestructive) {
-                            androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFC61111),
+                                contentColor = Color.White
+                            )
                         } else {
-                            androidx.compose.material3.ButtonDefaults.buttonColors()
+                            androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF00695C),
+                                contentColor = Color.White
+                            )
                         }
                     ) {
                         Text(text = confirmButtonText)

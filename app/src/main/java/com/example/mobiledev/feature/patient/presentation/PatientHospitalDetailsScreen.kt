@@ -152,43 +152,47 @@ fun PatientHospitalDetailsScreen(
 
     Scaffold(
         modifier = modifier.testTag("patientHospitalDetailsRoot"),
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = hospital?.name ?: "Hospital Details",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFFC61111)
                         )
                     }
-                },
-                actions = {
-                    Surface(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(36.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFF1F5F9)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            modifier = Modifier.padding(6.dp),
-                            tint = Color(0xFF64748B)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = hospital?.name ?: "Hospital Details",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+                        Text(
+                            text = if (uiState.isHospitalOffline) "Facility currently offline" else "Active medical facility",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (uiState.isHospitalOffline) Color.Red else Color.Gray,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFF8F9FA)
+                }
+            }
+        }
     ) { innerPadding ->
         when {
             uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
@@ -260,7 +264,7 @@ private fun ErrorState(
                 )
                 Text(text = message, style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = onBackClick) {
-                    Text("Back")
+                    Text("Back", color = Color(0xFF00695C))
                 }
             }
         }
@@ -322,7 +326,7 @@ private fun DetailsContent(
                                 )
                             }
                             Surface(
-                                color = Color(0xFFB2EBF2),
+                                color = Color(0xFFE8F5E9),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Row(
@@ -334,13 +338,13 @@ private fun DetailsContent(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
-                                        tint = Color(0xFF00838F)
+                                        tint = Color(0xFF2E7D32)
                                     )
                                     Text(
                                         text = "LEVEL 1\nTRAUMA",
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF00838F),
+                                            color = Color(0xFF2E7D32),
                                             lineHeight = 12.sp
                                         )
                                     )

@@ -1,5 +1,6 @@
 package com.example.mobiledev.feature.hospital.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -27,11 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
-import com.example.mobiledev.ui.components.AppBackgroundContainer
 import com.example.mobiledev.ui.components.GlassyCard
 import com.example.mobiledev.ui.components.AppLoadingIndicator
 import java.util.concurrent.TimeUnit
-
 
 data class HospitalDashboardTab(
     val label: String,
@@ -68,7 +66,6 @@ fun HospitalDashboardScreen(
     )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     
-    // Calculate triage stats based on requests
     val triageStats = remember(uiState.activeRequests) {
         val critical = uiState.activeRequests.count { it.priority.uppercase() == "CRITICAL" }
         val serious = uiState.activeRequests.count { it.priority.uppercase() in listOf("HIGH", "SERIOUS") }
@@ -77,117 +74,105 @@ fun HospitalDashboardScreen(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Logo Placeholder
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            modifier = Modifier.size(40.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = uiState.hospitalName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Hospital Management Dashboard",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    IconButton(onClick = onNotificationsClick) {
+                        BadgedBox(
+                            badge = {
+                                if (unreadNotificationsCount > 0) {
+                                    Badge { Text(unreadNotificationsCount.toString()) }
+                                }
+                            }
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(4.dp)
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color(0xFF00695C)
                             )
                         }
-                        
-                        // Notifications
-                        IconButton(onClick = onNotificationsClick) {
-                            BadgedBox(
-                                badge = {
-                                    if (unreadNotificationsCount > 0) {
-                                        Badge { Text(unreadNotificationsCount.toString()) }
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
+                }
+            }
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp,
-                modifier = Modifier.height(64.dp)
+                containerColor = Color.White,
+                tonalElevation = 8.dp
             ) {
                 tabs.forEachIndexed { index, tab ->
                     NavigationBarItem(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(24.dp)) },
-                        label = { Text(tab.label, fontSize = 10.sp) },
-                        modifier = Modifier.weight(1f)
+                        icon = { Icon(tab.icon, contentDescription = tab.label) },
+                        label = { Text(tab.label, style = MaterialTheme.typography.labelSmall) },
+                        alwaysShowLabel = true
                     )
                 }
             }
         }
     ) { padding ->
-        AppBackgroundContainer(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Screen Title
-                Text(
-                    text = "Triage Dashboard",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D47A1), // Hardcoded blue to match screenshot
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    fontSize = 28.sp
+            when (selectedTabIndex) {
+                0 -> TriageDashboardContent(
+                    uiState = uiState,
+                    triageStats = triageStats,
+                    selectedStatusFilter = selectedStatusFilter,
+                    onStatusFilterChange = { selectedStatusFilter = it },
+                    onRequestSelected = { viewModel.onRequestSelected(it) },
+                    onAddAmbulanceClick = { showAddAmbulanceDialog = true }
                 )
-
-                when (selectedTabIndex) {
-                    0 -> TriageDashboardContent(
-                        uiState = uiState,
-                        triageStats = triageStats,
-                        selectedStatusFilter = selectedStatusFilter,
-                        onStatusFilterChange = { selectedStatusFilter = it },
-                        onRequestSelected = { viewModel.onRequestSelected(it) },
-                        onAddAmbulanceClick = { showAddAmbulanceDialog = true }
-                    )
-                    1 -> DriversTabContent(
-                        ambulances = uiState.availableAmbulances,
-                        isLoading = uiState.isLoading
-                    )
-                    2 -> PatientsTabContent(
-                        activeRequests = uiState.activeRequests,
-                        isLoading = uiState.isLoading,
-                        onRequestSelected = { viewModel.onRequestSelected(it) }
-                    )
-                    3 -> ReportsTabContent(
-                        activeRequests = uiState.activeRequests,
-                        totalAmbulances = uiState.availableAmbulances.size
-                    )
-                    4 -> ProfileTabContent(
-                        hospitalName = uiState.hospitalName,
-                        onLogoutClick = onLogoutClick
-                    )
-                }
+                1 -> DriversTabContent(
+                    ambulances = uiState.availableAmbulances,
+                    isLoading = uiState.isLoading
+                )
+                2 -> PatientsTabContent(
+                    activeRequests = uiState.activeRequests,
+                    isLoading = uiState.isLoading,
+                    onRequestSelected = { viewModel.onRequestSelected(it) }
+                )
+                3 -> ReportsTabContent(
+                    activeRequests = uiState.activeRequests,
+                    totalAmbulances = uiState.availableAmbulances.size
+                )
+                4 -> ProfileTabContent(
+                    hospitalName = uiState.hospitalName,
+                    onLogoutClick = onLogoutClick
+                )
             }
 
-            // Assignment Dialog (Dispatch Flow)
             uiState.selectedRequest?.let { request ->
                 AssignmentDialog(
                     request = request,
@@ -204,7 +189,6 @@ fun HospitalDashboardScreen(
                 )
             }
 
-            // Add Ambulance Dialog
             if (showAddAmbulanceDialog) {
                 AddAmbulanceDialog(
                     onDismiss = { showAddAmbulanceDialog = false },
@@ -228,156 +212,95 @@ fun TriageDashboardContent(
     onAddAmbulanceClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Active Cases Summary
-        GlassyCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            containerColor = Color(0xFFE3F2FD) // Light blue background
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
                 Text(
-                    text = "Active Cases",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D47A1), // Dark blue for readability
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    text = "Triage Dashboard",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
                 )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val contentColor = Color(0xFF1A1C1E) // Dark grey for content visibility
-                    
-                    // Total
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Total: ${triageStats.total}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = contentColor
-                        )
-                    }
-                    
-                    // Critical
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                color = Color.Red,
-                                shape = RoundedCornerShape(2.dp),
-                                modifier = Modifier.size(12.dp)
-                            ) {}
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Critical: ${triageStats.critical}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor
-                            )
-                        }
-                    }
-                    
-                    // Serious
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                color = Color(0xFFFFA500),
-                                shape = RoundedCornerShape(2.dp),
-                                modifier = Modifier.size(12.dp)
-                            ) {}
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Serious: ${triageStats.serious}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor
-                            )
-                        }
-                    }
-                    
-                    // Stable
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                color = Color.Green,
-                                shape = RoundedCornerShape(2.dp),
-                                modifier = Modifier.size(12.dp)
-                            ) {}
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Stable: ${triageStats.stable}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor
-                            )
-                        }
+                Text(
+                    text = "Prioritize and manage active emergency requests",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Active Cases Summary
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Active Cases Summary",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00695C)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        SummaryItem(label = "Total", value = "${triageStats.total}", modifier = Modifier.weight(1f))
+                        SummaryItem(label = "Critical", value = "${triageStats.critical}", color = Color.Red, modifier = Modifier.weight(1f))
+                        SummaryItem(label = "Serious", value = "${triageStats.serious}", color = Color(0xFFFFA500), modifier = Modifier.weight(1f))
+                        SummaryItem(label = "Stable", value = "${triageStats.stable}", color = Color(0xFF2E7D32), modifier = Modifier.weight(1f))
                     }
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Status Filter Buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            PriorityFilterButton(
-                label = "Critical (${triageStats.critical})",
-                selected = selectedStatusFilter == "CRITICAL",
-                onClick = { onStatusFilterChange(if (selectedStatusFilter == "CRITICAL") null else "CRITICAL") },
-                selectedColor = Color(0xFFD32F2F),
-                modifier = Modifier.weight(1f)
-            )
-            PriorityFilterButton(
-                label = "Serious (${triageStats.serious})",
-                selected = selectedStatusFilter == "SERIOUS",
-                onClick = { onStatusFilterChange(if (selectedStatusFilter == "SERIOUS") null else "SERIOUS") },
-                selectedColor = Color(0xFFFFA500),
-                modifier = Modifier.weight(1f)
-            )
-            PriorityFilterButton(
-                label = "Stable (${triageStats.stable})",
-                selected = selectedStatusFilter == "STABLE",
-                onClick = { onStatusFilterChange(if (selectedStatusFilter == "STABLE") null else "STABLE") },
-                selectedColor = Color(0xFF4CAF50),
-                modifier = Modifier.weight(1f)
-            )
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(Color(0xFFEDF2F7), RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                PriorityFilterButton(
+                    label = "Critical",
+                    selected = selectedStatusFilter == "CRITICAL",
+                    onClick = { onStatusFilterChange(if (selectedStatusFilter == "CRITICAL") null else "CRITICAL") },
+                    selectedColor = Color(0xFFD32F2F),
+                    modifier = Modifier.weight(1f)
+                )
+                PriorityFilterButton(
+                    label = "Serious",
+                    selected = selectedStatusFilter == "SERIOUS",
+                    onClick = { onStatusFilterChange(if (selectedStatusFilter == "SERIOUS") null else "SERIOUS") },
+                    selectedColor = Color(0xFFFFA500),
+                    modifier = Modifier.weight(1f)
+                )
+                PriorityFilterButton(
+                    label = "Stable",
+                    selected = selectedStatusFilter == "STABLE",
+                    onClick = { onStatusFilterChange(if (selectedStatusFilter == "STABLE") null else "STABLE") },
+                    selectedColor = Color(0xFF2E7D32),
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
-        // Requests Title
-        Text(
-            text = "${selectedStatusFilter?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "All Active"} Requests",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // Requests List
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 AppLoadingIndicator()
-            }
-        } else if (uiState.activeRequests.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No active emergency requests", color = MaterialTheme.colorScheme.onSurface)
             }
         } else {
             val filteredRequests = when(selectedStatusFilter) {
@@ -387,24 +310,32 @@ fun TriageDashboardContent(
                 else -> uiState.activeRequests
             }
 
-            if (filteredRequests.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No ${selectedStatusFilter?.lowercase() ?: ""} requests", color = MaterialTheme.colorScheme.onSurface)
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(filteredRequests) { request ->
-                        TriageRequestItem(
-                            request = request,
-                            onClick = { onRequestSelected(request) }
-                        )
-                    }
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(filteredRequests) { request ->
+                    TriageDashboardItem(
+                        request = request,
+                        onClick = { onRequestSelected(request) }
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SummaryItem(
+    label: String,
+    value: String,
+    color: Color = Color.Black,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = color)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
     }
 }
 
@@ -418,14 +349,14 @@ fun PriorityFilterButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(40.dp),
-        color = if (selected) selectedColor else Color(0xFFEEEEEE),
+        modifier = modifier.fillMaxHeight(),
+        color = if (selected) selectedColor else Color.Transparent,
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
                 label, 
-                fontSize = 11.sp, 
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (selected) Color.White else Color.Gray
             )
@@ -434,96 +365,84 @@ fun PriorityFilterButton(
 }
 
 @Composable
-fun TriageRequestItem(
+fun TriageDashboardItem(
     request: EmergencyRequestEntity,
     onClick: () -> Unit
 ) {
     val timeAgo = getTimeAgoString(request.createdAt)
-    val contentColor = Color(0xFF1A1C1E) // Guaranteed dark color for visibility
     
-    val priorityColor = when(request.priority.uppercase()) {
-        "CRITICAL" -> Color.Red
-        "HIGH", "SERIOUS" -> Color(0xFFFFA500)
-        "MEDIUM", "LOW", "STABLE" -> Color(0xFF4CAF50)
-        else -> Color.Gray
-    }
-    
-    val priorityLabel = when(request.priority.uppercase()) {
-        "CRITICAL" -> "Critical"
-        "HIGH", "SERIOUS" -> "Serious"
-        "MEDIUM", "LOW", "STABLE" -> "Stable"
-        else -> request.priority
+    val (priorityLabel, priorityColor) = when(request.priority.uppercase()) {
+        "CRITICAL" -> "Critical" to Color(0xFFD32F2F)
+        "HIGH", "SERIOUS" -> "Serious" to Color(0xFFFFA500)
+        "MEDIUM", "LOW", "STABLE" -> "Stable" to Color(0xFF2E7D32)
+        else -> request.priority to Color.Gray
     }
 
-    Card(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, priorityColor.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Priority Badge
-            Surface(
-                color = priorityColor,
-                shape = RoundedCornerShape(4.dp)
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    color = priorityColor.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = priorityLabel,
+                        color = priorityColor,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+                
                 Text(
-                    text = priorityLabel,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    text = timeAgo,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontSize = 10.sp
+                    color = Color.Gray
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "Emergency #${request.id.takeLast(4)}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF1A202C)
+            )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Patient name
-            Row {
-                Text("Patient: ", color = contentColor)
-                Text(
-                    text = request.location.split(",").firstOrNull() ?: request.location,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
-            }
+            Text(
+                text = request.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.DarkGray,
+                maxLines = 2
+            )
             
-            // Incident description
-            Row {
-                Text("Incident: ", color = contentColor)
-                Text(
-                    text = request.description,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
-            }
-            
-            // Time elapsed
-            Row {
-                Text("Time Elapsed: ", color = contentColor)
-                Text(
-                    text = "$timeAgo",
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             Button(
                 onClick = onClick,
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .fillMaxWidth(0.5f)
-                    .height(36.dp),
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF80DEEA) // Cyan color from screenshot
-                ),
-                shape = RoundedCornerShape(4.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    containerColor = Color(0xFF00695C),
+                    contentColor = Color.White
+                )
             ) {
-                Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("View Details", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -535,29 +454,36 @@ fun DriversTabContent(
     isLoading: Boolean
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = "Ambulance Fleet",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
+                Text(
+                    text = "Fleet Management",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Monitor and manage active ambulances",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 AppLoadingIndicator()
             }
-        } else if (ambulances.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No ambulances available", color = MaterialTheme.colorScheme.onSurface)
-            }
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(ambulances) { ambulance ->
@@ -570,44 +496,60 @@ fun DriversTabContent(
 
 @Composable
 fun AmbulanceDriverCard(ambulance: AmbulanceEntity) {
-    GlassyCard(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+        Row(
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(56.dp),
+                color = Color(0xFFE8F5E9),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = ambulance.registrationNo,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Driver ID: ${ambulance.driverId}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF00695C),
+                        modifier = Modifier.size(28.dp)
                     )
                 }
-                
-                // Status indicator
-                Surface(
-                    color = Color(0xFF4CAF50).copy(alpha = 0.18f),
-                    contentColor = Color(0xFF4CAF50),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = "AVAILABLE",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp
-                    )
-                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = ambulance.registrationNo,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Driver: ${ambulance.driverId}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+            
+            Surface(
+                color = Color(0xFF2E7D32).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = ambulance.status.uppercase(),
+                    color = Color(0xFF2E7D32),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
             }
         }
     }
@@ -620,29 +562,36 @@ fun PatientsTabContent(
     onRequestSelected: (EmergencyRequestEntity) -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = "Active Patients",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
+                Text(
+                    text = "Patient Records",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Track and manage patient emergency history",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 AppLoadingIndicator()
             }
-        } else if (activeRequests.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No active patients", color = MaterialTheme.colorScheme.onSurface)
-            }
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(activeRequests) { request ->
@@ -661,60 +610,69 @@ fun PatientCard(
     request: EmergencyRequestEntity,
     onClick: () -> Unit
 ) {
-    GlassyCard(
+    val (priorityLabel, priorityColor) = when(request.priority.uppercase()) {
+        "CRITICAL" -> "Critical" to Color(0xFFD32F2F)
+        "HIGH", "SERIOUS" -> "Serious" to Color(0xFFFFA500)
+        else -> "Stable" to Color(0xFF2E7D32)
+    }
+
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(56.dp),
+                color = priorityColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Request #${request.id.takeLast(4)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = request.location,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                // Priority badge
-                val priorityColor = when(request.priority.uppercase()) {
-                    "CRITICAL" -> Color(0xFFD32F2F)
-                    "HIGH", "SERIOUS" -> Color(0xFFFFA500)
-                    else -> Color(0xFF4CAF50)
-                }
-                Surface(
-                    color = priorityColor.copy(alpha = 0.18f),
-                    contentColor = priorityColor,
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = request.priority,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = priorityColor,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Patient #${request.id.takeLast(4)}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = request.location,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    maxLines = 1
+                )
+            }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = request.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                maxLines = 2
-            )
+            Surface(
+                color = priorityColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = priorityLabel,
+                    color = priorityColor,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
@@ -725,109 +683,103 @@ fun ReportsTabContent(
     totalAmbulances: Int
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = "Emergency Reports",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
+        Spacer(modifier = Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
+                Text(
+                    text = "Analytics & Reports",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Monitor performance and efficiency metrics",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val pendingCount = activeRequests.count { it.status.uppercase() == "PENDING" }
+        val criticalCount = activeRequests.count { it.priority.uppercase() == "CRITICAL" }
+        
+        val stats = listOf(
+            HospitalReportStat("Total Requests", activeRequests.size.toString(), Icons.Default.Assessment, Color(0xFF00695C)),
+            HospitalReportStat("Fleet Size", totalAmbulances.toString(), Icons.Default.DirectionsCar, Color(0xFF00695C)),
+            HospitalReportStat("Pending", pendingCount.toString(), Icons.Default.Warning, Color(0xFFFFA000)),
+            HospitalReportStat("Critical", criticalCount.toString(), Icons.Default.Notifications, Color(0xFFD32F2F))
         )
 
-        // Summary statistics
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            item {
-                ReportStatCard(
-                    title = "Total Active Requests",
-                    value = activeRequests.size.toString(),
-                    backgroundColor = MaterialTheme.colorScheme.errorContainer
-                )
-            }
-
-            item {
-                ReportStatCard(
-                    title = "Total Ambulances",
-                    value = totalAmbulances.toString(),
-                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            }
-
-            item {
-                val pendingCount = activeRequests.count { it.status.uppercase() == "PENDING" }
-                ReportStatCard(
-                    title = "Pending Requests",
-                    value = pendingCount.toString(),
-                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            }
-
-            item {
-                val assignedCount = activeRequests.count { it.status.uppercase() in listOf("ASSIGNED", "EN_ROUTE") }
-                ReportStatCard(
-                    title = "In Progress",
-                    value = assignedCount.toString(),
-                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            }
-
-            item {
-                val criticalCount = activeRequests.count { it.priority.uppercase() == "CRITICAL" }
-                ReportStatCard(
-                    title = "Critical Cases",
-                    value = criticalCount.toString(),
-                    backgroundColor = Color(0xFFD32F2F).copy(alpha = 0.18f)
-                )
-            }
-
-            item {
-                val avgResponseTime = if (activeRequests.isNotEmpty()) {
-                    activeRequests.mapNotNull { it.estimatedTimeMins }.average().toInt()
-                } else {
-                    0
-                }
-                ReportStatCard(
-                    title = "Avg Response Time",
-                    value = "${avgResponseTime} min",
-                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                )
+            items(stats.size) { index ->
+                val stat = stats[index]
+                ReportStatCard(stat)
             }
         }
     }
 }
 
+private data class HospitalReportStat(
+    val label: String,
+    val value: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: Color
+)
+
 @Composable
-fun ReportStatCard(
-    title: String,
-    value: String,
-    backgroundColor: Color
-) {
-    GlassyCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        containerColor = backgroundColor.copy(alpha = 0.28f)
+private fun ReportStatCard(stat: HospitalReportStat) {
+    ElevatedCard(
+        modifier = Modifier.height(160.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Surface(
+                modifier = Modifier.size(48.dp),
+                color = stat.color.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = stat.icon,
+                        contentDescription = null,
+                        tint = stat.color,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            
+            Column {
+                Text(
+                    text = stat.value,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = stat.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -838,45 +790,84 @@ fun ProfileTabContent(
     onLogoutClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        GlassyCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+        Spacer(modifier = Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            Column {
                 Text(
                     text = "Hospital Profile",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
                 )
                 Text(
-                    text = "Name: $hospitalName",
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Manage facility details and sessions",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
                 )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Button(
-                    onClick = onLogoutClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout")
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(64.dp),
+                            color = Color(0xFFF1F5F9),
+                            shape = CircleShape
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = hospitalName,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF1A202C)
+                            )
+                            Text(
+                                text = "Verified Medical Facility",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    Button(
+                        onClick = onLogoutClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFC61111),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Logout from Session", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -903,11 +894,12 @@ fun AddAmbulanceDialog(
     var driverId by remember { mutableStateOf("") }
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        GlassyCard(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -916,34 +908,42 @@ fun AddAmbulanceDialog(
                 Text(
                     text = "Add New Ambulance",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    color = Color(0xFF1A202C),
+                    fontWeight = FontWeight.ExtraBold
                 )
 
                 OutlinedTextField(
                     value = regNo,
                     onValueChange = { regNo = it },
                     label = { Text("Registration Number") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 OutlinedTextField(
                     value = driverId,
                     onValueChange = { driverId = it },
                     label = { Text("Driver ID") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { onConfirm(regNo, driverId) },
-                        enabled = regNo.isNotBlank() && driverId.isNotBlank()
+                        enabled = regNo.isNotBlank() && driverId.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00695C),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Add")
+                        Text("Add Ambulance")
                     }
                 }
             }
@@ -960,11 +960,12 @@ fun AssignmentDialog(
     onTrackAmbulance: (String) -> Unit = {}
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        GlassyCard(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -973,8 +974,8 @@ fun AssignmentDialog(
                 Text(
                     text = "Assign Ambulance",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    color = Color(0xFF1A202C),
+                    fontWeight = FontWeight.ExtraBold
                 )
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -982,43 +983,51 @@ fun AssignmentDialog(
                         "Emergency: ${request.description}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.Black
                     )
                     Text(
                         "Location: ${request.location}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = Color.Gray
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Select available ambulance:",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.Black
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     if (availableAmbulances.isEmpty()) {
-                        val errorColor = glassReadableAccent(MaterialTheme.colorScheme.error)
                         Text(
                             "No ambulances available",
-                            color = errorColor,
+                            color = Color.Red,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
                     } else {
-                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                        LazyColumn(modifier = Modifier.heightIn(max = 240.dp)) {
                             items(availableAmbulances) { ambulance ->
-                                ListItem(
-                                    headlineContent = { Text(ambulance.registrationNo, color = MaterialTheme.colorScheme.onSurface) },
-                                    supportingContent = { Text("Driver ID: ${ambulance.driverId}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
-                                    modifier = Modifier.clickable { onTrackAmbulance(ambulance.id) },
-                                    trailingContent = {
-                                        Button(onClick = { onConfirm(ambulance.id) }) {
-                                            Text("Assign")
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable { onConfirm(ambulance.id) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFF8FAFC)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text(ambulance.registrationNo, fontWeight = FontWeight.Bold)
+                                            Text("Driver: ${ambulance.driverId}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                         }
-                                    },
-                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                                )
+                                        Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color(0xFF00695C))
+                                    }
+                                }
                             }
                         }
                     }
@@ -1028,18 +1037,9 @@ fun AssignmentDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Close", color = Color.Gray) }
                 }
             }
         }
-    }
-}
-
-private fun glassReadableAccent(color: Color): Color {
-    val luminance = color.luminance()
-    return when {
-        luminance > 0.65f -> androidx.compose.ui.graphics.lerp(color, Color.Black, 0.45f)
-        luminance < 0.15f -> androidx.compose.ui.graphics.lerp(color, Color.White, 0.25f)
-        else -> color
     }
 }

@@ -27,20 +27,47 @@ fun PatientListScreen(
     modifier: Modifier = Modifier,
     onPatientClick: (EmergencyRequest) -> Unit = {}
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Emergency Patients",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
+    Column(
+        modifier = modifier.fillMaxSize().background(Color(0xFFFBFBFB))
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 2.dp
         ) {
-            items(requests) { request ->
-                PatientItem(request)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = "Patient Records",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
+                )
+                Text(
+                    text = "Track and manage patient emergency history",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(requests) { request ->
+                    PatientItem(request)
+                }
             }
         }
     }
@@ -48,31 +75,31 @@ fun PatientListScreen(
 
 @Composable
 private fun PatientItem(request: EmergencyRequest) {
-    GlassyCard(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-        border = null
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = getPriorityColor(request.priority).copy(alpha = 0.2f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(56.dp),
+                color = getPriorityColor(request.priority).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = getPriorityColor(request.priority)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = getPriorityColor(request.priority),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -80,28 +107,29 @@ private fun PatientItem(request: EmergencyRequest) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = request.patientName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1A202C)
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.Gray
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = request.location,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
                         maxLines = 1
                     )
                 }
                 Text(
                     text = request.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color.DarkGray,
                     maxLines = 1,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -118,16 +146,15 @@ private fun PriorityBadge(priority: EmergencyPriority) {
     val text = priority.name
 
     Surface(
-        color = color.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Text(
             text = text,
             color = color,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
 }
@@ -136,7 +163,7 @@ private fun getPriorityColor(priority: EmergencyPriority): Color {
     return when (priority) {
         EmergencyPriority.CRITICAL -> Color(0xFFD32F2F)
         EmergencyPriority.HIGH -> Color(0xFFFFA000)
-        EmergencyPriority.MEDIUM -> Color(0xFF1976D2)
-        EmergencyPriority.LOW -> Color(0xFF388E3C)
+        EmergencyPriority.MEDIUM -> Color(0xFF00695C)
+        EmergencyPriority.LOW -> Color(0xFF2E7D32)
     }
 }

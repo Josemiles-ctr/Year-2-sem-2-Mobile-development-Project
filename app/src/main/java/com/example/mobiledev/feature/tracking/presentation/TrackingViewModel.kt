@@ -92,9 +92,13 @@ class TrackingViewModel(
                         uiState.value.userLocation?.let { findNearestEntities(it) }
                     }
                 } catch (e: SecurityException) {
-                    repository.getApprovedHospitalsStream().collect { hospitals ->
-                        _uiState.update { it.copy(hospitals = hospitals) }
-                        uiState.value.userLocation?.let { findNearestEntities(it) }
+                    try {
+                        repository.getApprovedHospitalsStream().collect { hospitals ->
+                            _uiState.update { it.copy(hospitals = hospitals) }
+                            uiState.value.userLocation?.let { findNearestEntities(it) }
+                        }
+                    } catch (e: Exception) {
+                        _uiState.update { it.copy(error = e.message) }
                     }
                 } catch (e: Exception) {
                     _uiState.update { it.copy(error = e.message) }

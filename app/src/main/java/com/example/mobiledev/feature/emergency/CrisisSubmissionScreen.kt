@@ -27,12 +27,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -70,12 +69,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrisisSubmissionScreen(
     viewModel: CrisisSubmissionViewModel,
     onCancel: () -> Unit,
-    onHelp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -142,111 +139,147 @@ fun CrisisSubmissionScreen(
     }
 
     Scaffold(
+        containerColor = Color(0xFFFBFBFB),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Crisis Submission", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(onClick = onCancel) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.primary)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Emergency Request",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1A202C)
+                        )
+                        Text(
+                            text = "Quickly report a crisis for immediate help",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                },
-                actions = {
-                    TextButton(onClick = onHelp) {
-                        Text("Help", color = MaterialTheme.colorScheme.primary)
+                    TextButton(onClick = onCancel) {
+                        Text("Cancel", color = Color(0xFFC61111), fontWeight = FontWeight.Bold)
                     }
                 }
-            )
+            }
         }
     ) { padding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp),
+                .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Large Emergency Button
-            Button(
-                onClick = { viewModel.submitRequest() },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                shape = RoundedCornerShape(30.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    "REQUEST EMERGENCY HELP",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-
-            // Incident Type Selection
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Select Incident Type",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Large Emergency Button
+                Button(
+                    onClick = { viewModel.submitRequest() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(30.dp)
                 ) {
-                    IncidentTypeCard(
-                        title = "Cardiac",
-                        icon = Icons.Default.Favorite,
-                        color = Color.Red,
-                        isSelected = uiState.selectedIncidentType == "Cardiac",
-                        onClick = { viewModel.onIncidentTypeSelected("Cardiac") },
-                        modifier = Modifier.weight(1f)
+                    Text(
+                        "REQUEST EMERGENCY HELP",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
                     )
-                    IncidentTypeCard(
-                        title = "Injury",
-                        icon = Icons.Default.Healing,
-                        color = Color.Blue,
-                        isSelected = uiState.selectedIncidentType == "Injury",
-                        onClick = { viewModel.onIncidentTypeSelected("Injury") },
-                        modifier = Modifier.weight(1f)
+                }
+
+                // Incident Type Selection
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Select Incident Type",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3748)
                     )
-                    IncidentTypeCard(
-                        title = "Respiratory",
-                        icon = Icons.Default.Air,
-                        color = Color.Green,
-                        isSelected = uiState.selectedIncidentType == "Respiratory",
-                        onClick = { viewModel.onIncidentTypeSelected("Respiratory") },
-                        modifier = Modifier.weight(1f)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        IncidentTypeCard(
+                            title = "Cardiac",
+                            icon = Icons.Default.Favorite,
+                            color = Color.Red,
+                            isSelected = uiState.selectedIncidentType == "Cardiac",
+                            onClick = { viewModel.onIncidentTypeSelected("Cardiac") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IncidentTypeCard(
+                            title = "Injury",
+                            icon = Icons.Default.Healing,
+                            color = Color(0xFF00695C),
+                            isSelected = uiState.selectedIncidentType == "Injury",
+                            onClick = { viewModel.onIncidentTypeSelected("Injury") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IncidentTypeCard(
+                            title = "Respiratory",
+                            icon = Icons.Default.Air,
+                            color = Color.Green,
+                            isSelected = uiState.selectedIncidentType == "Respiratory",
+                            onClick = { viewModel.onIncidentTypeSelected("Respiratory") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // Incident Description
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Incident Description (Optional)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3748)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = { viewModel.onDescriptionChanged(it) },
+                        placeholder = { Text("Briefly describe your emergency...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFD32F2F),
+                            unfocusedBorderColor = Color(0xFFE2E8F0),
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White
+                        )
                     )
                 }
             }
 
-            // Incident Description
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Incident Description (Optional)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = uiState.description,
-                    onValueChange = { viewModel.onDescriptionChanged(it) },
-                    placeholder = { Text("Briefly describe your emergency...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // Map Section
+            // Map Section - Fill Width
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
             ) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
@@ -289,7 +322,7 @@ fun CrisisSubmissionScreen(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1976D2)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF00695C)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -302,21 +335,24 @@ fun CrisisSubmissionScreen(
             }
 
             // Confirm Location Button
-            OutlinedButton(
-                onClick = {
-                    // Logic to confirm current location or let user drag marker
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Text(
-                    "Confirm Location",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold
-                )
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        // Logic to confirm current location or let user drag marker
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFF00695C)),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) {
+                    Text(
+                        "Confirm My Location",
+                        color = Color(0xFF00695C),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(8.dp))

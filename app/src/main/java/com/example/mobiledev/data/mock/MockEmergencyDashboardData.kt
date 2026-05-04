@@ -14,45 +14,45 @@ object MockEmergencyDashboardData {
     val ambulances: List<Ambulance>
         get() = listOf(
             Ambulance(
-                id = "AMB-MOCK-01",
-                plateNumber = "KAA 411A",
-                driverName = "Derek O.",
+                id = "AMB-UGA-01",
+                plateNumber = "UBA 411A",
+                drivers = "Kato Joseph, Lwanga Moses",
                 status = AmbulanceStatus.AVAILABLE
             ),
             Ambulance(
-                id = "AMB-MOCK-02",
-                plateNumber = "KBB 219P",
-                driverName = "Emma N.",
+                id = "AMB-UGA-02",
+                plateNumber = "UBB 219P",
+                drivers = "Nabirye Esther, Opio Brian",
                 status = AmbulanceStatus.ON_MISSION,
-                currentEmergencyId = "REQ-MOCK-1002"
+                currentEmergencyId = "REQ-UGA-1002"
             ),
             Ambulance(
-                id = "AMB-MOCK-03",
-                plateNumber = "KCC 774T",
-                driverName = "Brian K.",
+                id = "AMB-UGA-03",
+                plateNumber = "UBC 774T",
+                drivers = "Mwesigwa Robert, Atwine Chris",
                 status = AmbulanceStatus.AVAILABLE
             ),
             Ambulance(
-                id = "AMB-MOCK-04",
-                plateNumber = "KDD 560M",
-                driverName = "Cynthia A.",
+                id = "AMB-UGA-04",
+                plateNumber = "UBD 560M",
+                drivers = "Ssemuwemba Isaac, Okello David",
                 status = AmbulanceStatus.MAINTENANCE
             ),
             Ambulance(
-                id = "AMB-MOCK-05",
-                plateNumber = "KEE 902L",
-                driverName = "Moses P.",
+                id = "AMB-UGA-05",
+                plateNumber = "UBE 902L",
+                drivers = "Nakamya Jane, Musoke Peter",
                 status = AmbulanceStatus.ON_MISSION,
-                currentEmergencyId = "REQ-MOCK-1005"
+                currentEmergencyId = "REQ-UGA-1005"
             )
         )
 
     private fun baseRequests(): List<EmergencyRequest> {
         val timestamp = now
         val names = listOf(
-            "Grace N.", "Joseph M.", "Aisha K.", "Peter T.", "Mary A.",
-            "Daniel R.", "Sarah B.", "Ronald C.", "Faith L.", "Kevin O.",
-            "Martha I.", "Brian W."
+            "Mugisha Peter", "Namukasa Faith", "Kimbugwe Ronald", "Akello Martha", "Otim Denis",
+            "Nantongo Sarah", "Bwambale John", "Atim Grace", "Mutebi Charles", "Nalubega Prossy",
+            "Okot Patrick", "Alowo Stella"
         )
         val locations = listOf(
             "Kampala Road, CBD",
@@ -63,18 +63,18 @@ object MockEmergencyDashboardData {
             "Muyenga Tank Hill",
             "Nakasero Hospital Road",
             "Makerere Main Gate",
-            "Bukoto Junction",
+            "Bugolobi Village",
             "Kisaasi Central"
         )
         val descriptions = listOf(
-            "Severe chest pain and dizziness.",
-            "Road traffic accident with bleeding.",
-            "Breathing difficulty and wheezing.",
-            "Unconscious adult found on roadside.",
-            "Suspected stroke with slurred speech.",
-            "High fever and convulsions in child.",
-            "Possible fracture after fall from stairs.",
-            "Persistent abdominal pain and vomiting."
+            "Severe chest pain near Posta Uganda.",
+            "Boda boda accident along Jinja Road.",
+            "Respiratory distress in Kololo.",
+            "Unconscious adult found at taxi park.",
+            "Suspected stroke at Garden City.",
+            "Child with high fever in Kamwokya.",
+            "Fall from height at construction site.",
+            "Acute abdominal pain in Ntinda."
         )
         val priorities = listOf(
             EmergencyPriority.CRITICAL,
@@ -97,19 +97,19 @@ object MockEmergencyDashboardData {
                 repeat(10) {
                     val requestNumber = 1001 + index
                     val assignedAmbulanceId = when (status) {
-                        EmergencyStatus.ASSIGNED -> "AMB-MOCK-01"
-                        EmergencyStatus.EN_ROUTE -> "AMB-MOCK-03"
-                        EmergencyStatus.ARRIVED -> "AMB-MOCK-02"
-                        EmergencyStatus.COMPLETED -> "AMB-MOCK-05"
+                        EmergencyStatus.ASSIGNED -> "AMB-UGA-01"
+                        EmergencyStatus.EN_ROUTE -> "AMB-UGA-03"
+                        EmergencyStatus.ARRIVED -> "AMB-UGA-02"
+                        EmergencyStatus.COMPLETED -> "AMB-UGA-05"
                         else -> null
                     }
 
                     add(
                         EmergencyRequest(
-                            id = "REQ-MOCK-$requestNumber",
+                            id = "REQ-UGA-$requestNumber",
                             patientName = names[index % names.size],
                             location = locations[index % locations.size],
-                            phoneNumber = "07${(10000000 + index).toString().takeLast(8)}",
+                            phoneNumber = "0772${(100000 + index).toString().takeLast(6)}",
                             description = descriptions[index % descriptions.size],
                             status = status,
                             priority = priorities[index % priorities.size],
