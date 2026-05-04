@@ -135,6 +135,7 @@ class TrackingViewModel(
             }
             _uiState.update { it.copy(isLoading = false) }
         }
+        uiState.value.userLocation?.let { findNearestEntities(it) }
     }
 
     private fun handleAmbulancesUpdate(ambulances: List<AmbulanceEntity>) {

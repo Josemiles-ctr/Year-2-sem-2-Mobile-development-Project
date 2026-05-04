@@ -27,6 +27,7 @@ interface ResQRepository {
 
     // Ambulance
     fun getAllAmbulancesStream(): Flow<List<AmbulanceEntity>>
+    fun getAllAvailableAmbulancesStream(): Flow<List<AmbulanceEntity>>
     fun getAmbulancesByHospitalStream(hospitalId: String): Flow<List<AmbulanceEntity>>
     fun getAvailableAmbulancesStream(hospitalId: String): Flow<List<AmbulanceEntity>>
     suspend fun getAmbulanceById(id: String): AmbulanceEntity?
@@ -46,4 +47,10 @@ interface ResQRepository {
     suspend fun updateRequest(request: EmergencyRequestEntity)
     suspend fun deleteRequest(request: EmergencyRequestEntity)
     suspend fun softDeleteRequest(id: String)
+
+    // Notifications
+    fun getNotificationsForUserStream(userId: String): Flow<List<com.example.mobiledev.data.local.entity.NotificationEntity>>
+    fun getUnreadNotificationCountStream(userId: String): Flow<Int>
+    suspend fun insertNotification(notification: com.example.mobiledev.data.local.entity.NotificationEntity)
+    suspend fun markNotificationAsRead(id: String)
 }

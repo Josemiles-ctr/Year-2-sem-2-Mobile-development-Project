@@ -12,10 +12,12 @@ import com.example.mobiledev.data.mock.MockSeedData
 import com.example.mobiledev.data.local.dao.AmbulanceDao
 import com.example.mobiledev.data.local.dao.EmergencyRequestDao
 import com.example.mobiledev.data.local.dao.HospitalDao
+import com.example.mobiledev.data.local.dao.NotificationDao
 import com.example.mobiledev.data.local.dao.UserDao
 import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 import com.example.mobiledev.data.local.entity.HospitalStatus
 import kotlinx.coroutines.CoroutineScope
@@ -28,9 +30,10 @@ import org.mindrot.jbcrypt.BCrypt
         UserEntity::class,
         HospitalEntity::class,
         AmbulanceEntity::class,
-        EmergencyRequestEntity::class
+        EmergencyRequestEntity::class,
+        NotificationEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(ResQDatabase.Converters::class)
@@ -48,6 +51,7 @@ abstract class ResQDatabase : RoomDatabase() {
     abstract fun hospitalDao(): HospitalDao
     abstract fun ambulanceDao(): AmbulanceDao
     abstract fun emergencyRequestDao(): EmergencyRequestDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile

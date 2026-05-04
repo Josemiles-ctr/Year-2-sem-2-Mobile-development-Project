@@ -297,7 +297,7 @@ private fun ErrorState(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        GlassyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
@@ -348,7 +348,7 @@ private fun EmptyState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        GlassyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),

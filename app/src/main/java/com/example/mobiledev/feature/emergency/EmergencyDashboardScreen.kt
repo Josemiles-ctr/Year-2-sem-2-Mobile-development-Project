@@ -541,6 +541,13 @@ fun AssignAmbulanceDialog(
                         HorizontalDivider(color = Color(0xFFEEEEEE))
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                }
             }
         },
         confirmButton = {},
@@ -564,6 +571,7 @@ fun EmergencyDashboardPreview() {
                 phoneNumber = "0712345678",
                 description = "Chest pain and difficulty breathing",
                 status = EmergencyStatus.PENDING,
+                priority = EmergencyPriority.HIGH,
                 timestamp = System.currentTimeMillis() - 1000 * 60 * 5
             )
         ),
@@ -575,6 +583,7 @@ fun EmergencyDashboardPreview() {
                 phoneNumber = "0712345678",
                 description = "Chest pain and difficulty breathing",
                 status = EmergencyStatus.PENDING,
+                priority = EmergencyPriority.HIGH,
                 timestamp = System.currentTimeMillis() - 1000 * 60 * 5
             )
         ),

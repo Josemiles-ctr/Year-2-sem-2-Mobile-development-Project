@@ -1,8 +1,10 @@
 package com.example.mobiledev.data.repository
 
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.model.Ambulance
 import com.example.mobiledev.data.model.AmbulanceStatus
+import com.example.mobiledev.data.model.EmergencyPriority
 import com.example.mobiledev.data.model.EmergencyRequest
 import com.example.mobiledev.data.model.EmergencyStatus
 import com.example.mobiledev.data.security.AppRole
@@ -10,6 +12,7 @@ import com.example.mobiledev.data.security.AuthSessionManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
 class LocalEmergencyRepository(
     private val resQRepository: ResQRepository,
@@ -24,9 +27,16 @@ class LocalEmergencyRepository(
         offset: Int
     ): Flow<List<EmergencyRequest>> {
         val principal = authSessionManager.currentPrincipal
+        val hospitalId = principal.hospitalId
 
-        val requestFlow: Flow<List<EmergencyRequestEntity>> = when (principal.role) {
-            AppRole.PATIENT -> {
+        val requestFlow: Flow<List<EmergencyRequestEntity>> = when {
+            principal.role == AppRole.SYSTEM_ADMIN -> {
+                resQRepository.getAllActiveRequestsStream()
+            }
+            hospitalId != null && (principal.role == AppRole.HOSPITAL_ADMIN || principal.role == AppRole.DRIVER) -> {
+                resQRepository.getRequestsByHospitalStream(hospitalId)
+            }
+            principal.role == AppRole.PATIENT -> {
                 val userId = principal.userId
                 if (userId.isNullOrBlank()) {
                     flowOf(emptyList())
@@ -34,10 +44,7 @@ class LocalEmergencyRepository(
                     resQRepository.getRequestsByUserStream(userId)
                 }
             }
-            AppRole.DRIVER, AppRole.HOSPITAL_ADMIN, AppRole.SYSTEM_ADMIN -> {
-                resQRepository.getAllActiveRequestsStream()
-            }
-            AppRole.GUEST -> flowOf(emptyList())
+            else -> flowOf(emptyList())
         }
 
         return requestFlow.map { requests ->
@@ -54,18 +61,30 @@ class LocalEmergencyRepository(
 
     override fun getAmbulances(): Flow<List<Ambulance>> {
         val principal = authSessionManager.currentPrincipal
-        return when (principal.role) {
-            AppRole.PATIENT, AppRole.GUEST -> flowOf(emptyList())
-            else -> resQRepository.getAllAmbulancesStream().map { ambulances ->
-                ambulances.map { entity ->
-                    Ambulance(
-                        id = entity.id,
-                        plateNumber = entity.registrationNo,
-                        driverName = entity.driverId,
-                        status = mapAmbulanceStatus(entity.status),
-                        currentEmergencyId = null
-                    )
-                }
+        val hospitalId = principal.hospitalId
+
+        val ambulanceFlow: Flow<List<com.example.mobiledev.data.local.entity.AmbulanceEntity>> = when {
+            principal.role == AppRole.SYSTEM_ADMIN -> {
+                resQRepository.getAllAmbulancesStream()
+            }
+            hospitalId != null && (principal.role == AppRole.HOSPITAL_ADMIN || principal.role == AppRole.DRIVER) -> {
+                resQRepository.getAmbulancesByHospitalStream(hospitalId)
+            }
+            principal.role == AppRole.PATIENT -> {
+                resQRepository.getAllAvailableAmbulancesStream()
+            }
+            else -> flowOf(emptyList())
+        }
+
+        return ambulanceFlow.map { ambulances ->
+            ambulances.map { entity ->
+                Ambulance(
+                    id = entity.id,
+                    plateNumber = entity.registrationNo,
+                    driverName = entity.driverId,
+                    status = mapAmbulanceStatus(entity.status),
+                    currentEmergencyId = null
+                )
             }
         }
     }
@@ -82,6 +101,18 @@ class LocalEmergencyRepository(
                     updatedAt = System.currentTimeMillis()
                 )
                 resQRepository.updateRequest(updatedRequest)
+
+                // Notify patient about status change
+                val notification = NotificationEntity(
+                    id = "NOTIF_${UUID.randomUUID()}",
+                    userId = request.userId,
+                    title = "Emergency Request Updated",
+                    message = "Your emergency request status is now: ${status.name}",
+                    timestamp = System.currentTimeMillis(),
+                    type = "STATUS_CHANGE"
+                )
+                resQRepository.insertNotification(notification)
+
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Request not found"))
@@ -112,6 +143,28 @@ class LocalEmergencyRepository(
 
                 resQRepository.updateRequest(updatedRequest)
                 resQRepository.updateAmbulance(updatedAmbulance)
+
+                // Notify driver
+                val driverNotification = NotificationEntity(
+                    id = "NOTIF_${UUID.randomUUID()}",
+                    userId = ambulance.driverId,
+                    title = "New Assignment",
+                    message = "You have been assigned to a new emergency request.",
+                    timestamp = System.currentTimeMillis(),
+                    type = "AMBULANCE_ASSIGNED"
+                )
+                resQRepository.insertNotification(driverNotification)
+
+                // Notify patient
+                val patientNotification = NotificationEntity(
+                    id = "NOTIF_${UUID.randomUUID()}",
+                    userId = request.userId,
+                    title = "Ambulance Assigned",
+                    message = "An ambulance has been assigned to your request and is on the way.",
+                    timestamp = System.currentTimeMillis(),
+                    type = "AMBULANCE_ASSIGNED"
+                )
+                resQRepository.insertNotification(patientNotification)
 
                 Result.success(Unit)
             } else {
@@ -156,9 +209,20 @@ class LocalEmergencyRepository(
                 phoneNumber = "",
                 description = entity.description,
                 status = mapStatus(entity.status),
+                priority = mapPriority(entity.priority),
                 timestamp = entity.createdAt,
                 assignedAmbulanceId = entity.ambulanceId
             )
+        }
+    }
+
+    private fun mapPriority(priority: String): EmergencyPriority {
+        return when (priority.uppercase()) {
+            "CRITICAL" -> EmergencyPriority.CRITICAL
+            "HIGH" -> EmergencyPriority.HIGH
+            "MEDIUM" -> EmergencyPriority.MEDIUM
+            "LOW" -> EmergencyPriority.LOW
+            else -> EmergencyPriority.MEDIUM
         }
     }
 
