@@ -350,6 +350,9 @@ class TrackingViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(routePoints = listOf(origin, destination)) }
             }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         simulationJob?.cancel()
