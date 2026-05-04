@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
         }
 
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             MobileDevTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {

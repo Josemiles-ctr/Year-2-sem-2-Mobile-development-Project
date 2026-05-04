@@ -4,13 +4,15 @@ import com.example.mobiledev.data.local.entity.AmbulanceEntity
 import com.example.mobiledev.data.local.entity.EmergencyRequestEntity
 import com.example.mobiledev.data.local.entity.HospitalEntity
 import com.example.mobiledev.data.local.entity.HospitalStatus
+import com.example.mobiledev.data.local.entity.NotificationEntity
 import com.example.mobiledev.data.local.entity.UserEntity
 
 data class MockSeedBundle(
     val hospitals: List<HospitalEntity>,
     val users: List<UserEntity>,
     val ambulances: List<AmbulanceEntity>,
-    val requests: List<EmergencyRequestEntity>
+    val requests: List<EmergencyRequestEntity>,
+    val notifications: List<NotificationEntity>
 )
 
 object MockSeedData {
@@ -36,10 +38,14 @@ object MockSeedData {
             UserEntity("DRIVER_2", "HOSPITAL_1", "Nabirye Esther & Atwine Chris", "crew2@mulago.ug", "0703333444", "Mulago Station", "DRIVER", "UUID_USER_DRIVER_2", now - 797_000, now - 197_000),
             UserEntity("DRIVER_3", "HOSPITAL_2", "Mwesigwa Robert & Ssemuwemba Isaac", "crew3@casemedical.ug", "0705555666", "Central Station", "DRIVER", "UUID_USER_DRIVER_3", now - 796_000, now - 196_000),
             UserEntity("DRIVER_4", "HOSPITAL_2", "Okello David & Anyango Grace", "crew4@casemedical.ug", "0707777888", "Central Station", "DRIVER", "UUID_USER_DRIVER_4", now - 795_000, now - 195_000),
-            UserEntity("PATIENT_1", null, "Mugisha Peter", "peter@patient.ug", "0774000111", "Wandegeya", "PATIENT", "UUID_USER_PATIENT_1", now - 794_000, now - 194_000),
-            UserEntity("PATIENT_2", null, "Namukasa Faith", "faith@patient.ug", "0774000222", "Kololo", "PATIENT", "UUID_USER_PATIENT_2", now - 793_000, now - 193_000),
-            UserEntity("PATIENT_3", null, "Kimbugwe Ronald", "ronald@patient.ug", "0774000333", "Ntinda", "PATIENT", "UUID_USER_PATIENT_3", now - 792_000, now - 192_000),
-            UserEntity("PATIENT_4", null, "Akello Martha", "martha@patient.ug", "0774000444", "Nakasero", "PATIENT", "UUID_USER_PATIENT_4", now - 791_000, now - 191_000)
+            UserEntity("DRIVER_5", "HOSPITAL_3", "Bwambale John & Atim Grace", "crew5@ihk.ug", "0701122334", "IHK Station", "DRIVER", "UUID_USER_DRIVER_5", now - 794_000, now - 194_000),
+            UserEntity("DRIVER_6", "HOSPITAL_4", "Otim Denis & Nantongo Sarah", "crew6@mengo.ug", "0702233445", "Mengo Station", "DRIVER", "UUID_USER_DRIVER_6", now - 793_000, now - 193_000),
+            UserEntity("DRIVER_7", "HOSPITAL_6", "Mugisha Peter & Namukasa Faith", "crew7@nsambya.ug", "0703344556", "Nsambya Station", "DRIVER", "UUID_USER_DRIVER_7", now - 792_000, now - 192_000),
+            UserEntity("DRIVER_8", "HOSPITAL_8", "Kimbugwe Ronald & Akello Martha", "crew8@naguru.ug", "0704455667", "Naguru Station", "DRIVER", "UUID_USER_DRIVER_8", now - 791_000, now - 191_000),
+            UserEntity("PATIENT_1", null, "Mugisha Peter", "peter@patient.ug", "0774000111", "Wandegeya", "PATIENT", "UUID_USER_PATIENT_1", now - 790_000, now - 190_000),
+            UserEntity("PATIENT_2", null, "Namukasa Faith", "faith@patient.ug", "0774000222", "Kololo", "PATIENT", "UUID_USER_PATIENT_2", now - 789_000, now - 189_000),
+            UserEntity("PATIENT_3", null, "Kimbugwe Ronald", "ronald@patient.ug", "0774000333", "Ntinda", "PATIENT", "UUID_USER_PATIENT_3", now - 788_000, now - 188_000),
+            UserEntity("PATIENT_4", null, "Akello Martha", "martha@patient.ug", "0774000444", "Nakasero", "PATIENT", "UUID_USER_PATIENT_4", now - 787_000, now - 187_000)
         )
 
         val ambulances = listOf(
@@ -47,12 +53,12 @@ object MockSeedData {
             AmbulanceEntity("AMB_2", "HOSPITAL_1", "DRIVER_2", "UBB 202B", "LIC-UGA-202", "ON_EMERGENCY", 0.3400, 32.5780, now - 699_000, now - 179_000),
             AmbulanceEntity("AMB_3", "HOSPITAL_2", "DRIVER_3", "UBC 303C", "LIC-UGA-303", "AVAILABLE", 0.3170, 32.5770, now - 698_000, now - 178_000),
             AmbulanceEntity("AMB_4", "HOSPITAL_2", "DRIVER_4", "UBD 404D", "LIC-UGA-404", "OFFLINE", 0.3180, 32.5780, now - 697_000, now - 177_000),
-            AmbulanceEntity("AMB_5", "HOSPITAL_3", "DRIVER_1", "UBE 505E", "LIC-UGA-505", "AVAILABLE", 0.3020, 32.6090, now - 696_000, now - 176_000),
-            AmbulanceEntity("AMB_6", "HOSPITAL_3", "DRIVER_2", "UBF 606F", "LIC-UGA-606", "AVAILABLE", 0.3030, 32.6100, now - 695_000, now - 175_000),
-            AmbulanceEntity("AMB_7", "HOSPITAL_4", "DRIVER_3", "UBG 707G", "LIC-UGA-707", "ON_EMERGENCY", 0.3130, 32.5590, now - 694_000, now - 174_000),
-            AmbulanceEntity("AMB_8", "HOSPITAL_4", "DRIVER_4", "UBH 808H", "LIC-UGA-808", "AVAILABLE", 0.3140, 32.5600, now - 693_000, now - 173_000),
-            AmbulanceEntity("AMB_9", "HOSPITAL_1", "DRIVER_1", "UBI 909I", "LIC-UGA-909", "OFFLINE", 0.3370, 32.5750, now - 692_000, now - 172_000),
-            AmbulanceEntity("AMB_10", "HOSPITAL_2", "DRIVER_2", "UBJ 100J", "LIC-UGA-100", "AVAILABLE", 0.3150, 32.5750, now - 691_000, now - 171_000)
+            AmbulanceEntity("AMB_5", "HOSPITAL_3", "DRIVER_5", "UBE 505E", "LIC-UGA-505", "AVAILABLE", 0.3020, 32.6090, now - 696_000, now - 176_000),
+            AmbulanceEntity("AMB_6", "HOSPITAL_3", "DRIVER_5", "UBF 606F", "LIC-UGA-606", "AVAILABLE", 0.3030, 32.6100, now - 695_000, now - 175_000),
+            AmbulanceEntity("AMB_7", "HOSPITAL_4", "DRIVER_6", "UBG 707G", "LIC-UGA-707", "ON_EMERGENCY", 0.3130, 32.5590, now - 694_000, now - 174_000),
+            AmbulanceEntity("AMB_8", "HOSPITAL_4", "DRIVER_6", "UBH 808H", "LIC-UGA-808", "AVAILABLE", 0.3140, 32.5600, now - 693_000, now - 173_000),
+            AmbulanceEntity("AMB_9", "HOSPITAL_6", "DRIVER_7", "UBI 909I", "LIC-UGA-909", "AVAILABLE", 0.2990, 32.5870, now - 692_000, now - 172_000),
+            AmbulanceEntity("AMB_10", "HOSPITAL_8", "DRIVER_8", "UBJ 100J", "LIC-UGA-100", "AVAILABLE", 0.3450, 32.6100, now - 691_000, now - 171_000)
         )
 
         val requests = listOf(
@@ -82,11 +88,27 @@ object MockSeedData {
             EmergencyRequestEntity("REQ_18", "PATIENT_2", "HOSPITAL_4", null, "PENDING", "Abdominal pain", "Mengo", 0.3125, 32.5585, "LOW", null, now - 850_000, now - 180_000, null, false)
         )
 
+        val notifications = listOf(
+            NotificationEntity("NOTIF_1", "PATIENT_1", "Ambulance Dispatched", "Ambulance UBA 101A is on its way to your location.", now - 300_000, false, "AMBULANCE_ASSIGNED"),
+            NotificationEntity("NOTIF_2", "PATIENT_1", "Request Received", "Your emergency request REQ_1 has been received.", now - 600_000, true, "STATUS_CHANGE"),
+            NotificationEntity("NOTIF_3", "PATIENT_2", "Ambulance Assigned", "Ambulance UBB 202B has been assigned to your request.", now - 500_000, false, "AMBULANCE_ASSIGNED"),
+            NotificationEntity("NOTIF_4", "ADMIN_1", "New Emergency Request", "New CRITICAL request REQ_1 received in Kampala Road.", now - 600_000, false, "EMERGENCY_REQUEST"),
+            NotificationEntity("NOTIF_5", "ADMIN_2", "New Emergency Request", "New HIGH request REQ_3 received in Ntinda Market.", now - 598_000, true, "EMERGENCY_REQUEST"),
+            NotificationEntity("NOTIF_6", "PATIENT_1", "Emergency Service Rated", "Thank you for rating our service. Your feedback helps us improve.", now - 1200_000, true, "SYSTEM_ALERT"),
+            NotificationEntity("NOTIF_7", "PATIENT_1", "Critical Alert: Area Traffic", "Heavy traffic reported on Jinja Road. Expect slight delays in ambulance arrival.", now - 100_000, false, "EMERGENCY_REQUEST"),
+            NotificationEntity("NOTIF_8", "PATIENT_1", "System Maintenance", "ResQ systems will undergo maintenance tonight from 2 AM to 4 AM.", now - 3600_000, false, "SYSTEM_ALERT"),
+            NotificationEntity("NOTIF_9", "PATIENT_3", "Ambulance Arrived", "Ambulance UBA 101A has arrived at your location.", now - 200_000, false, "STATUS_CHANGE"),
+            NotificationEntity("NOTIF_10", "ADMIN_1", "Ambulance Maintenance", "Ambulance UBA 101A is due for maintenance checkup.", now - 86400_000, false, "SYSTEM_ALERT"),
+            NotificationEntity("NOTIF_11", "DRIVER_1", "New Task Assigned", "Please proceed to Wandegeya for a critical emergency.", now - 300_000, false, "AMBULANCE_ASSIGNED"),
+            NotificationEntity("NOTIF_12", "DRIVER_3", "Shift Update", "Your next shift starts at 8:00 PM tonight.", now - 7200_000, true, "SYSTEM_ALERT")
+        )
+
         return MockSeedBundle(
             hospitals = hospitals,
             users = users,
             ambulances = ambulances,
-            requests = requests
+            requests = requests,
+            notifications = notifications
         )
     }
 }
