@@ -191,10 +191,7 @@ All code contributed to this project must conform to the following standards.
 
 ### General Code Hygiene
 
-- Remove all **unused imports** before committing.
-- Remove all **dead code**, commented-out code blocks, and debug logging before opening a PR.
-- Do not leave `TODO` comments without an associated GitHub Issue reference.
-- Follow the **official Kotlin code style** as configured in the project (`kotlin.code.style=official`).
+- Before committing, remove all unused imports, dead code, commented-out code blocks, and debug logging. Do not open a pull request with unfinished cleanup work still in the codebase. Any TODO comments should only remain if they include a related GitHub Issue reference. Also, make sure all Kotlin code follows the official Kotlin code style configured in the project using kotlin.code.style=official.
 
 ---
 
@@ -229,4 +226,4 @@ Disrespectful or unconstructive behaviour will not be tolerated and may result i
 
 ---
 
-*These guidelines exist to keep our codebase clean, our collaboration effective, and our team aligned. When in doubt, ask — and when reviewing, be the reviewer you would want on your own PRs.*
+*These guidelines exist to keep our codebase clean, our collaboration effective, and our team aligned. When in doubt, ask — and when reviewing, please try to be the reviewer you would want on your own PRs.*

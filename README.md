@@ -85,7 +85,7 @@ Typical local build commands:
 
 ## Security note
 
-Sensitive Firebase files were removed from git history and should remain untracked.
+Sensitive Firebase files were removed from git history and should remain untracked and so was the API key.
 If you regenerate Firebase configuration locally, keep `google-services.json` out of version control.
 
 ## Team
