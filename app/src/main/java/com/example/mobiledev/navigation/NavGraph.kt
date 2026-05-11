@@ -94,14 +94,14 @@ fun NavGraph(
         ApiStaffRepository(retrofit.create(StaffApiService::class.java))
     }
 
-    // Handle logout or session expiration globally without triggering global recomposition
+    // Handle logout or session expiration globally
     LaunchedEffect(Unit) {
         authSessionManager.principal.collect { principal ->
             if (principal.role == AppRole.GUEST) {
                 val currentRoute = navController.currentDestination?.route
                 if (currentRoute != Screen.SignIn.route && currentRoute != Screen.SignUp.route) {
                     navController.navigate(Screen.SignIn.route) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
@@ -283,6 +283,11 @@ fun NavGraph(
         }
 
         composable(Screen.HospitalDashboard.route) { backStackEntry ->
+            val principal by authSessionManager.principal.collectAsState()
+            if (principal.role == AppRole.GUEST) {
+                return@composable
+            }
+
             val hospitalId = backStackEntry.arguments?.getString("hospitalId") ?: ""
             if (hospitalId.isBlank()) {
                 Text("Invalid hospital session. Please sign in again.")
